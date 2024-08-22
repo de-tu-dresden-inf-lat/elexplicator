@@ -1,0 +1,332 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://www.w3.org/2002/07/owl#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#">
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration>
+        <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#pulmonary_functon_testing"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#slight"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#interruption_of_REM_sleep"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#crf1"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#atMinuteOffsets"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#valueSetBoth"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#not_checked"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#WNL"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#questionSet"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#valueSet1234"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma2#studyA_crf5_Q_tread_t1"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#1Plus"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#moderate"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#absent"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#version"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#4Plus"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#3Plus"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#very_severe"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#2Plus"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRF"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Sleep"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#study1_crf1_Q_extol_t1"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#valueSetPick"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#TimeSequence"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#severe"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#exercise_evaluation"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#question"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#study1"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#cardiac_function_testing"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol"/>
+    </Declaration>
+    <Declaration>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#crfs"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRFQuestion"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#Study"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma2#studyB_crf3_Q_sleep_t4"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Tread"/>
+    </Declaration>
+    <EquivalentClasses>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#valueSet1234"/>
+        <ObjectOneOf>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#1Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#2Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#3Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#4Plus"/>
+        </ObjectOneOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#valueSetBoth"/>
+        <ObjectOneOf>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#1Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#2Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#3Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#4Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#WNL"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#absent"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#moderate"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#not_checked"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#severe"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#slight"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#very_severe"/>
+        </ObjectOneOf>
+    </EquivalentClasses>
+    <EquivalentClasses>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#valueSetPick"/>
+        <ObjectOneOf>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#1Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#2Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#3Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#4Plus"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#WNL"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#absent"/>
+            <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#not_checked"/>
+        </ObjectOneOf>
+    </EquivalentClasses>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#cardiac_function_testing"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#exercise_evaluation"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#pulmonary_functon_testing"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#exercise_evaluation"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#pulmonary_functon_testing"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRFQuestion"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol"/>
+        <ObjectAllValuesFrom>
+            <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+            <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#valueSet1234"/>
+        </ObjectAllValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Sleep"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#interruption_of_REM_sleep"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Sleep"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRFQuestion"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Sleep"/>
+        <ObjectAllValuesFrom>
+            <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+            <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#valueSetBoth"/>
+        </ObjectAllValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Tread"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/LOINC#cardiac_function_testing"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Tread"/>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRFQuestion"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Tread"/>
+        <ObjectAllValuesFrom>
+            <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+            <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#valueSetPick"/>
+        </ObjectAllValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRFQuestion"/>
+        <ObjectExactCardinality cardinality="1">
+            <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+        </ObjectExactCardinality>
+    </SubClassOf>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#TimeSequence"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#CRF"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#crf1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/prot#Study"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#study1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#study1_crf1_Q_extol_t1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Tread"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma2#studyA_crf5_Q_tread_t1"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="http://www.w3.org/2013/02/ValueSet/pharma2#Q_Sleep"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma2#studyB_crf3_Q_sleep_t4"/>
+    </ClassAssertion>
+    <DifferentIndividuals>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#1Plus"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#2Plus"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#3Plus"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#4Plus"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#WNL"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#absent"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#moderate"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#not_checked"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#severe"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#slight"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#very_severe"/>
+    </DifferentIndividuals>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma1#study1_crf1_Q_extol_t1"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology2#WNL"/>
+    </ObjectPropertyAssertion>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma2#studyA_crf5_Q_tread_t1"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#2Plus"/>
+    </ObjectPropertyAssertion>
+    <ObjectPropertyAssertion>
+        <ObjectProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#obsValue"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/pharma2#studyB_crf3_Q_sleep_t4"/>
+        <NamedIndividual IRI="http://www.w3.org/2013/02/ValueSet/terminology1#3Plus"/>
+    </ObjectPropertyAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol</IRI>
+        <Literal>Exercise tolerance</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#atMinuteOffsets"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">1</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#atMinuteOffsets"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">15</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#atMinuteOffsets"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">5</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#atMinuteOffsets"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#integer">60</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#question"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol_set1</IRI>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#Q_Extol</IRI>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#questionSet"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#crf1</IRI>
+        <AnonymousIndividual nodeID="_:genid2147483649"/>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#crfs"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#study1</IRI>
+        <AnonymousIndividual nodeID="_:genid2147483648"/>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty IRI="http://www.w3.org/2013/02/ValueSet/prot#version"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma1#study1</IRI>
+        <Literal datatypeIRI="http://www.w3.org/2001/XMLSchema#decimal">1.0</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma2#Q_Sleep</IRI>
+        <Literal>Sleep disturbance</Literal>
+    </AnnotationAssertion>
+    <AnnotationAssertion>
+        <AnnotationProperty abbreviatedIRI="rdfs:label"/>
+        <IRI>http://www.w3.org/2013/02/ValueSet/pharma2#Q_Tread</IRI>
+        <Literal>Treadmill endurance</Literal>
+    </AnnotationAssertion>
+</Ontology>
+
+
+
+<!-- Generated by the OWL API (version 4.5.9) https://github.com/owlcs/owlapi -->
+

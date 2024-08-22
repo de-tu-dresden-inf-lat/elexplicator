@@ -1,0 +1,18 @@
+Satisfiable
+Model: [( @ ( f ( i , r , ( B ) ) ) ( exists r . ( { ( f ( i , r , ( B ) ) ) } ) ) ),
+ ( ~ ( [ i = ( f ( i , r , ( B ) ) ) ] ) ),
+ ( @ i A ),
+ ( @ i ( { i } ) ),
+ ( @ i ( A -> ( exists r . ( B ) ) ) ),
+ ( @ i ( ( B ) -> ( exists r . ( B ) ) ) ),
+ ( [ i = i ] ), 
+ ( @ i ( exists r . ( B ) ) ),
+ ( @ i ( exists r . ( { ( f ( i , r , ( B ) ) ) } ) ) ),
+ ( @ ( f ( i , r , ( B ) ) ) ( B ) ),
+ ( @ ( f ( i , r , ( B ) ) ) ( { ( f ( i , r , ( B ) ) ) } ) ),
+ ( @ ( f ( i , r , ( B ) ) ) ( A -> ( exists r . ( B ) ) ) ),
+ ( @ ( f ( i , r , ( B ) ) ) ( ( B ) -> ( exists r . ( B ) ) ) ),
+ ( [ ( f ( i , r , ( B ) ) ) = ( f ( i , r , ( B ) ) ) ] ),
+ ( @ ( f ( i , r , ( B ) ) ) ( ~ A ) ),
+ ( @ ( f ( i , r , ( B ) ) ) ( exists r . ( B ) ) ),
+ ( ~ ( [ ( f ( i , r , ( B ) ) ) = i ] ) )]

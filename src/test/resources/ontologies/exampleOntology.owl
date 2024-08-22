@@ -1,0 +1,160 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://IJCKG-Example"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     ontologyIRI="http://IJCKG-Example">
+    <Prefix name="" IRI="http://IJCKG-Example#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration>
+        <Class IRI="#Aquaporin4"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CerebralLesion"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#CerebrospinalFluid"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#GranulocyticPleocytosis"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Lymphocytes"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#LymphocyticPleocytosis"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#MS"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#NMO"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#NeuroDisease"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OpticNerve"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Pleocytosis"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Protein"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#buildsAntibodiesAgainst"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#develops"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#hasCytologicalFinding"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#increases"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#inflames"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#occursIn"/>
+    </Declaration>
+    <SubClassOf>
+        <Class IRI="#Aquaporin4"/>
+        <Class IRI="#Protein"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#GranulocyticPleocytosis"/>
+        <Class IRI="#Pleocytosis"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Lymphocytes"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#occursIn"/>
+            <Class IRI="#CerebrospinalFluid"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#LymphocyticPleocytosis"/>
+        <Class IRI="#Pleocytosis"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#LymphocyticPleocytosis"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#increases"/>
+            <Class IRI="#Lymphocytes"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#MS"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#NeuroDisease"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#develops"/>
+                <Class IRI="#CerebralLesion"/>
+            </ObjectSomeValuesFrom>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#hasCytologicalFinding"/>
+                <Class IRI="#LymphocyticPleocytosis"/>
+            </ObjectSomeValuesFrom>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#inflames"/>
+                <Class IRI="#OpticNerve"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#NMO"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#NeuroDisease"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#buildsAntibodiesAgainst"/>
+                <Class IRI="#Aquaporin4"/>
+            </ObjectSomeValuesFrom>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#hasCytologicalFinding"/>
+                <Class IRI="#GranulocyticPleocytosis"/>
+            </ObjectSomeValuesFrom>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#inflames"/>
+                <Class IRI="#OpticNerve"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </SubClassOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#buildsAntibodiesAgainst"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#develops"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#hasCytologicalFinding"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#increases"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#inflames"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#occursIn"/>
+        <ObjectProperty abbreviatedIRI="owl:topObjectProperty"/>
+    </SubObjectPropertyOf>
+</Ontology>
+
+
+
+<!-- Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi -->
+
