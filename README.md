@@ -3,8 +3,8 @@
 #### Table of contents
 - [Description](#description)
 - [Getting Started](#getting-started)
-- [EL Proofs](#proofs)
-- [EL Counterexamples](#counterexamples)
+- [EL Proofs](#el-proofs)
+- [EL Counterexamples](#el-counterexamples)
 - [Diagnoses](#diagnoses)
 - [Atomic Decomposition](#atomic-decomposition)
 - [Concrete Domains Proofs](#concrete-domains-proofs)
