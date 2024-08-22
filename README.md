@@ -17,7 +17,7 @@
 
 In general, **EL Explicator** is a tool for generating explanations for Description Logic reasoning. It generates explanations for *logical consequences* and *non-consequences* of DL ontologies. Additionally, it can be used to debugging *unwanted consequences* and more. While *EL* is the primary DL it focuses on, the tool also extends to other logics for specific features, which are specified in their corresponding sections.
 
---
+---
 
 ### Getting Started
 To build **EL Explicator**, you first need to clone [Evee](https://github.com/de-tu-dresden-inf-lat/evee/tree/main), 
@@ -79,17 +79,17 @@ brew install clingo
 ```
 or follow the instruction provided on the website of [Clingo](https://potassco.org/clingo/).
 
---
+---
 
 ### EL Proofs
 //TODO
 
---
+---
 
 ### EL Counterexamples
 //TODO
 
---
+---
 
 ### Diagnoses
 **EL Explicator** can compute all minimal diagnoses of a given axiom using a modified version of [INCA](https://github.com/lukeswissman/inca), which is a tool for navigating answer sets of logic programs. In short, **EL Explicator** computes all the justifications for a given axiom, then encodes them as rules in a logic program that *INCA* then uses to compute all answer sets containing all minimal diagnoses. **EL Explicator** translates and filters the results and writes them to a text file. Diagnoses are separated by `\n` and axioms by `;`. For example, to compute all diagnoses of `SpicyIceCream SubClassOf: owl:Nothing`, you can run the following command:
@@ -106,7 +106,7 @@ which uses the reasoner *ELK* to compute the justifications and write the diagno
 
 This feature supports DLs up to SROIQ and can utilise two reasoners: *ELK* and *Hermit*.
 
---
+---
 
 ### Atomic Decompositions
 **EL Explicator** can compute an atomic decomposition based on the notion of star modules. For example, the following command: 
@@ -122,17 +122,17 @@ java -jar ./target/ELExplicator.jar \
 
 extracts a module of the signature of `SpicyIceCream SubClassOf: owl:Nothing` from the input ontology and uses it to generate the atomic decomposition, which is then exported to `defaultOutputFolder/aD1.JSON` and `defaultOutputFolder/aD1.XML`.
 
---
+---
 
 ### Concrete Domains Proofs
 //TODO
 
---
+---
 
 ### Proof Rewriting
 //TODO
 
---
+---
 
 ### Evonne
 //TODO
