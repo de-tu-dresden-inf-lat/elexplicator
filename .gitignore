@@ -12,6 +12,7 @@ temp/
 *.json
 *.xml
 !logback.xml
+!pom.xml
 *.log
 generatedCounterModels/
 generatedProofs/
