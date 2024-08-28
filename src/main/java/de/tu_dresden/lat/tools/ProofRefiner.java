@@ -19,7 +19,7 @@ public class ProofRefiner {
 	public static IProof<OWLAxiom> refineProof(IProof<OWLAxiom> inputProof, ProofType type,
 			Collection<OWLEntity> signature) throws ProofGenerationFailedException {
 
-		if (type == ProofType.TreeUnravellingOFMinimalSizeGraph)
+		if (type == ProofType.TreeUnravellingOfMinimalSizeGraph)
 			return TreeProofGenerator.getTreeUnravelOfMinHypProof(inputProof);
 
 		//
