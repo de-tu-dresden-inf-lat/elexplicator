@@ -116,7 +116,7 @@
 	<dependency>
 		<groupId>de.tu-dresden.inf.lat</groupId>
 		<artifactId>concrete-domain-reasoner_2.12</artifactId>
-		<version>0.1.0-SNAPSHOT</version>
+		<version>0.1-SNAPSHOT</version>
 		<!-- TODO Remove this once the code is published -->
 	</dependency>
 

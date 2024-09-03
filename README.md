@@ -20,25 +20,33 @@ In general, **EL Explicator** is a tool for generating explanations for Descript
 ---
 
 ### Getting Started
-To build **EL Explicator**, you first need to clone [Evee](https://github.com/de-tu-dresden-inf-lat/evee/tree/main), 
+
+To build **EL Explicator** (you need Java 8 or higher), first clone [this project](https://github.com/de-tu-dresden-inf-lat/elexplicator)
 
 ```
-git clone -b development --single-branch https://github.com/de-tu-dresden-inf-lat/evee --recurse-submodules
+git clone https://github.com/de-tu-dresden-inf-lat/elexplicator.git
 ```
 
-Afterwards, you need to run the following command: 
+as well as [Evee](https://github.com/de-tu-dresden-inf-lat/evee/tree/main).
+
+```
+git clone -b development --single-branch https://github.com/de-tu-dresden-inf-lat/evee.git --recurse-submodules
+```
+
+Afterwards, you need to run the following command in `evee/`: 
 
 ```
 mvn clean install -P elExplicator
 ```
 
-Additionally, **EL Explicator** depends on two other projects ( *CD Reasoner* and *Graph Generator* ), which are not published yet. Currently, the needed jar files are provided under `lib/`, which need to be installed in a local repository for this project. To do so, go to `elexplicator/` and run
+Additionally, **EL Explicator** depends on two other projects ( *CD Reasoner* and *Graph Generator* ), which are not published yet. Currently, the needed files are provided under `lib/`, which need to be installed in a local repository for this project. To do so, go to `elexplicator/` and run
 
 ```
 mvn install:install-file -Dfile=./lib/graphGenerator-0.1-SNAPSHOT.pom \
     -Dpackaging=pom \
     -DpomFile=./lib/graphGenerator-0.1-SNAPSHOT.pom\
-    -DlocalRepositoryPath=repo
+    -DlocalRepositoryPath=repo \
+    -DcreateChecksum=true
 ```
 
 then 
@@ -49,20 +57,22 @@ mvn install:install-file -Dfile=./lib/graphGenerator-owlapi4-0.1-SNAPSHOT.jar \
 -DartifactId=graphGenerator-owlapi4 \
 -Dversion=0.1-SNAPSHOT \
 -Dpackaging=jar \
--DlocalRepositoryPath=repo
+-DlocalRepositoryPath=repo \
+-DcreateChecksum=true
 ```
 to install *Graph Generator*. After that, run 
 
 ```
-mvn install:install-file -Dfile=./lib/concrete-domain-reasoner_2.12-0.1.0-SNAPSHOT.jar \
+mvn install:install-file -Dfile=./lib/concrete-domain-reasoner_2.12-0.1-SNAPSHOT.jar \
 -DgroupId=de.tu-dresden.inf.lat \
 -DartifactId=concrete-domain-reasoner_2.12 \
 -Dversion=0.1-SNAPSHOT \
 -Dpackaging=jar \
--DlocalRepositoryPath=repo
+-DlocalRepositoryPath=repo \
+-DcreateChecksum=true
 ```
 
-to install *CD Reasoner*. Now you have all dependencies ready and you can build **EL Explicator** by running the following command in 
+to install *CD Reasoner*. Now you have all dependencies ready and you can build **EL Explicator** by running the following command: 
 
 ```
 mvn clean compile assembly:single
