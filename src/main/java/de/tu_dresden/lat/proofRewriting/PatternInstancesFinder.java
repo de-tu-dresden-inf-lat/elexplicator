@@ -9,7 +9,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.github.jsonldjava.shaded.com.google.common.collect.Sets;
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 
 import de.tu_dresden.inf.lat.evee.proofs.interfaces.IInference;

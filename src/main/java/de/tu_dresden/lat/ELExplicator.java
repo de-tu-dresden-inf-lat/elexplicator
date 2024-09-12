@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 
+import com.google.common.collect.Sets;
 import de.tu_dresden.inf.lat.counterExample.data.ModelFormat;
 import de.tu_dresden.inf.lat.counterExample.data.ModelType;
 import de.tu_dresden.inf.lat.evee.general.data.exceptions.ModelGenerationException;
@@ -32,7 +33,6 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
-import com.github.jsonldjava.shaded.com.google.common.collect.Sets;
 
 import de.tu_dresden.inf.lat.evee.data.ProofType;
 import de.tu_dresden.lat.atomicDecomposition.AtomicDecompositionGenerator;
