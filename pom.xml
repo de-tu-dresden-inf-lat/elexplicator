@@ -16,6 +16,14 @@
     <antlr4.listener>true</antlr4.listener>
 </properties>
 
+<!-- TODO Remove this once the code of CD Reasoner and Graph Generator is published -->
+<repositories>
+	<repository>
+		<id>local-repo</id>
+		<url>file://${project.basedir}/repo</url>
+	</repository>
+</repositories>
+
 <dependencies>
 	<dependency>
 		<groupId>com.fasterxml.jackson.core</groupId>
@@ -117,19 +125,9 @@
 		<groupId>de.tu-dresden.inf.lat</groupId>
 		<artifactId>concrete-domain-reasoner_2.12</artifactId>
 		<version>0.1-SNAPSHOT</version>
-		<!-- TODO Remove this once the code is published -->
 	</dependency>
 
   </dependencies>
-
-	<!-- TODO Remove this once the code of CD Reasoner and Graph Generator is published -->
-	<repositories>
-		<repository>
-			<id>local-repo</id>
-			<url>file://${project.basedir}/repo</url>
-		</repository>
-	</repositories>
-
 
 	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>

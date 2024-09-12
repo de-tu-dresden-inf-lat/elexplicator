@@ -63,7 +63,7 @@ mvn install:install-file -Dfile=./lib/graphGenerator-owlapi4-0.1-SNAPSHOT.jar \
 to install *Graph Generator*. After that, run 
 
 ```
-mvn install:install-file -Dfile=./lib/concrete-domain-reasoner_2.12-0.1-SNAPSHOT.jar \
+mvn install:install-file -Dfile=./lib/concrete-domain-reasoner_2.12-0.1-SNAPSHOT-jar-with-dependencies.jar \
 -DgroupId=de.tu-dresden.inf.lat \
 -DartifactId=concrete-domain-reasoner_2.12 \
 -Dversion=0.1-SNAPSHOT \
