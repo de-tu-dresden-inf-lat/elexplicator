@@ -2,12 +2,10 @@ package de.tu_dresden.lat.Tests;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Objects;
 
-import com.github.jsonldjava.shaded.com.google.common.collect.Sets;
+import com.google.common.collect.Sets;
 import org.junit.Test;
-import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
 

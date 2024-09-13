@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.util.Objects;
 
+import com.google.common.collect.Sets;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import org.junit.Test;
 import org.liveontologies.puli.DynamicProof;
@@ -12,8 +13,6 @@ import org.semanticweb.elk.owlapi.proofs.ElkOwlInference;
 import org.semanticweb.elk.owlapi.proofs.ElkOwlProof;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.*;
-
-import com.github.jsonldjava.shaded.com.google.common.collect.Sets;
 
 import de.tu_dresden.inf.lat.evee.data.ProofType;
 import de.tu_dresden.inf.lat.evee.proofGenerators.ELKProofGenerator;
@@ -78,7 +77,7 @@ public class TestProofTypes {
 		IProof<OWLAxiom> p = g.getTreeProof(axiom, ProofType.MinimalTreeSize, null);
 		assertEquals(11, p.getInferences().size());
 
-		p = g.getTreeProof(axiom, ProofType.TreeUnravellingOFMinimalSizeGraph, null);
+		p = g.getTreeProof(axiom, ProofType.TreeUnravellingOfMinimalSizeGraph, null);
 		assertEquals(11, p.getInferences().size());
 
 		g.resetExploredAxiomsSet();

@@ -55,7 +55,7 @@ public class SomeTests {
 		elkPM = new MyELkProofManager(pizzaOnt);
 
 		elkPM.getProofs(alpha, "proofIceCream", "", OutputType.RecursiveJSON,
-				ProofType.TreeUnravellingOFMinimalSizeGraph, null, true, true);
+				ProofType.TreeUnravellingOfMinimalSizeGraph, null, true, true);
 	}
 
 	@Test
@@ -73,7 +73,7 @@ public class SomeTests {
 		elkPM = new MyELkProofManager(pizzaOnt);
 
 		elkPM.getProofs(alpha, "proofFruitVegetarian", "", OutputType.RecursiveJSON,
-				ProofType.TreeUnravellingOFMinimalSizeGraph, null, true, true);
+				ProofType.TreeUnravellingOfMinimalSizeGraph, null, true, true);
 	}
 
 	@Test
@@ -91,7 +91,7 @@ public class SomeTests {
 
 		elkPM = new MyELkProofManager(ont);
 
-		elkPM.getProofs(alpha, "proofAC", "", OutputType.RecursiveJSON, ProofType.TreeUnravellingOFMinimalSizeGraph,
+		elkPM.getProofs(alpha, "proofAC", "", OutputType.RecursiveJSON, ProofType.TreeUnravellingOfMinimalSizeGraph,
 				null, true, true);
 	}
 
@@ -110,7 +110,7 @@ public class SomeTests {
 
 		elkPM = new MyELkProofManager(ont);
 
-		elkPM.getProofs(alpha, "proofAC", "", OutputType.RecursiveJSON, ProofType.TreeUnravellingOFMinimalSizeGraph,
+		elkPM.getProofs(alpha, "proofAC", "", OutputType.RecursiveJSON, ProofType.TreeUnravellingOfMinimalSizeGraph,
 				null, true, true);
 	}
 
