@@ -1,4 +1,4 @@
-import diagnosis
+from diagnosis.diagnosis import copyfile, clingo, negate
 import os
 
 
@@ -20,16 +20,16 @@ def cs_generator_2(original_list_of_options, problematic, asp_path):
     if os.path.exists(tmp_asp_file):
         os.remove(tmp_asp_file)
 
-    diagnosis.copyfile(tmp_asp_path + "original_asp_program.txt", tmp_asp_file)
+    copyfile(tmp_asp_path + "original_asp_program.txt", tmp_asp_file)
     tmp_asp_file = open(tmp_asp_path + "conflict_tester.txt", "a")
 
     tmp_asp_file.write(":- not remove(_).\n")
     for e in original_list_of_options:
-        tmp_asp_file.write("remove(" + str(original_list_of_options.index(e)) + "):- " + diagnosis.negate(e[:len(e)-1]) + ".\n")
+        tmp_asp_file.write("remove(" + str(original_list_of_options.index(e)) + "):- " + negate(e[:len(e)-1]) + ".\n")
     if len(problematic) > 0:
         if problematic[len(problematic) - 1] != ".":
             problematic += "."
-    tmp_asp_file.write(":- " + diagnosis.negate(problematic) + "\n")
+    tmp_asp_file.write(":- " + negate(problematic) + "\n")
     tmp_asp_file.close()
 
     return check_unsat_ram_2(tmp_asp_path + "conflict_tester.txt", len(original_list_of_options), original_list_of_options)
@@ -48,7 +48,7 @@ def check_unsat_ram_2(asp_path, len_original, original_list_of_options):
     for i in range(1, len_original+1):
         # args = ['--configuration=handy', '-t 4', '--models=0']
         args = ['--models=0', '-t 4']
-        prg = diagnosis.clingo.Control(args)
+        prg = clingo.Control(args)
         try:
             prg.load(asp_path)
         except RuntimeError as rte:
@@ -75,7 +75,7 @@ def check_unsat_ram_2(asp_path, len_original, original_list_of_options):
                 # prg.add("", [], correction_set)
             # prg.ground([("", [])])
             args = ['--models=1']
-            prg = diagnosis.clingo.Control(args)
+            prg = clingo.Control(args)
             prg.load(asp_path)
             prg.ground([("base", []), ("parts", [])])
             # tester = ":- not #count{X:remove(X)}" + str(i+1) + "."
@@ -112,6 +112,6 @@ def index_to_integrity_constraint(correction_sets, original_list_of_options):
     for l in correction_sets:
         integrity_constraint = ""
         for ind in [i for i in range(0, len(original_list_of_options)) if i in l]:
-            integrity_constraint = diagnosis.negate(original_list_of_options[ind][:len(original_list_of_options[ind])-1]) + "," + integrity_constraint
+            integrity_constraint = negate(original_list_of_options[ind][:len(original_list_of_options[ind])-1]) + "," + integrity_constraint
         new_integrity_constraints.append(":- " + integrity_constraint[0:len(integrity_constraint) - 1] + ".\n")
     return new_integrity_constraints

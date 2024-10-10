@@ -1,6 +1,0 @@
-%All Justifications of A <= B
-statement :- alpha1, alpha2, alpha3.
-statement :- alpha22, alpha3.
-statement :- alpha4.
-%choices
-{alpha1;alpha2;alpha22;alpha3;alpha4}.
