@@ -91,8 +91,8 @@
 		<version>0.3</version>
 		<exclusions>
 			<exclusion>
-		                 <groupId>org.semanticweb.elk</groupId>
-            			<artifactId>elk-owlapi4</artifactId>
+				<groupId>org.semanticweb.elk</groupId>
+				<artifactId>elk-owlapi4</artifactId>
 			</exclusion>
 		</exclusions>
   	</dependency>

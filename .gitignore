@@ -8,6 +8,7 @@ temp/
 .project
 *.DS_Store
 *.png
+!INCA.png
 !images/helpUtil.png
 *.json
 *.xml
