@@ -121,7 +121,6 @@
 	    <version>1.4</version>
 	</dependency>
 
-<!--	It is causing problem with Hermit version in lat-scala-dl-tools-owlapi4_2.12-->
 <!--	<dependency>-->
 <!--		<groupId>com.hermit-reasoner</groupId>-->
 <!--		<artifactId>org.semanticweb.hermit</artifactId>-->
