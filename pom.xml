@@ -85,28 +85,16 @@
 		<version>4.13.2</version>
 	</dependency>
 
-<!--	<dependency>-->
-<!--		<groupId>de.tu-dresden.inf.lat</groupId>-->
-<!--		<artifactId>lat-scala-dl-tools-owlapi4_2.12</artifactId>-->
-<!--		<version>0.4.1-SNAPSHOT</version>-->
-<!--		<exclusions>-->
-<!--			<exclusion>-->
-<!--				<groupId>com.hermit-reasoner</groupId>-->
-<!--				<artifactId>org.semanticweb.hermit</artifactId>-->
-<!--			</exclusion>-->
-<!--		</exclusions>-->
-<!--	</dependency>-->
-
-	<dependency>
-		<groupId>de.tu-dresden.inf.lat.evee</groupId>
-	    <artifactId>evee-elk-proof-extractor-owlapi4</artifactId>
-	    <version>0.3</version>
-  	</dependency>
-
   	<dependency>
 		<groupId>de.tu-dresden.inf.lat.evee</groupId>
 		<artifactId>counterExampleProvider-owlapi4</artifactId>
 		<version>0.3</version>
+		<exclusions>
+			<exclusion>
+		                 <groupId>org.semanticweb.elk</groupId>
+            			<artifactId>elk-owlapi4</artifactId>
+			</exclusion>
+		</exclusions>
   	</dependency>
 
   	<dependency>
