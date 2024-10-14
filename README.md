@@ -21,7 +21,13 @@ In general, **EL Explicator** is a tool for generating explanations for Descript
 
 ### Getting Started
 
-To build **EL Explicator** (you need Java 8 or higher), first clone [this project](https://github.com/de-tu-dresden-inf-lat/elexplicator)
+To build **EL Explicator** (you need Java 8 or higher)
+- [Install EL Explicator on macOS and Linux](#install-on-macos-and-linux)
+- [Install EL Explicator on Windows](#install-on-windows)
+
+#### Install on macOS and Linux
+
+First clone [this project](https://github.com/de-tu-dresden-inf-lat/elexplicator)
 
 ```
 git clone https://github.com/de-tu-dresden-inf-lat/elexplicator.git
@@ -78,7 +84,6 @@ to install *CD Reasoner*. Now you have all dependencies ready and you can build 
 mvn clean compile assembly:single
 
 ``` 
-
 This creates "ELExplicator.jar" which can be found in `target/`. To check if jar file was created successfully, run the following command
 
 ```
@@ -94,12 +99,104 @@ and you should get something like this
 </p>
 
 Lastly, to be able to use the *Diagnoses* feature, you need to install *Clingo*. you can either run 
+
+for macOS
+
 ```
 brew install clingo
+```
+
+for Linux
+
+```
+sudo apt install clingo
 ```
 or follow the instruction provided on the website of [Clingo](https://potassco.org/clingo/).
 
 ---
+#### Install on Windows
+
+First clone [this project](https://github.com/de-tu-dresden-inf-lat/elexplicator)
+
+```
+git clone https://github.com/de-tu-dresden-inf-lat/elexplicator.git
+```
+
+as well as [Evee](https://github.com/de-tu-dresden-inf-lat/evee/tree/main).
+
+```
+git clone -b development --single-branch https://github.com/de-tu-dresden-inf-lat/evee.git --recurse-submodules
+```
+
+Afterwards, you need to run the following command in `evee/`: 
+
+```
+mvn clean install -P elExplicator
+```
+
+Additionally, **EL Explicator** depends on two other projects ( *CD Reasoner* and *Graph Generator* ), which are not published yet. Currently, the needed files are provided under `lib/`, which need to be installed in a local repository for this project. To do so, go to `elexplicator/` and run
+
+```
+mvn install:install-file -Dfile=./lib/graphGenerator-0.1-SNAPSHOT.pom ^
+    -Dpackaging=pom ^
+    -DpomFile=./lib/graphGenerator-0.1-SNAPSHOT.pom ^
+    -DlocalRepositoryPath=repo ^
+    -DcreateChecksum=true
+```
+
+then 
+
+```
+mvn install:install-file -Dfile=./lib/graphGenerator-owlapi4-0.1-SNAPSHOT.jar ^
+-DgroupId=de.tu-dresden.inf.lat ^
+-DartifactId=graphGenerator-owlapi4 ^
+-Dversion=0.1-SNAPSHOT ^
+-Dpackaging=jar ^
+-DlocalRepositoryPath=repo ^
+-DcreateChecksum=true
+```
+to install *Graph Generator*. After that, run 
+
+```
+mvn install:install-file -Dfile=./lib/concrete-domain-reasoner_2.12-0.1-SNAPSHOT-jar-with-dependencies.jar ^
+-DgroupId=de.tu-dresden.inf.lat ^
+-DartifactId=concrete-domain-reasoner_2.12 ^
+-Dversion=0.1-SNAPSHOT ^
+-Dpackaging=jar ^
+-DlocalRepositoryPath=repo ^
+-DcreateChecksum=true
+```
+
+to install *CD Reasoner*. Now you have all dependencies ready and you can build **EL Explicator** by running the following command: 
+
+```
+mvn clean compile assembly:single
+
+``` 
+This creates "ELExplicator.jar" which can be found in `target/`. To check if jar file was created successfully, run the following command
+
+```
+java -jar ./target/ELExplicator.jar
+```
+
+and you should get something like this
+
+<p align="center">
+	<kbd align="center">
+	  <img src="images/helpUtil.png" style="width:800px"/>
+	</kbd>
+</p>
+
+Lastly, to be able to use the *Diagnoses* feature, you need to install *Clingo*. You can either install using [Anaconda](https://docs.conda.io/en/latest/) by running the following command
+
+```
+conda install -c potassco clingo
+```
+
+or follow the instruction provided on the website of [Clingo](https://potassco.org/clingo/).
+
+---
+
 
 ### EL Proofs
 //TODO
@@ -114,6 +211,8 @@ or follow the instruction provided on the website of [Clingo](https://potassco.o
 ### Diagnoses
 **EL Explicator** can compute all minimal diagnoses of a given axiom using a modified version of [INCA](https://github.com/lukeswissman/inca), which is a tool for navigating answer sets of logic programs. In short, **EL Explicator** computes all the justifications for a given axiom, then encodes them as rules in a logic program that *INCA* then uses to compute all answer sets containing all minimal diagnoses. **EL Explicator** translates and filters the results and writes them to a text file. Diagnoses are separated by `\n` and axioms by `;`. For example, to compute all diagnoses of `SpicyIceCream SubClassOf: owl:Nothing`, you can run the following command:
 
+On macOS and Linux
+
 ```
 java -jar ./target/ELExplicator.jar \
 -a "<http://subPizza#SpicyIceCream> SubClassOf: owl:Nothing" \
@@ -122,6 +221,18 @@ java -jar ./target/ELExplicator.jar \
 -od ./minimalDiagnoses
 
 ```
+
+On Windows
+
+```
+java -jar ./target/ELExplicator.jar ^
+-a "<http://subPizza#SpicyIceCream> SubClassOf: owl:Nothing" ^
+-o ./src/test/resources/ontologies/modifiedPizzaOntology.owl ^
+-mds ELK, d1 ^
+-od ./minimalDiagnoses
+
+```
+
 which uses the reasoner *ELK* to compute the justifications and write the diagnoses to a file labeled `minimalDiagnoses/mDs_d1.txt`.
 
 This feature supports DLs up to SROIQ and can utilise two reasoners: *ELK* and *Hermit*.
@@ -131,11 +242,24 @@ This feature supports DLs up to SROIQ and can utilise two reasoners: *ELK* and *
 ### Atomic Decompositions
 **EL Explicator** can compute an atomic decomposition based on the notion of star modules. For example, the following command: 
 
+On macOS and Linux
+
 ```
 java -jar ./target/ELExplicator.jar \
 -a "<http://subPizza#SpicyIceCream> SubClassOf: owl:Nothing" \
 -o ./src/test/resources/ontologies/modifiedPizzaOntology.owl \
 -ad \
+-ol aD1
+
+```
+
+On Windows 
+
+```
+java -jar ./target/ELExplicator.jar ^
+-a "<http://subPizza#SpicyIceCream> SubClassOf: owl:Nothing" ^
+-o ./src/test/resources/ontologies/modifiedPizzaOntology.owl ^
+-ad ^
 -ol aD1
 
 ```
