@@ -31,10 +31,6 @@ public class AtomicDecompositionGenerator {
 	private static final String aDJarPathStr = "externalTools" + File.separator + "AD" + File.separator
 			+ "adStarGenerator.jar";
 
-	private String getModuleFileNameSuffix(boolean onlyModule) {
-		return onlyModule ? ".owl" : "_module.owl";
-	}
-
 	private AtomicDecompositionGenerator() {
 	}
 
@@ -53,11 +49,13 @@ public class AtomicDecompositionGenerator {
 		if (fileNameStr.isEmpty())
 			fileNameStr = "atomicDecomposition";
 
+		String moduleFileName = onlyModule?fileNameStr: "module_"+ fileNameStr;
+
 		Files.createDirectories(Paths.get(outDirStr));
 
 		try {
 			logger.info("Extracting a module with a seed signature = " + axiom.getSignature());
-			createAndSaveModule(ontology, axiom, outDirStr, fileNameStr, onlyModule);
+			createAndSaveModule(ontology, axiom, outDirStr, moduleFileName);
 		} catch (OWLOntologyCreationException e) {
 			logger.error("Failed to create the module");
 			e.printStackTrace();
@@ -74,8 +72,10 @@ public class AtomicDecompositionGenerator {
 			return;
 		}
 
+		String atomicDecompositionFileName = fileNameStr;
+
 		logger.info("Generating the atomic decomposition of the module");
-		int tc = runAtomicDecompositionTool(outDirStr, fileNameStr, false);
+		int tc = runAtomicDecompositionTool(outDirStr, atomicDecompositionFileName);
 		if (tc == 0) {
 			logger.info(" The atomic decomposition was created successfully");
 		} else {
@@ -84,13 +84,13 @@ public class AtomicDecompositionGenerator {
 		}
 	}
 
-	private int runAtomicDecompositionTool(String outDirStr, String fileNameStr, boolean onlyModule) {
+	private int runAtomicDecompositionTool(String outDirStr, String fileNameStr) {
 		Process p;
 		int tc = -1;
 
 		try {
 			p = Runtime.getRuntime().exec("java -cp " + aDJarPathStr + " EverythingForGivenOntology " + outDirStr
-					+ File.separator + fileNameStr + getModuleFileNameSuffix(onlyModule) + " " + outDirStr + " " + fileNameStr);
+					+ File.separator + fileNameStr + " " + outDirStr + " " + fileNameStr);
 
 			StreamConsumer errSC = new StreamConsumer(p.getErrorStream(), "ERR");
 			StreamConsumer outSC = new StreamConsumer(p.getInputStream(), "OUT");
@@ -109,7 +109,7 @@ public class AtomicDecompositionGenerator {
 		return tc;
 	}
 
-	private void createAndSaveModule(OWLOntology ontology, OWLAxiom axiom, String outDirStr, String fileNameStr, boolean onlyModule)
+	private void createAndSaveModule(OWLOntology ontology, OWLAxiom axiom, String outDirStr, String fileNameStr)
 			throws OWLOntologyCreationException, OWLOntologyStorageException, IOException {
 
 		OWLOntology module = Segmenter.getStarModule(ontology, axiom.getSignature(),
@@ -119,7 +119,7 @@ public class AtomicDecompositionGenerator {
 		logger.info("STAR MODULE");
 
 		OutputStream outputstream =
-				Files.newOutputStream(new File(outDirStr + File.separator + fileNameStr + getModuleFileNameSuffix(onlyModule)).toPath());
+				Files.newOutputStream(new File(outDirStr + File.separator + fileNameStr).toPath());
 		OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
 
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
