@@ -15,6 +15,8 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import de.tu_dresden.inf.lat.model.tools.GeneralTools;
+import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
+import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import org.apache.log4j.Logger;
@@ -40,14 +42,21 @@ public class ASPMinimalDiagnoses {
 	private static final String programFileName = "pi.txt";
 	private static final String INCAPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
 			+ File.separator + "incaMDs.py";
-	private static final String DiagPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
-			+ File.separator + "diag.py";
+	// private static final String DiagPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
+	// 		+ File.separator + "diag.py";
 	private static final String NavPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
 			+ File.separator + "diagnosisNav.py";
+
+	// Added this to have a SimpleOWLFormatterCL that can format using preferred labels.
+	// Need to use setOntology first.
+	private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
+			true);
 
 	public static ExitCode getAllMinimalDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
 			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName)
 			throws IOException, InterruptedException {
+
+		sOWLFormatter.setReferenceOntology(ontology);
 
 		if (!isAxiomSupported(reasonerName, axiom)) {
 			logger.info("Axiom is not supported!");
@@ -112,7 +121,7 @@ public class ASPMinimalDiagnoses {
 		for (Set<? extends OWLAxiom> diagnosis : allOptimalDiagnoses) {
 			oneDiagnosis = new StringJoiner("; ");
 			for (OWLAxiom axiom : diagnosis)
-				oneDiagnosis.add(SimpleOWLFormatter.format(axiom));
+				oneDiagnosis.add(sOWLFormatter.format(axiom).replaceAll("\"",""));
 
 			allDiagnoses.add(oneDiagnosis.toString());
 		}
@@ -263,30 +272,6 @@ public class ASPMinimalDiagnoses {
 		}
 	}
 
-	// private static void runProgram2(String dID, String outDirStr, Boolean firstRun) {
-	// 	Process p;
-	// 	int tc = -1;
-	// 	System.out.println(outDirStr + File.separator + programFileName);
-	// 	try {
-	// 		if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-	// 			p = Runtime.getRuntime()
-	// 					.exec("py " + DiagPath + " -f " + outDirStr + File.separator + programFileName + " -m "
-	// 							+ (identifiers2Axioms.keySet().size() - 1) + " -out "
-	// 							+ getMDSFilePathStr(outDirStr, dID) + " -fr " + firstRun);
-	// 			tc = p.waitFor();
-	// 		} else {
-	// 			p = Runtime.getRuntime()
-	// 					.exec("python3 " + DiagPath + " -f " + outDirStr + File.separator + programFileName + " -m "
-	// 							+ (identifiers2Axioms.keySet().size() - 1) + " -out "
-	// 							+ getMDSFilePathStr(outDirStr, dID) + " -fr " + firstRun);
-	// 			tc = p.waitFor();
-	// 		}
-	// 	} catch (IOException | InterruptedException e) {
-	// 		e.printStackTrace();
-	// 		System.out.println("tc = " + tc);
-	// 	}
-	// }
-
 	private static Set<Set<? extends OWLAxiom>> returnResult(String mDsID, String outDirStr) throws IOException {
 		Set<Set<? extends OWLAxiom>> allDiagnoses = new HashSet<>();
 		Set<OWLAxiom> diagnosis;
@@ -429,7 +414,6 @@ public class ASPMinimalDiagnoses {
 
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, dID, outDirStr);
-
 		return ExitCode.terminatedSuccessfully;
 
 
