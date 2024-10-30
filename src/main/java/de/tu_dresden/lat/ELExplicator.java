@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
 import com.google.common.collect.Sets;
 import de.tu_dresden.inf.lat.counterExample.data.ModelFormat;
 import de.tu_dresden.inf.lat.counterExample.data.ModelType;
@@ -101,6 +102,7 @@ public class ELExplicator {
 
 		options.addOption(myOpts.exportMapperOption);
 
+		options.addOption(myOpts.diagnosisOption);
 
 		CommandLine cmd = null;
 
@@ -194,7 +196,7 @@ public class ELExplicator {
 
 				ecode = ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, mdsID, outDirStr, Sets.newHashSet(),
 						reasonerName);
-
+			
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -202,6 +204,36 @@ public class ELExplicator {
 			System.exit(ecode.getValue());
 		}
 
+		if (cmd.hasOption(CLIOptionsStrings.diagnosisOptionShort)){
+			String[] diagnosisArgs = cmd.getOptionValues(CLIOptionsStrings.diagnosisOptionLong);
+			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
+			String dID = Helper.getMDsID(diagnosisArgs);
+			ExitCode ecode = ExitCode.terminatedSuccessfully;
+			try {
+				boolean flag = true;
+				ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
+						reasonerName, true);
+				
+				while (flag == true){
+					java.util.Scanner scanner = new java.util.Scanner(System.in);
+					System.out.println("Enter a facet:");
+					String facet = scanner.nextLine();
+					if (facet.equals("exit")){
+						flag = false;
+					}
+					else{
+						OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);
+						ASPMinimalDiagnoses.applyFacet(dID, outDirStr, facetAxiom);
+					}
+					
+				}
+			
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			System.exit(ecode.getValue());
+		}
 		Collection<OWLEntity> signature = null;
 		if (cmd.hasOption(CLIOptionsStrings.signatureFilePathOptionShort)) {
 			File sigFile = new File(cmd.getOptionValue(CLIOptionsStrings.signatureFilePathOptionLong));

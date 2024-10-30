@@ -72,6 +72,9 @@ public class CLIOptionsStrings {
             patternDirOptionShort = "pat",
             patternDirOptionLong = "pattern-path",
             lemmaTitleOptionShort = "lt",
-            lemmaTitleOptionLong="lemma-title"
+            lemmaTitleOptionLong="lemma-title",
+
+            diagnosisOptionShort = "d",
+            diagnosisOptionLong = "diagnosis"
     ;
 }
