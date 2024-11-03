@@ -1,12 +1,16 @@
 package de.tu_dresden.lat.diagnoses;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,6 +31,7 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.tools.AxiomChecker;
+import scala.util.parsing.json.JSONObject;
 
 /**
  * @author Christian Alrabbaa
@@ -130,7 +135,6 @@ public class ASPMinimalDiagnoses {
 	}
 
 	private static String getColumnsNames(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses) {
-		System.out.println();
 		int maxSize = 0;
 		for (Set<? extends OWLAxiom> diagnosis : allOptimalDiagnoses) {
 			if (diagnosis.size() > maxSize)
@@ -238,7 +242,7 @@ public class ASPMinimalDiagnoses {
 		return ruleHead + ruleBody + ".";
 	}
 
-	private static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun) {
+	private static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun) throws IOException {
 		String argsOpt = "";
 		if (minDiag){
 			argsOpt = argsOpt + " -md";
@@ -249,15 +253,33 @@ public class ASPMinimalDiagnoses {
 		if (firstRun){
 			argsOpt = argsOpt + " -fr";
 		}
+		System.out.println(argsOpt);
 		Process p;
 		int tc = -1;
-		System.out.println(outDirStr + File.separator + programFileName);
+		
 		try {
 			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 				p = Runtime.getRuntime()
 						.exec("py " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
+				BufferedReader ErrorReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				while (ErrorReader.readLine() != null){
+					System.out.println(ErrorReader.readLine());
+				}
+				File info_file = GeneralTools.createFile("info_file.txt");
+				FileOutputStream outStream = new FileOutputStream(info_file);
+				OutputStreamWriter writer = new OutputStreamWriter(outStream, StandardCharsets.UTF_8);
+				BufferedReader Outputreader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				StringBuilder output = new StringBuilder();
+				String line;
+				while ((line = Outputreader.readLine()) != null) {
+					output.append(line);
+					writer.write(line);
+					writer.write("\n");
+				}
+				writer.close();
+				System.out.println(output);
 				tc = p.waitFor();
 			} else {
 				p = Runtime.getRuntime()
@@ -290,12 +312,11 @@ public class ASPMinimalDiagnoses {
 		}
 
 		scanner.close();
-		System.out.println(allDiagnoses);
 		return allDiagnoses;
 	}
 
-	private static Set<String> returnFacets(String outFile) throws IOException {
-		Set<String> facets = new HashSet<>();
+	private static List<String> returnFacets(String outFile) throws IOException {
+		List<String> facets = new ArrayList<>();
 
 		Path path = Paths.get(outFile);
 		Scanner scanner = new Scanner(path);
@@ -303,19 +324,26 @@ public class ASPMinimalDiagnoses {
 
 			String line = scanner.nextLine().trim();
 			if(!line.isEmpty()){
-				if (line.length() >= 4 && line.startsWith("not ")){
-					System.out.println(line.substring(3));
-					System.out.println(identifiers2Axioms.get("alpha"+line.substring(4)));
-					String id = line.substring(4);
+				if (line.equals("Available facets")){
+					facets.add("Available facets");
+				}
+				else if(line.equals("Unavailable facets")){
+					facets.add("Available facets");
+				}
+				else if(line.equals("Chosen facets")){
+					facets.add("Available facets");
+				}
+				else if (line.length() >= 4 && line.startsWith("not ")){
+					String id = line.substring(line.indexOf('(')+1, line.indexOf(')'));
 					OWLAxiom axiom = identifiers2Axioms.get(axiomPrefix + id.trim());
 					String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
-					facets.add("not "+simplifiedAxiom.toString());
-				} else {
-					System.out.println(line);
-					System.out.println(identifiers2Axioms.get("alpha"+line));
-					OWLAxiom axiom = identifiers2Axioms.get(axiomPrefix + line.trim());
+					facets.add("not "+ axiomPrefix+id.trim() +  ": not "+simplifiedAxiom.toString());
+				} 
+				else{
+					String id = line.substring(line.indexOf('(')+1, line.indexOf(')'));
+					OWLAxiom axiom = identifiers2Axioms.get(axiomPrefix + id.trim());
 					String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
-					facets.add(simplifiedAxiom.toString());
+					facets.add(axiomPrefix + id.trim() + ": " + simplifiedAxiom.toString());
 				}
 			}		
 		}
@@ -323,13 +351,12 @@ public class ASPMinimalDiagnoses {
 		return facets;
 	}
 
-	private static void displayFacets(Set<String> allFacets) throws IOException {
+	private static void displayFacets(List<String> allFacets) throws IOException {
 		System.out.println("List of Available Facets:");
 		
 		StringJoiner facets= new StringJoiner("\n");
 
 		for (String f : allFacets){
-			System.out.println(f);
 			facets.add(f);
 		}
 
@@ -346,6 +373,72 @@ public class ASPMinimalDiagnoses {
 			writer.close();
 			logger.info("Done writing ");
 		}
+	}
+
+	public static ExitCode reactivateFunction(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
+		// get the identifier of the facet, send to the minimaldiag py file via incamds.py, different function in minimaldiag will be invoked corresponding to reactivate function
+		Process p;
+		int tc = -1;
+		try {
+			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+				p = Runtime.getRuntime()
+						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				StringBuilder output = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					output.append(line).append("\n");
+				}
+				System.out.println(output);
+				tc = p.waitFor();
+				if ((erreader.readLine())!= null){
+					System.out.println(erreader.readLine());
+				}
+			} else {
+				p = Runtime.getRuntime()
+						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
+				tc = p.waitFor();
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+			System.out.println("tc = " + tc);
+		}
+
+		return ExitCode.terminatedSuccessfully;
+	}
+
+
+	public static ExitCode getImpact(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
+		// get the identifier of the facet, send to the minimaldiag py file via incamds.py,  different function in minimaldiag will be invoked corresponding to impact function
+		Process p;
+		int tc = -1;
+		try {
+			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+				p = Runtime.getRuntime()
+						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -impact \"" + facetIdentifiers + "\"");
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				StringBuilder output = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					output.append(line).append("\n");
+				}
+				System.out.println(output);
+				tc = p.waitFor();
+				if ((erreader.readLine())!= null){
+					System.out.println(erreader.readLine());
+				}
+			} else {
+				p = Runtime.getRuntime()
+						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -impact \"" + facetIdentifiers + "\"");
+				tc = p.waitFor();
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+			System.out.println("tc = " + tc);
+		}
+		return ExitCode.terminatedSuccessfully;
 	}
 
 	private static String getMDSFilePathStr(String outDir, String mDsID) {
@@ -388,18 +481,25 @@ public class ASPMinimalDiagnoses {
 		return ExitCode.terminatedSuccessfully;
 	}
 
-	public static ExitCode applyFacet(String dID, String outDirStr, OWLAxiom facet) throws IOException, InterruptedException {
-		String facetAxiomIdentifier = axioms2Identifiers.get(facet);
+	public static ExitCode applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
+		
 		Process p;
 		int tc = -1;
 		try {
 			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 				p = Runtime.getRuntime()
-						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet " + facetAxiomIdentifier);
+						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				StringBuilder output = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					output.append(line).append("\n");
+				}
+				System.out.println(output);
 				tc = p.waitFor();
 			} else {
 				p = Runtime.getRuntime()
-						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet " + facetAxiomIdentifier);
+						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
 				tc = p.waitFor();
 			}
 		} catch (IOException | InterruptedException e) {
@@ -408,7 +508,7 @@ public class ASPMinimalDiagnoses {
 		}
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		runProgram(dID, outDirStr, false, true, false);
-		Set allOptimalDiagnoses = new HashSet();
+		Set allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
 		displayFacets(returnFacets("C:\\Users\\kansa\\elexplicator\\facets_options.txt"));
 
@@ -419,4 +519,7 @@ public class ASPMinimalDiagnoses {
 
 	}
 
+	
+
 }
+

@@ -35,8 +35,7 @@ def main():
 
     start = datetime.datetime.now()
     minimalDiagnoses.get_all_minimal_diagnoses(args.maxInt, args.filePath, args.mDsFilePath, args.minimalDiagnosis, args.facetedDiagnosis, args.firstRun)
-    print(args.firstRun)
-    print("done in " + str(datetime.datetime.now() - start))
+    # print("done in " + str(datetime.datetime.now() - start))
 
 
 def is_valid_file(parser, arg):

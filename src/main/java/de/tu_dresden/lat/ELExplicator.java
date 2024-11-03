@@ -1,10 +1,15 @@
 package de.tu_dresden.lat;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
 import com.google.common.collect.Sets;
@@ -15,6 +20,7 @@ import de.tu_dresden.inf.lat.evee.proofs.data.exceptions.ProofGenerationExceptio
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.interfaces.IModelGenerator;
 import de.tu_dresden.inf.lat.model.interfaces.IProverGenerator;
+import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.cli.CLIOptionsDefaultValues;
 import de.tu_dresden.lat.data.cli.CLIOptionsStrings;
@@ -28,6 +34,7 @@ import de.tu_dresden.lat.tools.Helper;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.easymock.internal.matchers.Or;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
@@ -209,21 +216,42 @@ public class ELExplicator {
 			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
 			String dID = Helper.getMDsID(diagnosisArgs);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
+
+			
 			try {
 				boolean flag = true;
 				ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
-				
+				// get first_ever_answer_set, first_ever
+				Set applied_facets = new HashSet<>();
+
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);
 					System.out.println("Enter a facet:");
-					String facet = scanner.nextLine();
-					if (facet.equals("exit")){
+					String user_in = scanner.nextLine();
+					if (user_in.equals("exit")){
 						flag = false;
 					}
 					else{
-						OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);
-						ASPMinimalDiagnoses.applyFacet(dID, outDirStr, facetAxiom);
+						if (!user_in.contains("#impact") || !user_in.contains("#reactivate")){
+							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
+							if (applied_facets.contains(user_in)){
+								System.out.print("already applied");
+							}else{
+								ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
+								applied_facets.add(user_in);	
+						}	
+						if (user_in.contains("#impact")){
+							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(user_in.indexOf("#impact ")));
+							// slice string, get identifier, send to function
+						}	
+						if (user_in.contains("#reactivate")){
+							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(user_in.indexOf("#reactivate ")));
+							// slice string, get identifier, send to function
+						}
+						}
+												
+						
 					}
 					
 				}
