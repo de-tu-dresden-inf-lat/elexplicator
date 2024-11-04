@@ -505,9 +505,9 @@ def compare(old_model, new_model, deep_investigation):
                         if "remove" in element:
                             e_id = element[element.index('(')+1:element.index(')')]
                             if "not" in element:
-                                second += f"alpha{e_id}"
+                                second += f"alpha{e_id}\n"
                             else:
-                                second += f"not alpha{e_id}"
+                                second += f"not alpha{e_id}\n"
                 save_text = first + second
                 save_deep_investigation(save_text)
                 print_red_blue_white()
