@@ -497,8 +497,17 @@ def compare(old_model, new_model, deep_investigation):
                 
                 second = "Dependency:\n"
                 for element in list(set(add_point(flat_list_white)).difference(set(list_of_added_knowledge))):
-                    if element not in add_point(flat_prev_white) and "alpha" in element:
-                        second += element[:element.index('(')] + "\n"
+                    if element not in add_point(flat_prev_white):
+                        print("dep:", element, "\n")
+                    if element not in add_point(flat_prev_white):
+                        if "alpha" in element:
+                            second += element[:element.index('(')] + "\n"
+                        if "remove" in element:
+                            e_id = element[element.index('(')+1:element.index(')')]
+                            if "not" in element:
+                                second += f"alpha{e_id}"
+                            else:
+                                second += f"not alpha{e_id}"
                 save_text = first + second
                 save_deep_investigation(save_text)
                 print_red_blue_white()
