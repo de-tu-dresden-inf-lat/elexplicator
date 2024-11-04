@@ -38,10 +38,12 @@ def updateJustificationFile(justificationsFilePath, facet):
     log_file = open("added_knowledge.txt", "a")
     if "not" in facet:
         asp_file.write(f":- not remove({facetId}). \n")
-        log_file.write(f"remove({facetId})\n")
+        log_file.write(f"remove({facetId}).\n")
+        log_file.write(f"not alpha{facetId}().\n")
     else:
-        asp_file.write(f":- remove({facetId}). \n")
-        log_file.write(f"not remove({facetId})\n")
+        asp_file.write(f":- remove({facetId}).\n")
+        log_file.write(f"not remove({facetId}).\n")
+        log_file.write(f"alpha{facetId}().\n")
     asp_file.close()
     
 

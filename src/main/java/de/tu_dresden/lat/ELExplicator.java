@@ -216,7 +216,8 @@ public class ELExplicator {
 			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
 			String dID = Helper.getMDsID(diagnosisArgs);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
-
+			Files.deleteIfExists(Paths.get("added_knowledge.txt"));
+			Files.deleteIfExists(Paths.get("deep_investigation.txt"));
 			
 			try {
 				boolean flag = true;
@@ -242,7 +243,7 @@ public class ELExplicator {
 								applied_facets.add(user_in);	
 						}	
 						if (user_in.contains("#impact")){
-							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(user_in.indexOf("#impact ")));
+							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(8));
 							// slice string, get identifier, send to function
 						}	
 						if (user_in.contains("#reactivate")){

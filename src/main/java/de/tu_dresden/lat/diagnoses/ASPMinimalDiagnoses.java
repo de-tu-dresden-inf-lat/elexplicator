@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -84,7 +86,7 @@ public class ASPMinimalDiagnoses {
 		createProgram(allJustifications, outDirStr);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		runProgram(mDsID, outDirStr, true, false, false);
+		runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
 		allOptimalDiagnoses.addAll(returnResult(mDsID, outDirStr));
 
 		logger.info("Generating output file");
@@ -242,7 +244,7 @@ public class ASPMinimalDiagnoses {
 		return ruleHead + ruleBody + ".";
 	}
 
-	private static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun) throws IOException {
+	private static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun, Optional<String> facetIdentifier) throws IOException {
 		String argsOpt = "";
 		if (minDiag){
 			argsOpt = argsOpt + " -md";
@@ -252,6 +254,10 @@ public class ASPMinimalDiagnoses {
 		}
 		if (firstRun){
 			argsOpt = argsOpt + " -fr";
+		}
+		if (facetIdentifier.isPresent()){
+			argsOpt = argsOpt + " -facet \"" + facetIdentifier.get().toString() +"\"";
+			System.out.println(facetIdentifier.get());
 		}
 		System.out.println(argsOpt);
 		Process p;
@@ -267,18 +273,14 @@ public class ASPMinimalDiagnoses {
 				while (ErrorReader.readLine() != null){
 					System.out.println(ErrorReader.readLine());
 				}
-				File info_file = GeneralTools.createFile("info_file.txt");
-				FileOutputStream outStream = new FileOutputStream(info_file);
-				OutputStreamWriter writer = new OutputStreamWriter(outStream, StandardCharsets.UTF_8);
 				BufferedReader Outputreader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				System.out.println(erreader.readLine());
 				StringBuilder output = new StringBuilder();
 				String line;
 				while ((line = Outputreader.readLine()) != null) {
 					output.append(line);
-					writer.write(line);
-					writer.write("\n");
 				}
-				writer.close();
 				System.out.println(output);
 				tc = p.waitFor();
 			} else {
@@ -314,6 +316,33 @@ public class ASPMinimalDiagnoses {
 		scanner.close();
 		return allDiagnoses;
 	}
+	private static List<String> returnDeepInv(String outFile) throws IOException {
+		List<String> facets = new ArrayList<>();
+
+		Path path = Paths.get(outFile);
+		Scanner scanner = new Scanner(path);
+		while (scanner.hasNextLine()) {		
+
+			String line = scanner.nextLine().trim();
+			if(!line.isEmpty()){
+				if (line.equals("Selection:")){
+					facets.add("Selection:");
+				}
+				else if(line.equals("Dependency:")){
+					facets.add("Dependency:");
+				}
+				else{
+					String id = line;
+					OWLAxiom axiom = identifiers2Axioms.get(id.trim());
+					String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
+					facets.add(id.trim() + ": " + simplifiedAxiom.toString());
+				}
+			}		
+		}
+		scanner.close();
+		return facets;
+	}
+
 
 	private static List<String> returnFacets(String outFile) throws IOException {
 		List<String> facets = new ArrayList<>();
@@ -328,10 +357,10 @@ public class ASPMinimalDiagnoses {
 					facets.add("Available facets");
 				}
 				else if(line.equals("Unavailable facets")){
-					facets.add("Available facets");
+					facets.add("Unavailable facets");
 				}
 				else if(line.equals("Chosen facets")){
-					facets.add("Available facets");
+					facets.add("Chosen facets");
 				}
 				else if (line.length() >= 4 && line.startsWith("not ")){
 					String id = line.substring(line.indexOf('(')+1, line.indexOf(')'));
@@ -351,7 +380,7 @@ public class ASPMinimalDiagnoses {
 		return facets;
 	}
 
-	private static void displayFacets(List<String> allFacets) throws IOException {
+	private static void displayFacets(List<String> allFacets, String fileName) throws IOException {
 		System.out.println("List of Available Facets:");
 		
 		StringJoiner facets= new StringJoiner("\n");
@@ -360,7 +389,7 @@ public class ASPMinimalDiagnoses {
 			facets.add(f);
 		}
 
-		File file = GeneralTools.createFile("C:\\Users\\kansa\\elexplicator\\facets_options.txt");
+		File file = GeneralTools.createFile(fileName);
 
 		FileOutputStream outStream = new FileOutputStream(file);
 
@@ -471,9 +500,9 @@ public class ASPMinimalDiagnoses {
 		createProgram(allJustifications, outDirStr);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		runProgram(mDsID, outDirStr, false, true, firstRun);
+		runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
 		allOptimalDiagnoses.addAll(returnResult(mDsID, outDirStr));
-		displayFacets(returnFacets("C:\\Users\\kansa\\elexplicator\\facets_options.txt"));
+		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
 
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, mDsID, outDirStr);
@@ -507,10 +536,13 @@ public class ASPMinimalDiagnoses {
 			System.out.println("tc = " + tc);
 		}
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		runProgram(dID, outDirStr, false, true, false);
+		runProgram(dID, outDirStr, false, true, false, Optional.of(facetIdentifier));
 		Set allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
-		displayFacets(returnFacets("C:\\Users\\kansa\\elexplicator\\facets_options.txt"));
+		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		if (Files.exists(Paths.get("deep_investigation.txt"))){
+			displayFacets(returnDeepInv("deep_investigation.txt"), "deep_investigation_log.txt");
+		}	
 
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, dID, outDirStr);

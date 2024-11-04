@@ -33,11 +33,11 @@ consequences = []
 what_if_white = []
 first_list_of_predicates = []
 justifications_program_path =''
-
+input_facet =''
 
 minimal_conflict_sets_asp = []
 
-def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min_diag, facet_diag, first_run):
+def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min_diag, facet_diag, first_run, input_facet):
     """
     Generate all optimal classical repairs for making "not statement()" a valid option
     :param max_index:
@@ -46,7 +46,7 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     """
     global all_optimal_classical_repairs, optimal_classical_repairs_file_path, intermediate_optimal_classical_repairs, first_ever, \
     first_answer_set_ever, last_answer_set, init_first_answer_set, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, allowed_entries
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, facet
     all_optimal_classical_repairs = []
     intermediate_optimal_classical_repairs = []
     # path = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
@@ -54,6 +54,9 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     optimal_classical_repairs_file_path =  mDsID
 
     init_first_answer_set = first_run
+    deep_investigation = not init_first_answer_set
+    if input_facet is not None:
+        facet = input_facet
 
     if os.path.exists(optimal_classical_repairs_file_path):
         os.remove(optimal_classical_repairs_file_path)
@@ -70,70 +73,15 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
         program.write(":- statement.\n")
         program.close()
 
-    info_dict = {}
-    # if facet_diag and not first_run and os.path.exists("info_file.txt"):    
-    #     file = open("info_file.txt", 'r')
-    #     lines = (file.readlines())
-    #     for line in lines:
-    #         line = line.strip()            
-    #         info_dict[line.split(":")[0]] = line.split(":")[1].strip()
-    #     file.close()   
-    #     first_ever = info_dict["first_ever"] 
-    #     print("first_ever:", first_ever)
-    #     first_answer_set_ever = ast.literal_eval(info_dict["first_answer_set_ever"])
-    #     print("first_answer_set_ever:", first_answer_set_ever)
-    #     first_answer_set_ever_tmp=[]
-    #     for element in first_answer_set_ever:
-    #         pred_name = element[:element.index('(')]
-    #         predicate = Predicate(pred_name)
-    #         pred_arg = element[element.index('(')+1:element.index(')')]
-    #         Predicate.add_elements(predicate, pred_arg)
-    #         first_answer_set_ever_tmp.append(predicate)
-    #     last_answer_set = info_dict['last_answer_set']
-    #     # print("answerset:", first_answer_set_ever_tmp)
-    #     first_answer_set_ever = first_answer_set_ever_tmp
-    #     first_list_of_predicates = ast.literal_eval(info_dict['first_list_of_predicates'])
-    #     first_list_of_preds_tmp=[]
-    #     for element in first_list_of_predicates:
-    #         pred_name = element[:element.index('(')]
-    #         predicate = Predicate(pred_name)
-    #         pred_arg = element[element.index('(')+1:element.index(')')]
-    #         Predicate.add_elements(predicate, pred_arg)
-    #         first_list_of_preds_tmp.append(predicate)
-    #     first_list_of_predicates = first_list_of_preds_tmp
 
     if facet_diag and not first_run and os.path.exists("pyglobals.pk1"):
         get_added_knowledge_function()
-        with open("pyglobals.pk1", 'rb') as f:
-            data = pickle.load(f)
-            first_ever = data['first_ever']
-            first_answer_set_ever = data['first_answer_set_ever']
-            # last_answer_set = data['last_answer_set']
-            first_list_of_predicates = data['first_list_of_predicates']
-            list_of_answer_sets = data['list_of_answer_sets']
-            list_of_predicates = data['list_of_predicates']
-            list_of_difference_blue = data['list_of_difference_blue']
-            list_of_difference_red = data['list_of_difference_red']
-            list_of_difference_white = data['list_of_difference_white']
-            tmp_prev_red = data['tmp_prev_red']
-            allowed_entries = data['allowed_entries']
-    if facet_diag:
-        res = translator(justifications_program_path, False)
-        with open("pyglobals.pk1", 'wb') as f:
-            pickle.dump({
-                'first_ever': first_ever,
-                'first_answer_set_ever': first_answer_set_ever,
-                # 'last_answer_set': last_answer_set,
-                'first_list_of_predicates': first_list_of_predicates,
-                'list_of_answer_sets': list_of_answer_sets,
-                'list_of_predicates': list_of_predicates,
-                'list_of_difference_blue' : list_of_difference_blue,
-                'list_of_difference_red' : list_of_difference_red,
-                'list_of_difference_white' : list_of_difference_white,
-                'tmp_prev_red' : tmp_prev_red,
-                'allowed_entries' : allowed_entries
-            }, f)
+        fetch_globals()
 
+    if facet_diag:
+        res = translator(justifications_program_path, deep_investigation)
+        store_globals()
+        
     return compute_all_optimal_classical_repairs(justifications_program_path, max_index+1)
 
 def get_added_knowledge_function():
@@ -141,7 +89,7 @@ def get_added_knowledge_function():
     with open("added_knowledge.txt", "r") as f:
         lines = f.readlines()
         for line in lines:
-            list_of_added_knowledge.append(line)
+            list_of_added_knowledge.append(line.strip())
 
 def compute_all_optimal_classical_repairs(program_path, len_original):
     """
@@ -278,7 +226,6 @@ def get_integrity_constraints(repairs):
 def translator(asp_file, deep_investigation):
     global list_of_answer_sets, first_answer_set_ever, init_first_answer_set, first_list_of_predicates
     translator_not(asp_file)
-    print("init_first_answer_set:", init_first_answer_set)
     list_of_answer_sets = []
     args = ['--enum-mode=brave']
     prg = clingo.Control(args)
@@ -297,18 +244,10 @@ def translator(asp_file, deep_investigation):
             init_predicates_names()
             first_answer_set_ever = list_of_answer_sets[len(list_of_answer_sets) - 1]
             answer_set_li = []
-            for answer in first_answer_set_ever:
-                for args in answer.p_elements:
-                    answer_set_li.append(answer.p_name + "(" + args + ")")
-            print("first_answer_set_ever:", answer_set_li)
 
         if len(first_answer_set_ever) != 0 and len(list_of_answer_sets) != 0 and not init_first_answer_set:
             if len(list_of_answer_sets[0]) != 0:
-                compare(first_answer_set_ever, list_of_answer_sets[len(list_of_answer_sets) - 1], False)
-                print("blue:", list_of_difference_blue)
-                print("red:", list_of_difference_red)
-                print("white:", list_of_difference_white)
-
+                compare(first_answer_set_ever, list_of_answer_sets[len(list_of_answer_sets) - 1], deep_investigation)
             init_first_answer_set = False 
     initial_display(str(ret))
     return str(ret)
@@ -371,10 +310,6 @@ def model_function(model):
             found = False
     list_of_answer_sets.append(list_of_predicates)
     li_preds = []
-    for answer in list_of_answer_sets[0]:
-        for args in answer.p_elements:
-            li_preds.append(answer.p_name + "(" + args + ")")
-    print('first_list_of_predicates:', li_preds)
     return None
 
 def negate(atom):
@@ -434,7 +369,6 @@ def translator_not(asp_file):
     if str(ret) == "SAT":
         if init_first_answer_set:
             first_ever = list_of_predicates_not_to_negate
-            print("first_ever:", first_ever)
 
 
 def model_function_not(model):
@@ -469,7 +403,6 @@ def create_last_answer_set(model):
     assert isinstance(model, clingo.Model)
     global last_answer_set
     last_answer_set = [model.symbols(atoms=True)]
-    print("last_answer_set:", last_answer_set)
 
 def compare(old_model, new_model, deep_investigation):
     """
@@ -481,7 +414,7 @@ def compare(old_model, new_model, deep_investigation):
     :return: 
     """
     global tmp_prev_red, tmp_prev_blue, list_of_difference_red, list_of_difference_blue, list_of_indices, list_of_difference_white, input_list,\
-        asp_file_name, union_of_answers_without_c, tmp_prev_white
+        asp_file_name, union_of_answers_without_c, tmp_prev_white, facet
 
     if len(old_model) > len(new_model):
         for e in old_model:
@@ -554,84 +487,63 @@ def compare(old_model, new_model, deep_investigation):
                     predicate = predicate_name + "(" + x + ")"
 
                     list_of_difference_red[i].append(predicate)
-
-        # if deep_investigation:
-            # start = '\033[95m'
-            # end = '\033[0m'
-            # flat_list_white = diagnosis.converter(list_of_difference_white)
-            # flat_prev_white = add_point(diagnosis.converter(tmp_prev_white))
-            # if set(add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
-            #     first = "The selection of "
-            #     for element in input_list:
-                    # first += start + element[:len(element)-1] + end + ", "
-            #     first = first[:len(first)-2]
-            #     second = " also requires the selection of "
-            #     for element in list(set(add_point(flat_list_white)).difference(set(list_of_added_knowledge))):
-            #         if element not in add_point(flat_prev_white):
-            #             second += start + element[:len(element)-1] + end + ", "
-            #     second = second[:len(second)-2]
-            #     display_text = first + second + "\ndo you want to continue?(y/n)\n"
-            #     option = input(display_text)
-            #     if option.lower() == 'y':
-            #         print_red_blue_white()
-            #     else:
-            #         del_function(asp_file_name, input_list, False)
-            #         input_list = []
-            #         translator(asp_file_name, True)
-            # else:
-            #     print_red_blue_white()
+        if deep_investigation:
+            flat_list_white = diagnosis.converter(list_of_difference_white)
+            flat_prev_white = add_point(diagnosis.converter(tmp_prev_white))
+                
+            if set(add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
+                
+                first = f"Selection:\n{facet}\n"
+                
+                second = "Dependency:\n"
+                for element in list(set(add_point(flat_list_white)).difference(set(list_of_added_knowledge))):
+                    if element not in add_point(flat_prev_white) and "alpha" in element:
+                        second += element[:element.index('(')] + "\n"
+                save_text = first + second
+                save_deep_investigation(save_text)
+                print_red_blue_white()
+                # if option.lower() == 'y':
+                #     print_red_blue_white()
+                # else:
+                #     del_function(asp_file_name, input_list, False)
+                #     input_list = []
+                #     translator(asp_file_name, True)
+            else:
+                print("No dependency")
+                print_red_blue_white()
         print_red_blue_white()
         tmp_prev_white = list(list_of_difference_white)
 
 
 def print_red_blue_white():
     global justifications_program_path
-    """
-    
-    :return: 
-    """
+
     one = True
     two = True
     three = True        
 
     disp_file = open("facets_options.txt", "w")
     if len(set(tuple(i) for i in list_of_difference_red).intersection(set(tuple(i) for i in list_of_difference_red))) > 1:
-        print("red", list_of_difference_red)
         disp_file.write("Unavailable facets\n")
-        for lst in list_of_difference_red:
-            for element in lst:
-                if "remove" in element:    
-                    disp_file.write(element+"\n")
-        # print_options(["Unavailable Facets:"], '\033[1;33m')
-        # for lst in list_of_difference_red:
-        #     print_options(lst, '\033[1;31m')
+        to_print = get_facets_to_print(list_of_difference_red)   
+        for element in to_print:
+            disp_file.write(element)
     else:
         one = False
     if one:
         if len(set(tuple(i) for i in list_of_difference_blue).intersection(set(tuple(i) for i in list_of_difference_blue))) > 1:
-            print("blue:", list_of_difference_blue)
             disp_file.write("Available facets\n")
-            for lst in list_of_difference_blue:
-                for element in lst:
-                    if "remove" in element:    
-                        disp_file.write(element+"\n")
+            to_print = get_facets_to_print(list_of_difference_blue)   
+            for element in to_print:
+                disp_file.write(element)
         else:
             two = False
 
         if len(set(tuple(i) for i in list_of_difference_white).intersection(set(tuple(i) for i in list_of_difference_white))) > 1:
-            # print_options(["Chosen Facets:"], '\033[1;33m')
-            # for lst in list_of_difference_white:
-            #     print_options(lst)
             disp_file.write("Chosen facets\n")
-            for lst in list_of_difference_white:
-                for element in lst:
-                    if "alpha" in element:  
-                        element_id = element[element.index("alpha")+len("alpha"):element.index("()")] 
-                        if "not" in element:
-                            disp_file.write("not alpha("+element_id+")\n")
-                        else:
-                            disp_file.write("alpha("+element_id+")")
-            print('list_of_difference_white:', list_of_difference_white)
+            to_print = get_facets_to_print(list_of_difference_white)   
+            for element in to_print:
+                disp_file.write(element)
         else:
             three = False
         disp_file.close()
@@ -652,8 +564,6 @@ def add_point(some_list):
                 i += "."
             ret.append(i)
     return ret
-
-
     
 
 def initial_display(clingo_return):
@@ -678,26 +588,10 @@ def initial_display(clingo_return):
                 disp_file.close()
             else:
                 disp_file.write("No facets available.")
-                disp_file.close()
-            
-            
-            # if to_print:
-            #     allowed_entries = set(to_print)
-            #     print('\033[1;33m' + "\nThe following facets are available:\n" + '\033[0m')
-            #     print_options(to_print)
-            # else:
-            #     print('\033[1;33m' + "\nThe provided problem has no facets!\n" + '\033[0m')
-            #     conf_pr = False
-            # for atom in list_of_answer_sets[len(list_of_answer_sets) - 1]:
-            #     if "remove(" in str(atom) and atom not in first_ever:
-            #         if "not " == str(atom)[:4]:
-            #             to_print.append("not " + str(atom)[str(atom).index("(")+1:str(atom).index(")")])
-            #         else:
-            #             to_print.append(str(atom)[str(atom).index("(")+1:str(atom).index(")")])
+                disp_file.close()         
 
     else:
         return clingo_return
-        # print(clingo_return)
 
 
 class Predicate:
@@ -903,3 +797,62 @@ def model_what_if(model):
                 x = x + str(part) + ','
             x = x[:-1]
             what_if_white.append(tmp + atom.name + "(" + x + ")")
+
+def store_globals():
+    with open("pyglobals.pk1", 'wb') as f:
+            pickle.dump({
+                'first_ever': first_ever,
+                'first_answer_set_ever': first_answer_set_ever,
+                # 'last_answer_set': last_answer_set,
+                'first_list_of_predicates': first_list_of_predicates,
+                'list_of_answer_sets': list_of_answer_sets,
+                'list_of_predicates': list_of_predicates,
+                'list_of_difference_blue' : list_of_difference_blue,
+                'list_of_difference_red' : list_of_difference_red,
+                'list_of_difference_white' : list_of_difference_white,
+                'tmp_prev_red' : tmp_prev_red,
+                'tmp_prev_white' : tmp_prev_white,
+                'allowed_entries' : allowed_entries
+            }, f)
+
+
+def fetch_globals():
+    global first_ever, first_answer_set_ever, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries
+    with open("pyglobals.pk1", 'rb') as f:
+        data = pickle.load(f)
+        first_ever = data['first_ever']
+        first_answer_set_ever = data['first_answer_set_ever']
+        # last_answer_set = data['last_answer_set']
+        first_list_of_predicates = data['first_list_of_predicates']
+        list_of_answer_sets = data['list_of_answer_sets']
+        list_of_predicates = data['list_of_predicates']
+        list_of_difference_blue = data['list_of_difference_blue']
+        list_of_difference_red = data['list_of_difference_red']
+        list_of_difference_white = data['list_of_difference_white']
+        tmp_prev_red = data['tmp_prev_red']
+        tmp_prev_white = data['tmp_prev_white']
+        allowed_entries = data['allowed_entries']
+
+def get_facets_to_print(list_of_facets):
+    to_print = []
+    for lst in list_of_facets:
+        for element in lst:
+            if "remove" in element:  
+                e_id = element[element.index('(')+1:element.index(')')] 
+                if element[:4] == "not ":
+                    to_print.append(f"({e_id})\n")
+                else:
+                    to_print.append(f"not ({e_id})\n")
+            if "alpha" in element:
+                e_id = element[element.index("alpha")+len("alpha"):element.index("()")] 
+                if "not" in element:
+                    to_print.append(f"not ({e_id})\n")
+                else:
+                    to_print.append(f"({e_id})\n")
+
+    return set(to_print)
+
+def save_deep_investigation(save_text):
+    with open("deep_investigation.txt", "a") as f:
+        f.write(save_text)
