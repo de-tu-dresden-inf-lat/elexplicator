@@ -23,17 +23,14 @@ import java.util.StringJoiner;
 import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
-import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import org.apache.log4j.Logger;
-import org.omg.CORBA.SystemException;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.tools.AxiomChecker;
-import scala.util.parsing.json.JSONObject;
 
 /**
  * @author Christian Alrabbaa
@@ -257,9 +254,7 @@ public class ASPMinimalDiagnoses {
 		}
 		if (facetIdentifier.isPresent()){
 			argsOpt = argsOpt + " -facet \"" + facetIdentifier.get().toString() +"\"";
-			System.out.println(facetIdentifier.get());
 		}
-		System.out.println(argsOpt);
 		Process p;
 		int tc = -1;
 		
@@ -269,19 +264,6 @@ public class ASPMinimalDiagnoses {
 						.exec("py " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
-				BufferedReader ErrorReader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				while (ErrorReader.readLine() != null){
-					System.out.println(ErrorReader.readLine());
-				}
-				BufferedReader Outputreader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				System.out.println(erreader.readLine());
-				StringBuilder output = new StringBuilder();
-				String line;
-				while ((line = Outputreader.readLine()) != null) {
-					output.append(line);
-				}
-				System.out.println(output);
 				tc = p.waitFor();
 			} else {
 				p = Runtime.getRuntime()
@@ -316,7 +298,7 @@ public class ASPMinimalDiagnoses {
 		scanner.close();
 		return allDiagnoses;
 	}
-	private static List<String> returnDeepInv(String outFile) throws IOException {
+	private static List<String> returnImpacts(String outFile) throws IOException {
 		List<String> facets = new ArrayList<>();
 
 		Path path = Paths.get(outFile);
@@ -330,6 +312,12 @@ public class ASPMinimalDiagnoses {
 				}
 				else if(line.equals("Dependency:")){
 					facets.add("Dependency:");
+				}
+				else if(line.equals("Remove:")){
+					facets.add("Remove:");
+				}
+				else if(line.equals("Impact:")){
+					facets.add("Impact:");
 				}
 				else if(line.length() >= 4 && line.startsWith("not ")){
 					String id = line.substring(4).trim();
@@ -386,7 +374,6 @@ public class ASPMinimalDiagnoses {
 	}
 
 	private static void displayFacets(List<String> allFacets, String fileName) throws IOException {
-		System.out.println("List of Available Facets:");
 		
 		StringJoiner facets= new StringJoiner("\n");
 
@@ -417,18 +404,7 @@ public class ASPMinimalDiagnoses {
 			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 				p = Runtime.getRuntime()
 						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
-				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				StringBuilder output = new StringBuilder();
-				String line;
-				while ((line = reader.readLine()) != null) {
-					output.append(line).append("\n");
-				}
-				System.out.println(output);
 				tc = p.waitFor();
-				if ((erreader.readLine())!= null){
-					System.out.println(erreader.readLine());
-				}
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
@@ -451,18 +427,7 @@ public class ASPMinimalDiagnoses {
 			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 				p = Runtime.getRuntime()
 						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -impact \"" + facetIdentifiers + "\"");
-				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				StringBuilder output = new StringBuilder();
-				String line;
-				while ((line = reader.readLine()) != null) {
-					output.append(line).append("\n");
-				}
-				System.out.println(output);
 				tc = p.waitFor();
-				if ((erreader.readLine())!= null){
-					System.out.println(erreader.readLine());
-				}
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -impact \"" + facetIdentifiers + "\"");
@@ -472,6 +437,8 @@ public class ASPMinimalDiagnoses {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
 		}
+		displayFacets(returnImpacts("impacts.txt"), "impacts.txt");
+
 		return ExitCode.terminatedSuccessfully;
 	}
 
@@ -523,13 +490,6 @@ public class ASPMinimalDiagnoses {
 			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 				p = Runtime.getRuntime()
 						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
-				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				StringBuilder output = new StringBuilder();
-				String line;
-				while ((line = reader.readLine()) != null) {
-					output.append(line).append("\n");
-				}
-				System.out.println(output);
 				tc = p.waitFor();
 			} else {
 				p = Runtime.getRuntime()
@@ -546,7 +506,7 @@ public class ASPMinimalDiagnoses {
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
 		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
 		if (Files.exists(Paths.get("deep_investigation.txt"))){
-			displayFacets(returnDeepInv("deep_investigation.txt"), "deep_investigation_log.txt");
+			displayFacets(returnImpacts("deep_investigation.txt"), "deep_investigation_log.txt");
 		}	
 
 		logger.info("Generating output file");

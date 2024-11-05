@@ -498,8 +498,6 @@ def compare(old_model, new_model, deep_investigation):
                 second = "Dependency:\n"
                 for element in list(set(add_point(flat_list_white)).difference(set(list_of_added_knowledge))):
                     if element not in add_point(flat_prev_white):
-                        print("dep:", element, "\n")
-                    if element not in add_point(flat_prev_white):
                         if "alpha" in element:
                             second += element[:element.index('(')] + "\n"
                         if "remove" in element:
@@ -511,14 +509,7 @@ def compare(old_model, new_model, deep_investigation):
                 save_text = first + second
                 save_deep_investigation(save_text)
                 print_red_blue_white()
-                # if option.lower() == 'y':
-                #     print_red_blue_white()
-                # else:
-                #     del_function(asp_file_name, input_list, False)
-                #     input_list = []
-                #     translator(asp_file_name, True)
             else:
-                print("No dependency")
                 print_red_blue_white()
         print_red_blue_white()
         tmp_prev_white = list(list_of_difference_white)
@@ -724,88 +715,6 @@ def print_Correction_Sets(to_keep):
         second = second[:second.rfind("\n", 0, second.rfind("\n")) + 1]
 
     print(first + second)
-
-def impact_function(input_text):
-    global input_list
-    get_added_knowledge_function()
-    input_list= input_text.split("/")
-    input_list_tmp =[]
-    for e in input_list:
-        atomId = facet.split("alpha")[1]
-        if "not" in atomId:
-            atomId = 'not '+atomId
-        input_list_tmp.append(atomId)
-    input_list = [e for e in input_list_tmp if e]
-    input_list = add_point(handle_input_negation(input_list))
-    if not what_if_delete():
-        print("This deletion will not affect the rest of the chosen options")
-
-def what_if_delete():
-    """
-    this function returns the difference between a program befor some delletion and after it
-    :return: 
-    """
-    global list_of_added_knowledge, asp_file_name, input_list, what
-    start = '\033[95m'
-    end = '\033[0m'
-    diagnosis.create_original(list_of_added_knowledge, asp_file_name)
-    tmp_asp_path = asp_file_name[:asp_file_name.rfind(os.sep) + 1]
-    tmp_asp_file = tmp_asp_path + "what_if.txt"
-    if os.path.exists(tmp_asp_file):
-        os.remove(tmp_asp_file)
-
-    copyfile(tmp_asp_path + "original_asp_program.txt", tmp_asp_file)
-
-    with open(tmp_asp_file, "a") as tmp:
-        for e in add_point([element for element in list_of_added_knowledge if element not in add_point(input_list)]):
-            tmp.write(":- " + negate(e) + "\n")
-    tmp.close()
-
-    args = ['--enum-mode=cautious']
-    prg = clingo.Control(args)
-    try:
-        prg.load(tmp_asp_file)
-    except RuntimeError:
-        return None
-    prg.ground([("base", []), ("parts", [])])
-    prg.solve(on_model=model_what_if)
-
-    first = "Removing "
-    for e in input_list:
-        first += start + e[:len(e) - 1] + end + ", "
-    first = first[:len(first) - 2]
-    second = " will cause the deletion of "
-    third = ""
-    for e in list(set(add_point(diagnosis.converter(list_of_difference_white))).difference(add_point(what_if_white))):
-        if e not in list_of_added_knowledge:
-            third += start + e[:len(e) - 1] + end + ", "
-    third = third[:len(third) - 2]
-    if third:
-        print(first + second + third)
-        return True
-    else:
-        return False
-
-def model_what_if(model):
-    """
-
-    :param model: 
-    :return: 
-    """
-    assert isinstance(model, clingo.Model)
-    global what_if_white
-    what_if_white = []
-    for atom in model.symbols(atoms=True):
-        if atom.negative:
-            tmp = "-"
-        else:
-            tmp = ""
-        for argument in [atom.arguments]:
-            x = ""
-            for part in argument:
-                x = x + str(part) + ','
-            x = x[:-1]
-            what_if_white.append(tmp + atom.name + "(" + x + ")")
 
 def store_globals():
     with open("pyglobals.pk1", 'wb') as f:

@@ -38,7 +38,6 @@ def main():
     args = parser.parse_args()
 
     start = datetime.datetime.now()
-    print("facet:", args.facet)
     minimalDiagnoses.get_all_minimal_diagnoses(args.maxInt, args.filePath, args.mDsFilePath, args.minimalDiagnosis, args.facetedDiagnosis, args.firstRun, args.facet)
     # print("done in " + str(datetime.datetime.now() - start))
 

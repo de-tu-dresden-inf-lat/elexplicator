@@ -234,13 +234,14 @@ public class ELExplicator {
 						flag = false;
 					}
 					else{
-						if (!user_in.contains("#impact") || !user_in.contains("#reactivate")){
+						if (!user_in.contains("#impact") && !user_in.contains("#reactivate")){
 							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
 							if (applied_facets.contains(user_in)){
 								System.out.print("already applied");
 							}else{
 								ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
 								applied_facets.add(user_in);	
+							}
 						}	
 						if (user_in.contains("#impact")){
 							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(8));
@@ -250,7 +251,7 @@ public class ELExplicator {
 							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(user_in.indexOf("#reactivate ")));
 							// slice string, get identifier, send to function
 						}
-						}
+						
 												
 						
 					}
