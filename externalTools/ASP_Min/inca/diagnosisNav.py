@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import os
-from diagnosis import minimalDiagnoses, impactComputation
+from diagnosis import minimalDiagnoses, impactComputation, reactivateComputation
 
 def main():
     parser = ArgumentParser()
@@ -24,7 +24,7 @@ def main():
     if args.facet is not None:
         updateJustificationFile(args.filePath, args.facet)   
     if args.reactivate is not None:
-        minimalDiagnoses.reactivate_function(args.filePath, args.reactivate)
+        reactivateComputation.reactivate_function(args.filePath, args.reactivate)
     if args.impact is not None:
         impactComputation.impact_function(args.filePath, args.impact)
 

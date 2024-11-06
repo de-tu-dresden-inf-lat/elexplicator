@@ -248,7 +248,7 @@ public class ELExplicator {
 							// slice string, get identifier, send to function
 						}	
 						if (user_in.contains("#reactivate")){
-							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(user_in.indexOf("#reactivate ")));
+							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(12));
 							// slice string, get identifier, send to function
 						}
 						

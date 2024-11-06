@@ -265,6 +265,23 @@ public class ASPMinimalDiagnoses {
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
 				tc = p.waitFor();
+
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				StringBuilder output = new StringBuilder();
+				StringBuilder errOutput = new StringBuilder();
+				String line;
+				while ((line = reader.readLine()) != null) {
+					output.append(line).append("\n");
+				}
+				System.out.println(output);
+				
+				String errLine;
+				while ((errLine = erreader.readLine())!= null){
+					errOutput.append(errLine).append("\n");
+				}
+				System.out.println(errOutput);
+
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
@@ -307,31 +324,31 @@ public class ASPMinimalDiagnoses {
 
 			String line = scanner.nextLine().trim();
 			if(!line.isEmpty()){
-				if (line.equals("Selection:")){
-					facets.add("Selection:");
-				}
-				else if(line.equals("Dependency:")){
-					facets.add("Dependency:");
-				}
-				else if(line.equals("Remove:")){
-					facets.add("Remove:");
-				}
-				else if(line.equals("Impact:")){
-					facets.add("Impact:");
-				}
-				else if(line.length() >= 4 && line.startsWith("not ")){
-					String id = line.substring(4).trim();
-					OWLAxiom axiom = identifiers2Axioms.get(id);
-					String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
-					facets.add("not "+ id +  ": not "+simplifiedAxiom.toString());
-				}else{
-					String id = line.trim();
-					OWLAxiom axiom = identifiers2Axioms.get(id);
-					String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
-					facets.add(id + ": " + simplifiedAxiom.toString());
+				switch(line){
+					case "Selection:": case "Dependency:": case "Remove:": case "Impact:": case "To reactivate:": case "Remove all:": case "Remove combination of:": case "OR":
+						facets.add(line);
+						break;
+					// case "Selection:":
+					// 	facets.add(line);
+					// case "Dependency:":
+					// 	facets.add(line);
+					default:
+						if(line.length() >= 4 && line.startsWith("not ")){
+							String id = line.substring(4).trim();
+							OWLAxiom axiom = identifiers2Axioms.get(id);
+							String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
+							facets.add("not "+ id +  ": not "+simplifiedAxiom.toString());
+						}else{
+							String id = line.trim();
+							OWLAxiom axiom = identifiers2Axioms.get(id);
+							String simplifiedAxiom = SimpleOWLFormatter.format(axiom);
+							facets.add(id + ": " + simplifiedAxiom.toString());
+						}
+						break;
 				}
 			}		
 		}
+
 		scanner.close();
 		return facets;
 	}
@@ -405,16 +422,28 @@ public class ASPMinimalDiagnoses {
 				p = Runtime.getRuntime()
 						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
 				tc = p.waitFor();
+				
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
 				tc = p.waitFor();
 			}
+			BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			StringBuilder errOutput = new StringBuilder();				
+			String errLine;
+			while ((errLine = erreader.readLine())!= null){
+				errOutput.append(errLine).append("\n");
+			}
+			if (errOutput.length() > 0){
+				System.out.print(errOutput);					
+			}
+			else{
+				displayFacets(returnImpacts("corrections.txt"), "corrections.txt");
+			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
-		}
-
+		}		
 		return ExitCode.terminatedSuccessfully;
 	}
 

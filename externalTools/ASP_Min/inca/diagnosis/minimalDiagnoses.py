@@ -1,7 +1,6 @@
 #from scipy.weave.catalog import intermediate_dir
 
-from diagnosis import diagnosis
-from diagnosis import correctionset
+from diagnosis import diagnosis, correctionset, helperFunctions
 import os
 import clingo
 import ast
@@ -276,7 +275,7 @@ def model_function(model):
 
                 list_of_predicates.append(predicate)
 
-                predicate = Predicate(negate(tmp + atom.name))
+                predicate = Predicate(helperFunctions.negate(tmp + atom.name))
                 Predicate.add_elements(predicate, atom.arguments)
 
                 list_of_predicates.append(predicate)
@@ -286,11 +285,11 @@ def model_function(model):
                     predicate = list_of_predicates[i]
                     Predicate.add_elements(predicate, atom.arguments)
                     if predicate.p_name + "(" + predicate.p_elements[len(predicate.p_elements) - 1] + ")" not in first_ever:
-                        name_in_list = [x for x in list_of_predicates if x.p_name == negate(atom.name)]
+                        name_in_list = [x for x in list_of_predicates if x.p_name == helperFunctions.negate(atom.name)]
                         if len(name_in_list) > 0:
                             predicate = name_in_list[0]
                         else:
-                            predicate = Predicate(negate(tmp + atom.name))
+                            predicate = Predicate(helperFunctions.negate(tmp + atom.name))
                             list_of_predicates.append(predicate)
                         Predicate.add_elements(predicate, atom.arguments)
                     found = True
@@ -303,7 +302,7 @@ def model_function(model):
 
                     list_of_predicates.append(predicate)
 
-                    predicate = Predicate(negate(tmp + atom.name))
+                    predicate = Predicate(helperFunctions.negate(tmp + atom.name))
                     Predicate.add_elements(predicate, atom.arguments)
 
                     list_of_predicates.append(predicate)
@@ -311,28 +310,6 @@ def model_function(model):
     list_of_answer_sets.append(list_of_predicates)
     li_preds = []
     return None
-
-def negate(atom):
-    """
-    this function will negate the provided atom
-    :param atom: 
-    :return: 
-    """
-    if atom[:4] == "not ":
-        atom = atom[4:]
-    else:
-        atom = "not " + atom
-    return atom
-
-def negate_set(answer_set):
-    negated_answer_set = []
-    for atom in answer_set:
-        if atom[:4] == "not ":
-            atom = atom[4:]
-        else:
-            atom = "not " + atom
-        negated_answer_set.append(atom)
-    return negated_answer_set
 
 def init_predicates_names():
     """
@@ -462,12 +439,12 @@ def compare(old_model, new_model, deep_investigation):
                 ind = [x.p_index for x in list_of_indices if x.p_name == old_model[i].p_name[4:]][0]
                 tmp = []
                 for e in range(len(list_of_difference_blue[ind])):
-                    tmp.append(negate(list_of_difference_blue[ind][e]))
+                    tmp.append(helperFunctions.negate(list_of_difference_blue[ind][e]))
                 for e in tmp:
                     list_of_difference_blue[i].append(e)
 
                 tmp_blue = []
-                p_name = negate(new_model[i].p_name)
+                p_name = helperFunctions.negate(new_model[i].p_name)
                 ind = [x for x in list_of_indices if x.p_name == p_name][0].p_index
 
                 for argument in new_model[ind].p_elements:
@@ -478,7 +455,7 @@ def compare(old_model, new_model, deep_investigation):
                 for element in for_sure_blue:
 
                     predicate_name = element[:element.index("(")]
-                    predicate_name = negate(predicate_name)
+                    predicate_name = helperFunctions.negate(predicate_name)
 
                     x = ""
                     for e in element[element.find("(") + 1:element.rfind(")")].split(","):
@@ -580,7 +557,7 @@ def initial_display(clingo_return):
             disp_file = open("facets_options.txt", "w")
             disp_file.write("Available facets\n")
             if to_print:
-                allowed_entries = set(to_print)                
+                allowed_entries = set(to_print)        
                 for f in to_print:
                     disp_file.write(str(f))
                     if f != to_print[-1]:
@@ -645,76 +622,6 @@ class PredicateIndex:
         self.p_name = predicate_name
         self.p_index = ind 
 
-def reactivate_function(input_text):
-    global input_list
-    get_added_knowledge_function()
-    input_list = input_text.split("/")
-    for e in input_list:
-        atomId = facet.split("alpha")[1]
-        if "not" in atomId:
-            atomId = 'not '+atomId
-        input_list_tmp.append(atomId)
-    input_list = [e for e in input_list_tmp if e]
-    input_list = add_point(handle_input_negation(input_list))
-    input_list = [e for e in input_list if e in allowed_entries]
-    
-    if input_list:
-        if input_list[0] in add_point(diagnosis.converter(list_of_difference_red)):
-            if not diagnosis.simple_inconsistency_chech(list_of_added_knowledge, input_list[0]):
-                diagnosis.create_original(list_of_added_knowledge, justifications_program_path)
-                correction_sets = correctionset.cs_generator_2(list_of_added_knowledge, input_list[0], asp_file_name)
-                print_Correction_Sets(correction_sets)
-            else:
-                print("Because you have already selected "+negate(input))
-    
-def print_Correction_Sets(to_keep):
-    """
-    print the reasons in a form of possible deletions
-    :param reasons: 
-    :return: 
-    """
-    global input_list
-    reasons = []
-    start = '\033[95m'
-    under_line = '\033[4m'
-    end = '\033[0m'
-    first = "To be able to select "
-    for e in input_list:
-        first += e[:len(e)-1] + ", "
-    first = first[:len(first)-2] + " you have to remove "
-    for l in to_keep:
-        tmp = []
-        for ind in [i for i in range(0, len(list_of_added_knowledge)) if i in l]:
-            tmp.append(list_of_added_knowledge[ind])
-        reasons.append(tmp)
-    second = ""
-    intersection = diagnosis.pruner_2(reasons)
-    if len(intersection) != len(reasons[0]):
-        for i in intersection:
-            second += start + i[:len(i)-1] + end + " " + under_line + "and" + end + " "
-        if len(reasons) > 2:
-            second += "one of the following combinations\n\t"
-        else:
-            second += "\n\t"
-        for reason in reasons:
-            for r in list(set(reason).difference(set(intersection))):
-                second += start + r[:len(r)-1] + end + ", "
-            second = second[:len(second) - 2]
-            second += "\n" + under_line + "or" + end + "\n\t"
-        second = second[:second.rfind("\n", 0, second.rfind("\n")) + 1]
-    else:
-        if len(reasons) > 2:
-            first += " one of the following combinations\n\t"
-        else:
-            first += "\n\t"
-        for reason in reasons:
-            for r in reason:
-                second += start + r[:len(r) - 1] + end + ", "
-            second = second[:len(second) - 2]
-            second += "\n" + under_line + "or" + end + "\n\t"
-        second = second[:second.rfind("\n", 0, second.rfind("\n")) + 1]
-
-    print(first + second)
 
 def store_globals():
     with open("pyglobals.pk1", 'wb') as f:
