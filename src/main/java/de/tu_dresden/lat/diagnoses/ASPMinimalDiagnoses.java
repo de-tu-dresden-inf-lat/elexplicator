@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -447,6 +448,48 @@ public class ASPMinimalDiagnoses {
 		return ExitCode.terminatedSuccessfully;
 	}
 
+	public static ExitCode delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
+		String argsOpt = "";
+		if (facetIdentifiers.isPresent()){
+			argsOpt = argsOpt + " -del \"" + facetIdentifiers.get().toString() +"\"";
+		} else{
+			argsOpt = argsOpt + " -delall";
+		}
+		Process p;
+		int tc = -1;
+		try {
+			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+				p = Runtime.getRuntime()
+						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + argsOpt);
+				tc = p.waitFor();
+				
+			} else {
+				p = Runtime.getRuntime()
+						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + argsOpt);
+				tc = p.waitFor();
+			}
+			BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+			StringBuilder errOutput = new StringBuilder();				
+			String errLine;
+			while ((errLine = erreader.readLine())!= null){
+				errOutput.append(errLine).append("\n");
+			}
+			if (errOutput.length() > 0){
+				System.out.print(errOutput);					
+			}
+		} catch (IOException | InterruptedException e) {
+			e.printStackTrace();
+			System.out.println("tc = " + tc);
+		}		
+		logger.info("Extracting All Minimal Classical Diagnoses");
+		runProgram(dID, outDirStr, false, true, false, Optional.empty());
+		Set allOptimalDiagnoses = new HashSet<>();
+		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
+		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		logger.info("Generating output file");
+		saveResult(allOptimalDiagnoses, dID, outDirStr);
+		return ExitCode.terminatedSuccessfully;
+	}
 
 	public static ExitCode getImpact(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
 		// get the identifier of the facet, send to the minimaldiag py file via incamds.py,  different function in minimaldiag will be invoked corresponding to impact function
@@ -520,6 +563,14 @@ public class ASPMinimalDiagnoses {
 				p = Runtime.getRuntime()
 						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
 				tc = p.waitFor();
+				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				StringBuilder errOutput = new StringBuilder();
+				
+				String errLine;
+				while ((errLine = erreader.readLine())!= null){
+					errOutput.append(errLine).append("\n");
+				}
+				System.out.println(errOutput);
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");

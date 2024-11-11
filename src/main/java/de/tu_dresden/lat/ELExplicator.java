@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
@@ -228,16 +229,16 @@ public class ELExplicator {
 
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);
-					System.out.println("Enter a facet:");
+					System.out.println("Type help to list commands:\n");
 					String user_in = scanner.nextLine();
 					if (user_in.equals("exit")){
 						flag = false;
 					}
 					else{
-						if (!user_in.contains("#impact") && !user_in.contains("#reactivate")){
+						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("help")){
 							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
 							if (applied_facets.contains(user_in)){
-								System.out.print("already applied");
+								System.out.print("Facet already applied");
 							}else{
 								ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
 								applied_facets.add(user_in);	
@@ -251,9 +252,27 @@ public class ELExplicator {
 							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(12));
 							// slice string, get identifier, send to function
 						}
-						
+						if (user_in.contains("#del")){
+							String del_axiom = user_in.substring(5);
+							System.out.println(del_axiom);
+							System.out.println(applied_facets.contains(del_axiom));
+							if (applied_facets.contains(del_axiom)){
+								ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.of(del_axiom));
+								applied_facets.remove(del_axiom);
+							}else{
+								System.out.println("Facet has not been applied yet.");
+							}
+						}
+						if (user_in.contains("delall")){
+							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.empty());
+							applied_facets.clear();
+							
+						}
+						if (user_in.contains("help")){
+							System.out.println("List of available commands:");
+						}
 												
-						
+
 					}
 					
 				}

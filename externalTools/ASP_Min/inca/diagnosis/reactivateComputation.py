@@ -26,11 +26,11 @@ def reactivate_function(asp_file_name, input_text):
         input_list_tmp.append(atom1)
         input_list_tmp.append(atom2)
     input_list = [e for e in input_list_tmp if e]
-    input_list = minimalDiagnoses.add_point(helperFunctions.handle_input_negation(input_list))
+    input_list = helperFunctions.add_point(helperFunctions.handle_input_negation(input_list))
     input_list = [e for e in input_list if e in minimalDiagnoses.allowed_entries]
     
     if input_list:
-        if input_list[0] in minimalDiagnoses.add_point(diagnosis.converter(list_of_difference_red)):
+        if input_list[0] in helperFunctions.add_point(diagnosis.converter(list_of_difference_red)):
             if not diagnosis.simple_inconsistency_chech(list_of_added_knowledge, input_list[0]):
                 diagnosis.create_original(list_of_added_knowledge, justifications_program_path)
                 correction_sets = cs_generator_2(list_of_added_knowledge, input_list[0], justifications_program_path)

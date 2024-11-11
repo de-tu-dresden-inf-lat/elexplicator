@@ -45,7 +45,7 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     """
     global all_optimal_classical_repairs, optimal_classical_repairs_file_path, intermediate_optimal_classical_repairs, first_ever, \
     first_answer_set_ever, last_answer_set, init_first_answer_set, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, facet
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate, facet
     all_optimal_classical_repairs = []
     intermediate_optimal_classical_repairs = []
     # path = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
@@ -78,7 +78,10 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
         fetch_globals()
 
     if facet_diag:
-        res = translator(justifications_program_path, deep_investigation)
+        if input_facet is None:
+            res=translator(justifications_program_path, False)
+        else:
+            res = translator(justifications_program_path, deep_investigation)
         store_globals()
         
     return compute_all_optimal_classical_repairs(justifications_program_path, max_index+1)
@@ -466,15 +469,15 @@ def compare(old_model, new_model, deep_investigation):
                     list_of_difference_red[i].append(predicate)
         if deep_investigation:
             flat_list_white = diagnosis.converter(list_of_difference_white)
-            flat_prev_white = add_point(diagnosis.converter(tmp_prev_white))
+            flat_prev_white = helperFunctions.add_point(diagnosis.converter(tmp_prev_white))
                 
-            if set(add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
+            if set(helperFunctions.add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
                 
                 first = f"Selection:\n{facet}\n"
                 
                 second = "Dependency:\n"
-                for element in list(set(add_point(flat_list_white)).difference(set(list_of_added_knowledge))):
-                    if element not in add_point(flat_prev_white):
+                for element in list(set(helperFunctions.add_point(flat_list_white)).difference(set(list_of_added_knowledge))):
+                    if element not in helperFunctions.add_point(flat_prev_white):
                         if "alpha" in element:
                             second += element[:element.index('(')] + "\n"
                         if "remove" in element:
@@ -525,23 +528,7 @@ def print_red_blue_white():
             three = False
         disp_file.close()
     if not one:  # and not two and not three and list_of_added_knowledge:
-        translator(justifications_program_path, True)
-
-
-def add_point(some_list):
-    """
-    add a full stop to the end of every predicate
-    :param some_list: 
-    :return: 
-    """
-    ret = []
-    for i in some_list:
-        if len(i) > 0:
-            if i[len(i) - 1] != ".":
-                i += "."
-            ret.append(i)
-    return ret
-    
+        translator(justifications_program_path, True)  
 
 def initial_display(clingo_return):
     if clingo_return == "SAT":
@@ -637,13 +624,14 @@ def store_globals():
                 'list_of_difference_white' : list_of_difference_white,
                 'tmp_prev_red' : tmp_prev_red,
                 'tmp_prev_white' : tmp_prev_white,
-                'allowed_entries' : allowed_entries
+                'allowed_entries' : allowed_entries,
+                'list_of_predicates_not_to_negate' : list_of_predicates_not_to_negate
             }, f)
 
 
 def fetch_globals():
     global first_ever, first_answer_set_ever, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate
     with open("pyglobals.pk1", 'rb') as f:
         data = pickle.load(f)
         first_ever = data['first_ever']
@@ -658,6 +646,7 @@ def fetch_globals():
         tmp_prev_red = data['tmp_prev_red']
         tmp_prev_white = data['tmp_prev_white']
         allowed_entries = data['allowed_entries']
+        list_of_predicates_not_to_negate = data['list_of_predicates_not_to_negate']
 
 def get_facets_to_print(list_of_facets):
     to_print = []
@@ -679,5 +668,5 @@ def get_facets_to_print(list_of_facets):
     return set(to_print)
 
 def save_deep_investigation(save_text):
-    with open("deep_investigation.txt", "a") as f:
+    with open("deep_investigation.txt", "w") as f:
         f.write(save_text)

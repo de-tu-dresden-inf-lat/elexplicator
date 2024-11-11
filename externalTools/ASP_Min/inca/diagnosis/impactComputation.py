@@ -18,7 +18,7 @@ def impact_function(file_path, input_text):
     list_of_difference_white = minimalDiagnoses.list_of_difference_white
 
     input_list_original= input_text.split("/")
-    input_list = minimalDiagnoses.add_point(helperFunctions.handle_input_negation(input_list_original))
+    input_list = helperFunctions.add_point(helperFunctions.handle_input_negation(input_list_original))
     input_list_tmp =[]
     for e in input_list:
         atomId = e[e.index("alpha")+len("alpha"):e.index(".")]
@@ -48,7 +48,7 @@ def what_if_delete():
     copyfile(tmp_asp_path + "original_asp_program.txt", tmp_asp_file)
 
     with open(tmp_asp_file, "a") as tmp:
-        for e in minimalDiagnoses.add_point([element for element in list_of_added_knowledge if element not in minimalDiagnoses.add_point(input_list)]):
+        for e in helperFunctions.add_point([element for element in list_of_added_knowledge if element not in helperFunctions.add_point(input_list)]):
             tmp.write(":- " + helperFunctions.negate(e) + "\n")
     tmp.close()
 
@@ -64,7 +64,7 @@ def what_if_delete():
     impact_li = []
 
 
-    for e in list(set(minimalDiagnoses.add_point(diagnosis.converter(list_of_difference_white))).difference(minimalDiagnoses.add_point(what_if_white))):
+    for e in list(set(helperFunctions.add_point(diagnosis.converter(list_of_difference_white))).difference(helperFunctions.add_point(what_if_white))):
         if e not in list_of_added_knowledge:
            impact_li.append(e)
     impacts_li = helperFunctions.transform_facets(impact_li)

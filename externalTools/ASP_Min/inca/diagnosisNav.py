@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import os
-from diagnosis import minimalDiagnoses, impactComputation, reactivateComputation
+from diagnosis import minimalDiagnoses, impactComputation, reactivateComputation, deletion
 
 def main():
     parser = ArgumentParser()
@@ -19,6 +19,13 @@ def main():
                         help="compute consequences of removing a facet",
                         type=str
                         )
+    parser.add_argument("-del", dest="delete", required=False,
+                        help="delete the specified facets",
+                        type=str
+                        )
+    parser.add_argument("-delall", dest="deleteAll", action="store_true", required=False,
+                        help="indicate to delete all applied facets"
+                        )
 
     args = parser.parse_args()
     if args.facet is not None:
@@ -27,6 +34,10 @@ def main():
         reactivateComputation.reactivate_function(args.filePath, args.reactivate)
     if args.impact is not None:
         impactComputation.impact_function(args.filePath, args.impact)
+    if args.delete is not None:
+        deletion.del_function(args.filePath, args.delete)
+    if args.deleteAll:
+        deletion.del_all(args.filePath)
 
 def is_valid_file(parser, arg):
     if not os.path.exists(arg):

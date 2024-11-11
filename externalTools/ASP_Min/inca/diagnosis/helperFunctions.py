@@ -65,6 +65,20 @@ def negate(atom):
         atom = "not " + atom
     return atom
 
+def add_point(some_list):
+    """
+    add a full stop to the end of every predicate
+    :param some_list: 
+    :return: 
+    """
+    ret = []
+    for i in some_list:
+        if len(i) > 0:
+            if i[len(i) - 1] != ".":
+                i += "."
+            ret.append(i)
+    return ret
+
 # Define a custom warning handler to show only warning message
 def custom_warning_handler(message, category, filename, lineno, file=sys.stderr, line=None):
     print(f"{category.__name__}: {message}", file=sys.stderr)
