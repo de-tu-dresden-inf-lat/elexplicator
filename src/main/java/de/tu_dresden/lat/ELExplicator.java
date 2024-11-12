@@ -241,12 +241,7 @@ public class ELExplicator {
 					else{
 						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("help")){
 							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
-							if (applied_facets.contains(user_in)){
-								System.out.print("Facet already applied");
-							}else{
-								ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
-								applied_facets.add(user_in);	
-							}
+							ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
 						}	
 						if (user_in.contains("#impact")){
 							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(8));
@@ -258,19 +253,10 @@ public class ELExplicator {
 						}
 						if (user_in.contains("#del")){
 							String del_axiom = user_in.substring(5);
-							System.out.println(del_axiom);
-							System.out.println(applied_facets.contains(del_axiom));
-							if (applied_facets.contains(del_axiom)){
-								ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.of(del_axiom));
-								applied_facets.remove(del_axiom);
-							}else{
-								System.out.println("Facet has not been applied yet.");
-							}
+							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.of(del_axiom));
 						}
 						if (user_in.contains("delall")){
 							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.empty());
-							applied_facets.clear();
-							
 						}
 						if (user_in.contains("help")){
 							List<List<String>> helpText = new ArrayList<>(

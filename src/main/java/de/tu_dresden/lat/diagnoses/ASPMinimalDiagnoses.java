@@ -265,28 +265,7 @@ public class ASPMinimalDiagnoses {
 						.exec("py " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
-				tc = p.waitFor();
-
-				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				StringBuilder output = new StringBuilder();
-				StringBuilder errOutput = new StringBuilder();
-				String line;
-				while ((line = reader.readLine()) != null) {
-					output.append(line).append("\n");
-				}
-				if (output.length() > 0){
-					System.out.println(output);
-				}
-								
-				String errLine;
-				while ((errLine = erreader.readLine())!= null){
-					errOutput.append(errLine).append("\n");
-				}
-				if (errOutput.length() > 0){
-					System.out.println(errOutput);
-				}
-				
+				tc = p.waitFor();			
 
 			} else {
 				p = Runtime.getRuntime()
@@ -334,10 +313,6 @@ public class ASPMinimalDiagnoses {
 					case "Selection:": case "Dependency:": case "Remove:": case "Impact:": case "To reactivate:": case "Remove all:": case "Remove combination of:": case "OR":
 						facets.add(line);
 						break;
-					// case "Selection:":
-					// 	facets.add(line);
-					// case "Dependency:":
-					// 	facets.add(line);
 					default:
 						if(line.length() >= 4 && line.startsWith("not ")){
 							String id = line.substring(4).trim();
@@ -434,22 +409,25 @@ public class ASPMinimalDiagnoses {
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -reactivate \"" + facetIdentifiers + "\"");
 				tc = p.waitFor();
 			}
-			BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-			StringBuilder errOutput = new StringBuilder();				
-			String errLine;
-			while ((errLine = erreader.readLine())!= null){
-				errOutput.append(errLine).append("\n");
-			}
-			if (errOutput.length() > 0){
-				System.out.print(errOutput);					
-			}
-			else{
-				displayFacets(returnImpacts("corrections.txt"), "corrections.txt");
+			if (tc != 0){
+				switch(tc){
+					case 1:
+						System.out.println("No facets have been applied yet!");
+						break;
+					case 2:
+						System.out.println("Invalid facet option!");
+						break;
+					case 3:
+						System.out.println("The question must be about an element of the unavailable options!");
+						break;
+				}
+				return ExitCode.InvalidOption;
 			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
-		}		
+		}	
+		displayFacets(returnImpacts("corrections.txt"), "corrections.txt");	
 		return ExitCode.terminatedSuccessfully;
 	}
 
@@ -473,14 +451,17 @@ public class ASPMinimalDiagnoses {
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + argsOpt);
 				tc = p.waitFor();
 			}
-			BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-			StringBuilder errOutput = new StringBuilder();				
-			String errLine;
-			while ((errLine = erreader.readLine())!= null){
-				errOutput.append(errLine).append("\n");
-			}
-			if (errOutput.length() > 0){
-				System.out.print(errOutput);					
+			if (tc != 0){
+				switch (tc) {
+					case 1:
+						System.out.println("No facet has been applied yet!");
+						break;
+				
+					case 2:
+						System.out.println("Invalid facet option!");
+						break;
+				}
+				return ExitCode.InvalidOption;
 			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -497,7 +478,6 @@ public class ASPMinimalDiagnoses {
 	}
 
 	public static ExitCode getImpact(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
-		// get the identifier of the facet, send to the minimaldiag py file via incamds.py,  different function in minimaldiag will be invoked corresponding to impact function
 		Process p;
 		int tc = -1;
 		try {
@@ -509,6 +489,17 @@ public class ASPMinimalDiagnoses {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -impact \"" + facetIdentifiers + "\"");
 				tc = p.waitFor();
+			}					
+			if (tc != 0){
+				switch(tc){
+					case 1:
+						System.out.println("No facets have been applied yet!");
+						break;
+					case 2:
+						System.out.println("Invalid facet option!");
+						break;
+				}
+				return ExitCode.InvalidOption;
 			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -560,6 +551,12 @@ public class ASPMinimalDiagnoses {
 	}
 
 	public static ExitCode applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
+		try{
+			identifiers2Axioms.get(facetIdentifier).toString();
+		} catch (NullPointerException e){
+			System.out.println("Invalid option!\n");
+			return ExitCode.InvalidOption;
+		}
 		
 		Process p;
 		int tc = -1;
@@ -568,16 +565,6 @@ public class ASPMinimalDiagnoses {
 				p = Runtime.getRuntime()
 						.exec("py " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
 				tc = p.waitFor();
-				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-				StringBuilder errOutput = new StringBuilder();
-				
-				String errLine;
-				while ((errLine = erreader.readLine())!= null){
-					errOutput.append(errLine).append("\n");
-				}
-				if (errOutput.length() > 0){
-					System.out.println(errOutput);
-				}
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");

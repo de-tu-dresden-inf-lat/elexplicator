@@ -6,7 +6,7 @@ package de.tu_dresden.lat.data.enums;
  */
 public enum ExitCode {
 	NotEntailed(-2), Entailed(-1), terminatedSuccessfully(0), NotSupportedAxiom(3),
-	NoJustificationsComputed(4), TranslationToOWLXMLFailed(5);
+	NoJustificationsComputed(4), TranslationToOWLXMLFailed(5), InvalidOption(6);
 
 	private final int value;
 

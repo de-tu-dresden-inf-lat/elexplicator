@@ -953,7 +953,7 @@ def handle_input(asp_file_name):
                 del_function(asp_file_name, input_list)
                 translator(asp_file_name, False)
 
-            elif "#how" in input_text.lower(): #impact
+            elif "#how" in input_text.lower(): #reactivate
                 input_text = input_text[4:]
                 input_list = input_text.split("/")
                 input_list = [e for e in input_list if e]
@@ -990,7 +990,7 @@ def handle_input(asp_file_name):
             elif "show" in input_text.lower():
                 print_red_blue_white()
 
-            elif "#what" in input_text.lower(): #repair
+            elif "#what" in input_text.lower(): #impact
 
                 # input_text = "".join(input_text.split())
                 input_text = input_text[5:]

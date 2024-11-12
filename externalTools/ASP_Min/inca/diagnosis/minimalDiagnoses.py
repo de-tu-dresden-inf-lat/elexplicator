@@ -6,6 +6,7 @@ import clingo
 import ast
 import operator
 import dill as pickle
+import sys
 
 
 logs = []
@@ -88,10 +89,13 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
 
 def get_added_knowledge_function():
     global list_of_added_knowledge
-    with open("added_knowledge.txt", "r") as f:
-        lines = f.readlines()
-        for line in lines:
-            list_of_added_knowledge.append(line.strip())
+    try:
+        with open("added_knowledge.txt", "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                list_of_added_knowledge.append(line.strip())
+    except FileNotFoundError as e:
+        sys.exit(1)
 
 def compute_all_optimal_classical_repairs(program_path, len_original):
     """

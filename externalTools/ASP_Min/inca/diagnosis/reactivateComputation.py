@@ -2,7 +2,7 @@ from diagnosis import diagnosis, correctionset, minimalDiagnoses, impactComputat
 import dill as pickle
 from diagnosis.diagnosis import copyfile, clingo, negate
 import os
-import warnings
+import sys
 
 list_of_added_knowledge = []
 justifications_program_path = ''
@@ -12,11 +12,16 @@ def reactivate_function(asp_file_name, input_text):
     justifications_program_path = asp_file_name
     minimalDiagnoses.fetch_globals()
     list_of_difference_red = minimalDiagnoses.list_of_difference_red
-    get_added_knowledge_function()
+    minimalDiagnoses.get_added_knowledge_function()
+    list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
     input_list_original = input_text.split("/")
     input_list_tmp = []
+    rem_atom_list = []
     for e in input_list_original:
-        atomId = e.split("alpha")[1]
+        try:
+            atomId = e.split("alpha")[1]
+        except IndexError or ValueError:
+            sys.exit(2)
         if "not" in e:
             atom1 = f'not alpha{atomId}()'
             atom2 = f"remove({atomId})"
@@ -25,9 +30,15 @@ def reactivate_function(asp_file_name, input_text):
             atom2 = f"not remove({atomId})"
         input_list_tmp.append(atom1)
         input_list_tmp.append(atom2)
+        rem_atom_list.append(atom2)
     input_list = [e for e in input_list_tmp if e]
     input_list = helperFunctions.add_point(helperFunctions.handle_input_negation(input_list))
     input_list = [e for e in input_list if e in minimalDiagnoses.allowed_entries]
+
+    rem_atom_list = helperFunctions.add_point(helperFunctions.handle_input_negation(rem_atom_list))
+
+    if input_list != rem_atom_list:
+        sys.exit(2)
     
     if input_list:
         if input_list[0] in helperFunctions.add_point(diagnosis.converter(list_of_difference_red)):
@@ -39,8 +50,8 @@ def reactivate_function(asp_file_name, input_text):
                 # print("Because you have already selected "+minimalDiagnoses.negate(input_list[0]))
                 save_correction_set(helperFunctions.transform_facets([helperFunctions.negate(input_list[0])]), [])
         else:
-            helperFunctions.setup_warning_handler()
-            warnings.warn("The question must be about an element of the unavailable options", Warning)
+            sys.exit(3)
+            
     
 def print_Correction_Sets(to_keep):
     """
@@ -104,32 +115,6 @@ def save_correction_set(intersection_list, combinations_list):
                 if combinations_list.index(combination) != len(combinations_list)-1:
                     f.write("OR\n")
     
-
-def fetch_globals():
-    global first_ever, first_answer_set_ever, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries
-    with open("pyglobals.pk1", 'rb') as f:
-        data = pickle.load(f)
-        first_ever = data['first_ever']
-        first_answer_set_ever = data['first_answer_set_ever']
-        # last_answer_set = data['last_answer_set']
-        first_list_of_predicates = data['first_list_of_predicates']
-        list_of_answer_sets = data['list_of_answer_sets']
-        list_of_predicates = data['list_of_predicates']
-        list_of_difference_blue = data['list_of_difference_blue']
-        list_of_difference_red = data['list_of_difference_red']
-        list_of_difference_white = data['list_of_difference_white']
-        tmp_prev_red = data['tmp_prev_red']
-        tmp_prev_white = data['tmp_prev_white']
-        allowed_entries = data['allowed_entries']
-
-def get_added_knowledge_function():
-    global list_of_added_knowledge
-    with open("added_knowledge.txt", "r") as f:
-        lines = f.readlines()
-        for line in lines:
-            list_of_added_knowledge.append(line.strip())
-
 
 def cs_generator_2(original_list_of_options, problematic, asp_path):
     """

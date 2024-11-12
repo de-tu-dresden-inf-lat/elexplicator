@@ -1,4 +1,6 @@
 from diagnosis import helperFunctions, minimalDiagnoses
+import sys
+
 def del_function(to_delete_from_file_name, input_text, print_message=True):
     """
     This function deletes from the provided asp file every thing that is given in the input list 
@@ -11,8 +13,13 @@ def del_function(to_delete_from_file_name, input_text, print_message=True):
     get_global_variables()
     
     to_delete_list = get_del_list(input_text)
+
+    rem_atom_list = [transform(e+'.') for e in to_delete_list]
+    rem_atom_list_valid = [e for e in rem_atom_list if e in minimalDiagnoses.allowed_entries]
+    if rem_atom_list != rem_atom_list_valid:
+        sys.exit(2)
+
     to_delete_list = [":- " + helperFunctions.negate(transform(x+'.')) for x in to_delete_list]
-    print(to_delete_list)
     del_counter = 0
     fs = open(to_delete_from_file_name, "r")
     lines = fs.readlines()
@@ -64,7 +71,10 @@ def get_del_list(input_text):
     return input_list
 
 def transform(atom):
-    atom_id = atom[atom.index("alpha")+len("alpha"):atom.index(".")] 
+    try:
+        atom_id = atom[atom.index("alpha")+len("alpha"):atom.index(".")] 
+    except ValueError or IndexError:
+        sys.exit(2)
     if atom[:4]=="not ":
         ret_atom = f"remove({atom_id})."
     else:

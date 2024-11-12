@@ -1,5 +1,4 @@
 import re
-import warnings
 import sys
 
 def get_facets_to_print(list_of_facets):
@@ -78,11 +77,3 @@ def add_point(some_list):
                 i += "."
             ret.append(i)
     return ret
-
-# Define a custom warning handler to show only warning message
-def custom_warning_handler(message, category, filename, lineno, file=sys.stderr, line=None):
-    print(f"{category.__name__}: {message}", file=sys.stderr)
-
-# Set the custom warning handler
-def setup_warning_handler():
-    warnings.showwarning = custom_warning_handler
