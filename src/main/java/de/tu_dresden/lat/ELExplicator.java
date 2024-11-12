@@ -11,6 +11,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
 import com.google.common.collect.Sets;
@@ -229,8 +232,9 @@ public class ELExplicator {
 
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);
-					System.out.println("Type help to list commands:\n");
+					System.out.println("Type help to list commands:");
 					String user_in = scanner.nextLine();
+					System.out.print("\n");
 					if (user_in.equals("exit")){
 						flag = false;
 					}
@@ -269,7 +273,20 @@ public class ELExplicator {
 							
 						}
 						if (user_in.contains("help")){
-							System.out.println("List of available commands:");
+							List<List<String>> helpText = new ArrayList<>(
+								Arrays.asList(
+									new ArrayList<>(Arrays.asList("Apply a nav. step using the identifier of a facet", "ex: alpha0\n")),
+									new ArrayList<>(Arrays.asList("Retract a specific facet", "ex: alpha0\n" )),
+									new ArrayList<>(Arrays.asList("Show the impact of removing certain facets", "ex: #impact alpha0\n")),
+									new ArrayList<>(Arrays.asList("Find all min. correction sets to w.r.t a facet", "ex: #reactivate alpha0\n")),		
+									new ArrayList<>(Arrays.asList("Retract all facets", "delall\n")),
+									new ArrayList<>(Arrays.asList("Terminate the program", "exit\n\n")),
+									new ArrayList<>(Arrays.asList("*Note* Multiple entries and deletions must be separated by \"/\"", "\n\n"))
+								)
+							);			
+							for (List<String> i : helpText){
+								System.out.printf("%1$-50s %2$s", i.get(0), i.get(1));
+							}
 						}
 												
 

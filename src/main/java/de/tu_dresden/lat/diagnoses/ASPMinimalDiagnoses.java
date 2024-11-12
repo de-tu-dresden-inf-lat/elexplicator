@@ -275,13 +275,18 @@ public class ASPMinimalDiagnoses {
 				while ((line = reader.readLine()) != null) {
 					output.append(line).append("\n");
 				}
-				System.out.println(output);
-				
+				if (output.length() > 0){
+					System.out.println(output);
+				}
+								
 				String errLine;
 				while ((errLine = erreader.readLine())!= null){
 					errOutput.append(errLine).append("\n");
 				}
-				System.out.println(errOutput);
+				if (errOutput.length() > 0){
+					System.out.println(errOutput);
+				}
+				
 
 			} else {
 				p = Runtime.getRuntime()
@@ -570,7 +575,9 @@ public class ASPMinimalDiagnoses {
 				while ((errLine = erreader.readLine())!= null){
 					errOutput.append(errLine).append("\n");
 				}
-				System.out.println(errOutput);
+				if (errOutput.length() > 0){
+					System.out.println(errOutput);
+				}
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");

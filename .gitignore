@@ -18,6 +18,7 @@ temp/
 generatedCounterModels/
 generatedProofs/
 defaultOutputFolder/
+Diagnosis/
 repo/
 **/original_asp_program.txt
 **/what_if.txt
