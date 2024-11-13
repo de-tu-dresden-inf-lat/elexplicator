@@ -887,8 +887,8 @@ def handle_input(asp_file_name):
         if "exit" not in input_text.lower():
             os.system('cls' if os.name == 'nt' else 'clear')
             if input_text != "" and "#del" != input_text[:4].lower() and "delall" != input_text.lower() and "lk" != input_text.lower() \
-                    and "#how" != input_text[:4].lower() and "help" != input_text[:4].lower() and "show" != input_text[:4].lower() and "#what" != \
-                    input_text[:5].lower():
+                    and "#reactivate" != input_text[:11].lower() and "help" != input_text[:4].lower() and "show" != input_text[:4].lower() and "#impact" != \
+                    input_text[:7].lower():
 
                 input_list = input_text.split("/")
                 input_list = handle_input_negation(input_list)
@@ -953,8 +953,8 @@ def handle_input(asp_file_name):
                 del_function(asp_file_name, input_list)
                 translator(asp_file_name, False)
 
-            elif "#how" in input_text.lower(): #reactivate
-                input_text = input_text[4:]
+            elif "#reactivate" in input_text.lower(): #reactivate
+                input_text = input_text[11:]
                 input_list = input_text.split("/")
                 input_list = [e for e in input_list if e]
                 input_list = add_point(handle_input_negation(input_list))
@@ -977,8 +977,8 @@ def handle_input(asp_file_name):
                 help_text = ["Apply a nav. step using an inclusive facet", "ex: p(y1,y2)\n",
                              "Apply a nav. step using an exclusive facet", "ex: #not p(y1,y2)\n",
                              "Retract a specific facet", "ex: #del p(y1,y2)\n",
-                             "Show the consequences of removing certain facets", "ex: #what p(y1,y2)\n",
-                             "Calculate all minimal correction sets w.r.t. some facet", "ex: #how p(y1,y2)\n",
+                             "Show the impact of removing certain facets", "ex: #impact p(y1,y2)\n",
+                             "Find all min. correction sets to reactivate some facet", "ex: #reactivate p(y1,y2)\n",
                              "Retract all facets", "delall\n",
                              "List all applied facets", "lk\n",
                              "Display active / inactive facets", "show\n",
@@ -990,10 +990,10 @@ def handle_input(asp_file_name):
             elif "show" in input_text.lower():
                 print_red_blue_white()
 
-            elif "#what" in input_text.lower(): #impact
+            elif "#impact" in input_text.lower(): #impact
 
                 # input_text = "".join(input_text.split())
-                input_text = input_text[5:]
+                input_text = input_text[7:]
                 input_list = input_text.split("/")
                 input_list = [e for e in input_list if e]
                 input_list = add_point(handle_input_negation(input_list))
