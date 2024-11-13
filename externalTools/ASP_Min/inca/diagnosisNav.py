@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 import os
-from diagnosis import minimalDiagnoses, impactComputation, reactivateComputation, deletion
+from diagnosis import minimalDiagnoses, impactComputation, reactivateComputation, deletion, helperFunctions, diagnosis
 
 def main():
     parser = ArgumentParser()
@@ -9,7 +9,7 @@ def main():
                         help="input file that contains the logic program", metavar="FILE",
                         type=lambda x: is_valid_file(parser, x))
     parser.add_argument("-facet", dest="facet", required=False,
-                        help="the facet to apply to diagnosis",
+                        help="the list of facets to apply to diagnosis",
                         type=str)
     parser.add_argument("-reactivate", dest="reactivate", required=False,
                         help="compute minimal correction sets wrt to the input facet",
@@ -45,20 +45,47 @@ def is_valid_file(parser, arg):
     else:
         return arg
 
-def updateJustificationFile(justificationsFilePath, facet):   
-    facetId = facet.split("alpha")[1]
+def updateJustificationFile(justificationsFilePath, facets): 
+
+    facets_list = facets.split("/")
+    facets_list = helperFunctions.handle_input_negation(facets_list)
+
+    list_of_added_knowledge = []
+    applicable_options = []
+    try:
+        with open("added_knowledge.txt", "r") as f:
+            lines = f.readlines()
+            for line in lines:
+                list_of_added_knowledge.append(line.strip())
+    except FileNotFoundError as e:
+        list_of_added_knowledge = []
+
+    
+    minimalDiagnoses.fetch_globals()
+    if not list_of_added_knowledge:
+        # if no facet has been applied yet, use the initial allowed_entries as list of applicable facets else use the list_of_difference_blue
+        applicable_options = minimalDiagnoses.allowed_entries
+    else:
+        applicable_options = diagnosis.converter(minimalDiagnoses.list_of_difference_blue)
+        applicable_options = helperFunctions.add_point(applicable_options)
+    facets_list = [e for e in facets_list if helperFunctions.transform_alpha_to_remove(e+'.') in applicable_options]
+
     asp_file = open(justificationsFilePath, "a")
     log_file = open("added_knowledge.txt", "a")
-    if "not" in facet:
-        asp_file.write(f":- not remove({facetId}). \n")
-        log_file.write(f"remove({facetId}).\n")
-        log_file.write(f"not alpha{facetId}().\n")
-    else:
-        asp_file.write(f":- remove({facetId}).\n")
-        log_file.write(f"not remove({facetId}).\n")
-        log_file.write(f"alpha{facetId}().\n")
+
+    for i in facets_list:
+        facetId = i.split("alpha")[1]
+        
+        if "not" in i:
+            asp_file.write(f":- not remove({facetId}). \n")
+            log_file.write(f"remove({facetId}).\n")
+            log_file.write(f"not alpha{facetId}().\n")
+        else:
+            asp_file.write(f":- remove({facetId}).\n")
+            log_file.write(f"not remove({facetId}).\n")
+            log_file.write(f"alpha{facetId}().\n")
     asp_file.close()
-    
+    log_file.close()
 
 
 if __name__ == '__main__':

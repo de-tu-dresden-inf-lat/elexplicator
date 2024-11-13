@@ -16,12 +16,8 @@ def reactivate_function(asp_file_name, input_text):
     list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
     input_list_original = input_text.split("/")
     input_list_tmp = []
-    rem_atom_list = []
     for e in input_list_original:
-        try:
-            atomId = e.split("alpha")[1]
-        except IndexError or ValueError:
-            sys.exit(2)
+        atomId = e.split("alpha")[1]
         if "not" in e:
             atom1 = f'not alpha{atomId}()'
             atom2 = f"remove({atomId})"
@@ -30,15 +26,9 @@ def reactivate_function(asp_file_name, input_text):
             atom2 = f"not remove({atomId})"
         input_list_tmp.append(atom1)
         input_list_tmp.append(atom2)
-        rem_atom_list.append(atom2)
     input_list = [e for e in input_list_tmp if e]
     input_list = helperFunctions.add_point(helperFunctions.handle_input_negation(input_list))
     input_list = [e for e in input_list if e in minimalDiagnoses.allowed_entries]
-
-    rem_atom_list = helperFunctions.add_point(helperFunctions.handle_input_negation(rem_atom_list))
-
-    if input_list != rem_atom_list:
-        sys.exit(2)
     
     if input_list:
         if input_list[0] in helperFunctions.add_point(diagnosis.converter(list_of_difference_red)):
@@ -50,7 +40,7 @@ def reactivate_function(asp_file_name, input_text):
                 # print("Because you have already selected "+minimalDiagnoses.negate(input_list[0]))
                 save_correction_set(helperFunctions.transform_facets([helperFunctions.negate(input_list[0])]), [])
         else:
-            sys.exit(3)
+            sys.exit(2)
             
     
 def print_Correction_Sets(to_keep):

@@ -34,6 +34,7 @@ what_if_white = []
 first_list_of_predicates = []
 justifications_program_path =''
 input_facet =''
+input_list = []
 
 minimal_conflict_sets_asp = []
 
@@ -46,7 +47,7 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     """
     global all_optimal_classical_repairs, optimal_classical_repairs_file_path, intermediate_optimal_classical_repairs, first_ever, \
     first_answer_set_ever, last_answer_set, init_first_answer_set, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate, facet
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate, input_list
     all_optimal_classical_repairs = []
     intermediate_optimal_classical_repairs = []
     # path = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
@@ -56,7 +57,7 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     init_first_answer_set = first_run
     deep_investigation = not init_first_answer_set
     if input_facet is not None:
-        facet = input_facet
+        input_list = input_facet.split('/')
 
     if os.path.exists(optimal_classical_repairs_file_path):
         os.remove(optimal_classical_repairs_file_path)
@@ -398,7 +399,7 @@ def compare(old_model, new_model, deep_investigation):
     :return: 
     """
     global tmp_prev_red, tmp_prev_blue, list_of_difference_red, list_of_difference_blue, list_of_indices, list_of_difference_white, input_list,\
-        asp_file_name, union_of_answers_without_c, tmp_prev_white, facet
+        asp_file_name, union_of_answers_without_c, tmp_prev_white, input_list
 
     if len(old_model) > len(new_model):
         for e in old_model:
@@ -477,7 +478,9 @@ def compare(old_model, new_model, deep_investigation):
                 
             if set(helperFunctions.add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
                 
-                first = f"Selection:\n{facet}\n"
+                first = f"Selection:\n"
+                for i in input_list:
+                    first += i+"\n"
                 
                 second = "Dependency:\n"
                 for element in list(set(helperFunctions.add_point(flat_list_white)).difference(set(list_of_added_knowledge))):

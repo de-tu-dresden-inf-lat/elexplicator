@@ -14,12 +14,7 @@ def del_function(to_delete_from_file_name, input_text, print_message=True):
     
     to_delete_list = get_del_list(input_text)
 
-    rem_atom_list = [transform(e+'.') for e in to_delete_list]
-    rem_atom_list_valid = [e for e in rem_atom_list if e in minimalDiagnoses.allowed_entries]
-    if rem_atom_list != rem_atom_list_valid:
-        sys.exit(2)
-
-    to_delete_list = [":- " + helperFunctions.negate(transform(x+'.')) for x in to_delete_list]
+    to_delete_list = [":- " + helperFunctions.negate(helperFunctions.transform_alpha_to_remove(x+'.')) for x in to_delete_list]
     del_counter = 0
     fs = open(to_delete_from_file_name, "r")
     lines = fs.readlines()
@@ -70,17 +65,6 @@ def get_del_list(input_text):
     input_list = helperFunctions.handle_input_negation(input_list)
     return input_list
 
-def transform(atom):
-    try:
-        atom_id = atom[atom.index("alpha")+len("alpha"):atom.index(".")] 
-    except ValueError or IndexError:
-        sys.exit(2)
-    if atom[:4]=="not ":
-        ret_atom = f"remove({atom_id})."
-    else:
-        ret_atom = f"not remove({atom_id})."
-    return ret_atom
-
 def remove_from_knowledge(line):
     global list_of_added_knowledge
     atom = line[3:]
@@ -90,7 +74,7 @@ def remove_from_knowledge(line):
         if x == helperFunctions.negate(atom):
             to_remove.append(x)
         elif "alpha" in x:
-            if transform(x[:x.index('()')]+'.') == helperFunctions.negate(atom):
+            if helperFunctions.transform_alpha_to_remove(x[:x.index('()')]+'.') == helperFunctions.negate(atom):
                 to_remove.append(x)
     list_of_added_knowledge = [x for x in list_of_added_knowledge if x not in to_remove]
     with open("added_knowledge.txt", "w") as f:

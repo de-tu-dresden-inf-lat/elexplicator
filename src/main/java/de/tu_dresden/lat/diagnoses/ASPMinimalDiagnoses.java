@@ -395,7 +395,12 @@ public class ASPMinimalDiagnoses {
 	}
 
 	public static ExitCode reactivateFunction(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
-		// get the identifier of the facet, send to the minimaldiag py file via incamds.py, different function in minimaldiag will be invoked corresponding to reactivate function
+		String facetsStr = getValidFacets(facetIdentifiers);
+		if (facetsStr.length() != 0){
+			facetIdentifiers = facetsStr.substring(0, facetsStr.length()-1);			
+		}else{
+			return ExitCode.InvalidOption;
+		}
 		Process p;
 		int tc = -1;
 		try {
@@ -415,9 +420,6 @@ public class ASPMinimalDiagnoses {
 						System.out.println("No facets have been applied yet!");
 						break;
 					case 2:
-						System.out.println("Invalid facet option!");
-						break;
-					case 3:
 						System.out.println("The question must be about an element of the unavailable options!");
 						break;
 				}
@@ -434,7 +436,14 @@ public class ASPMinimalDiagnoses {
 	public static ExitCode delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
 		String argsOpt = "";
 		if (facetIdentifiers.isPresent()){
-			argsOpt = argsOpt + " -del \"" + facetIdentifiers.get().toString() +"\"";
+			String facetsStr = getValidFacets(facetIdentifiers.get().toString());
+			if (facetsStr.length() != 0){
+				String facetIdentifiersStr = facetsStr.substring(0, facetsStr.length()-1);	
+				argsOpt = argsOpt + " -del \"" + facetIdentifiersStr + "\"";		
+			}else{
+				return ExitCode.InvalidOption;
+			}
+			
 		} else{
 			argsOpt = argsOpt + " -delall";
 		}
@@ -456,10 +465,6 @@ public class ASPMinimalDiagnoses {
 					case 1:
 						System.out.println("No facet has been applied yet!");
 						break;
-				
-					case 2:
-						System.out.println("Invalid facet option!");
-						break;
 				}
 				return ExitCode.InvalidOption;
 			}
@@ -478,6 +483,13 @@ public class ASPMinimalDiagnoses {
 	}
 
 	public static ExitCode getImpact(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
+		String facetsStr = getValidFacets(facetIdentifiers);
+		if (facetsStr.length() != 0){
+			facetIdentifiers = facetsStr.substring(0, facetsStr.length()-1);			
+		}else{
+			return ExitCode.InvalidOption;
+		}
+
 		Process p;
 		int tc = -1;
 		try {
@@ -494,9 +506,6 @@ public class ASPMinimalDiagnoses {
 				switch(tc){
 					case 1:
 						System.out.println("No facets have been applied yet!");
-						break;
-					case 2:
-						System.out.println("Invalid facet option!");
 						break;
 				}
 				return ExitCode.InvalidOption;
@@ -551,13 +560,13 @@ public class ASPMinimalDiagnoses {
 	}
 
 	public static ExitCode applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
-		try{
-			identifiers2Axioms.get(facetIdentifier).toString();
-		} catch (NullPointerException e){
-			System.out.println("Invalid option!\n");
+		
+		String facetsStr = getValidFacets(facetIdentifier);
+		if (facetsStr.length() != 0){
+			facetIdentifier = facetsStr.substring(0, facetsStr.length()-1);			
+		}else{
 			return ExitCode.InvalidOption;
 		}
-		
 		Process p;
 		int tc = -1;
 		try {
@@ -569,6 +578,25 @@ public class ASPMinimalDiagnoses {
 				p = Runtime.getRuntime()
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
 				tc = p.waitFor();
+			}
+			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			
+			StringBuilder output = new StringBuilder();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				output.append(line).append("\n");
+			}
+			System.out.println(output);
+			
+			
+			if(tc != 0){
+				BufferedReader erreader = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+				StringBuilder errOutput = new StringBuilder();
+				String errLine;
+				while ((errLine = erreader.readLine())!= null){
+					errOutput.append(errLine).append("\n");
+				}
+			System.out.println(errOutput);
 			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -590,6 +618,23 @@ public class ASPMinimalDiagnoses {
 
 	}
 
+	public static String getValidFacets(String inputString){
+		String[] inputStrings = inputString.split("/");
+		StringBuilder facetsStr = new StringBuilder();
+		for (String s : inputStrings){
+			String id = s;
+			if (s.contains("not")){
+				id = s.substring(4);
+			}
+			try{
+				identifiers2Axioms.get(id).toString();
+				facetsStr.append(s+'/');
+			} catch (NullPointerException e){
+				System.out.printf("%1s is an invalid option\n", s);
+			}
+		} 
+		return facetsStr.toString();
+	}
 	
 
 }

@@ -21,6 +21,7 @@ def get_facets_to_print(list_of_facets):
     return set(to_print)
 
 def transform_facets(list_of_facets):
+    # transform atoms of lp to identifiers form
     transformed_facets = []
     for element in list_of_facets:
         if "alpha" in element:
@@ -32,6 +33,18 @@ def transform_facets(list_of_facets):
             else:
                 transformed_facets.append(f"not alpha{e_id}")
     return list(set(transformed_facets))
+
+def transform_alpha_to_remove(atom):
+    # transform from atom identifiers "alpha..." to remove(...) atoms
+    try:
+        atom_id = atom[atom.index("alpha")+len("alpha"):atom.index(".")] 
+    except ValueError or IndexError:
+        sys.exit(2)
+    if atom[:4]=="not ":
+        ret_atom = f"remove({atom_id})."
+    else:
+        ret_atom = f"not remove({atom_id})."
+    return ret_atom
 
 def handle_input_negation(some_list):
     """

@@ -21,12 +21,8 @@ def impact_function(file_path, input_text):
     input_list_original= input_text.split("/")
     input_list = helperFunctions.add_point(helperFunctions.handle_input_negation(input_list_original))
     input_list_tmp =[]
-    rem_atom_list = []
     for e in input_list:
-        try:
-            atomId = e[e.index("alpha")+len("alpha"):e.index(".")]
-        except ValueError or IndexError:
-            sys.exit(2)
+        atomId = e[e.index("alpha")+len("alpha"):e.index(".")]
         
         if "not" in e:
             r_atom = f"remove({atomId})."
@@ -36,13 +32,8 @@ def impact_function(file_path, input_text):
             a_atom = f"alpha{atomId}()."
         input_list_tmp.append(r_atom)
         input_list_tmp.append(a_atom)
-        rem_atom_list.append(r_atom)
     input_list = [e for e in input_list_tmp if e]
-    rem_atom_list_valid = [e for e in input_list if e in minimalDiagnoses.allowed_entries]
 
-    # check if any invalid facets/axioms were input
-    if rem_atom_list != rem_atom_list_valid: 
-        sys.exit(2)
     what_if_delete()
 
 def what_if_delete():
