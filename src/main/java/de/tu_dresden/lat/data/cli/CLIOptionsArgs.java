@@ -13,6 +13,7 @@ public class CLIOptionsArgs {
     formatArg = "Format",
     nameArg = "Name",
     labelArg = "Label",
-    mDsOptionArgs = "Reasoner, Identifier"
+    mDsOptionArgs = "Reasoner, Identifier",
+    diagnosisOptionArgs = "Reasoner, Identifier" 
     ;
 }
