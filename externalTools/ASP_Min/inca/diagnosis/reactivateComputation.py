@@ -15,6 +15,7 @@ def reactivate_function(asp_file_name, input_text):
     minimalDiagnoses.get_added_knowledge_function()
     list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
     input_list_original = input_text.split("/")
+    input_list_original = helperFunctions.handle_input_negation(input_list_original)
     input_list_tmp = []
     for e in input_list_original:
         atomId = e.split("alpha")[1]

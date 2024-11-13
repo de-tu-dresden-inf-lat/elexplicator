@@ -624,7 +624,8 @@ public class ASPMinimalDiagnoses {
 		for (String s : inputStrings){
 			String id = s;
 			if (s.contains("not")){
-				id = s.substring(4);
+				int lastNotIndex = s.lastIndexOf("not ");
+				id = s.substring(lastNotIndex + 4).trim();
 			}
 			try{
 				identifiers2Axioms.get(id).toString();

@@ -18,7 +18,8 @@ def impact_function(file_path, input_text):
     list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
     list_of_difference_white = minimalDiagnoses.list_of_difference_white
 
-    input_list_original= input_text.split("/")
+    input_list_original = input_text.split("/")
+    input_list_original = helperFunctions.handle_input_negation(input_list_original)
     input_list = helperFunctions.add_point(helperFunctions.handle_input_negation(input_list_original))
     input_list_tmp =[]
     for e in input_list:
