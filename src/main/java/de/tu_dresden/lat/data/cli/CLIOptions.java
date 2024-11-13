@@ -201,6 +201,10 @@ public class CLIOptions {
         lemmaTitleOptionREQUIRED.setRequired(true);
 
         diagnosisOption.setRequired(false);
+        diagnosisOption.setArgs(2);
+        diagnosisOption.setOptionalArg(true);
+        diagnosisOption.setValueSeparator(',');
+        diagnosisOption.setArgName(CLIOptionsArgs.diagnosisOptionArgs);
     }
 
     private static class LazyHolder {
