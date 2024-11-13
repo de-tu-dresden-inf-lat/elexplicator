@@ -112,6 +112,9 @@ public class CLIOptions {
     public final Option lemmaTitleOptionREQUIRED = new Option(CLIOptionsStrings.lemmaTitleOptionShort,
             CLIOptionsStrings.lemmaTitleOptionLong, true, CLIOptionsDescriptions.lemmaTitleOptionDescription);
 
+    public final Option diagnosisOption = new Option(CLIOptionsStrings.diagnosisOptionShort, CLIOptionsStrings.diagnosisOptionLong, 
+            true, CLIOptionsDescriptions.diagnosisOptionDescription);
+    
     private CLIOptions() {
         formatter.setWidth(200);
 
@@ -196,6 +199,12 @@ public class CLIOptions {
 
         lemmaTitleOption.setRequired(false);
         lemmaTitleOptionREQUIRED.setRequired(true);
+
+        diagnosisOption.setRequired(false);
+        diagnosisOption.setArgs(2);
+        diagnosisOption.setOptionalArg(true);
+        diagnosisOption.setValueSeparator(',');
+        diagnosisOption.setArgName(CLIOptionsArgs.diagnosisOptionArgs);
     }
 
     private static class LazyHolder {

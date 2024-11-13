@@ -18,8 +18,16 @@ temp/
 generatedCounterModels/
 generatedProofs/
 defaultOutputFolder/
+Diagnosis/
 repo/
 **/original_asp_program.txt
 **/what_if.txt
 **/conflict_tester.txt
 **/*.pyc
+added_knowledge.txt
+corrections.txt
+deep_investigation_log.txt
+deep_investigation.txt
+facets_options.txt
+impacts.txt
+pyglobals.pk1

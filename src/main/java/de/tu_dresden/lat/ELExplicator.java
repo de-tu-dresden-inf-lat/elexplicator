@@ -1,11 +1,21 @@
 package de.tu_dresden.lat;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
 import com.google.common.collect.Sets;
 import de.tu_dresden.inf.lat.counterExample.data.ModelFormat;
 import de.tu_dresden.inf.lat.counterExample.data.ModelType;
@@ -14,6 +24,7 @@ import de.tu_dresden.inf.lat.evee.proofs.data.exceptions.ProofGenerationExceptio
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.interfaces.IModelGenerator;
 import de.tu_dresden.inf.lat.model.interfaces.IProverGenerator;
+import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.cli.CLIOptionsDefaultValues;
 import de.tu_dresden.lat.data.cli.CLIOptionsStrings;
@@ -27,6 +38,7 @@ import de.tu_dresden.lat.tools.Helper;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.easymock.internal.matchers.Or;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
@@ -101,6 +113,7 @@ public class ELExplicator {
 
 		options.addOption(myOpts.exportMapperOption);
 
+		options.addOption(myOpts.diagnosisOption);
 
 		CommandLine cmd = null;
 
@@ -194,7 +207,7 @@ public class ELExplicator {
 
 				ecode = ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, mdsID, outDirStr, Sets.newHashSet(),
 						reasonerName);
-
+			
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -202,6 +215,77 @@ public class ELExplicator {
 			System.exit(ecode.getValue());
 		}
 
+		if (cmd.hasOption(CLIOptionsStrings.diagnosisOptionShort)){
+			String[] diagnosisArgs = cmd.getOptionValues(CLIOptionsStrings.diagnosisOptionLong);
+			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
+			String dID = Helper.getMDsID(diagnosisArgs);
+			ExitCode ecode = ExitCode.terminatedSuccessfully;
+			Files.deleteIfExists(Paths.get("added_knowledge.txt"));
+			Files.deleteIfExists(Paths.get("deep_investigation.txt"));
+			
+			try {
+				boolean flag = true;
+				ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
+						reasonerName, true);
+				// get first_ever_answer_set, first_ever
+				Set applied_facets = new HashSet<>();
+
+				while (flag == true){
+					java.util.Scanner scanner = new java.util.Scanner(System.in);
+					System.out.println("Type help to list commands:");
+					String user_in = scanner.nextLine();
+					System.out.print("\n");
+					if (user_in.equals("exit")){
+						flag = false;
+					}
+					else{
+						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("help")){
+							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
+							ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
+						}	
+						if (user_in.contains("#impact")){
+							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(8));
+							// slice string, get identifier, send to function
+						}	
+						if (user_in.contains("#reactivate")){
+							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(12));
+							// slice string, get identifier, send to function
+						}
+						if (user_in.contains("#del")){
+							String del_axiom = user_in.substring(5);
+							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.of(del_axiom));
+						}
+						if (user_in.contains("delall")){
+							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.empty());
+						}
+						if (user_in.contains("help")){
+							List<List<String>> helpText = new ArrayList<>(
+								Arrays.asList(
+									new ArrayList<>(Arrays.asList("Apply a nav. step using the identifier of a facet", "ex: alpha0\n")),
+									new ArrayList<>(Arrays.asList("Retract a specific facet", "ex: alpha0\n" )),
+									new ArrayList<>(Arrays.asList("Show the impact of removing certain facets", "ex: #impact alpha0\n")),
+									new ArrayList<>(Arrays.asList("Find all min. correction sets to w.r.t a facet", "ex: #reactivate alpha0\n")),		
+									new ArrayList<>(Arrays.asList("Retract all facets", "delall\n")),
+									new ArrayList<>(Arrays.asList("Terminate the program", "exit\n\n")),
+									new ArrayList<>(Arrays.asList("*Note* Multiple entries and deletions must be separated by \"/\"", "\n\n"))
+								)
+							);			
+							for (List<String> i : helpText){
+								System.out.printf("%1$-50s %2$s", i.get(0), i.get(1));
+							}
+						}
+												
+
+					}
+					
+				}
+			
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			System.exit(ecode.getValue());
+		}
 		Collection<OWLEntity> signature = null;
 		if (cmd.hasOption(CLIOptionsStrings.signatureFilePathOptionShort)) {
 			File sigFile = new File(cmd.getOptionValue(CLIOptionsStrings.signatureFilePathOptionLong));

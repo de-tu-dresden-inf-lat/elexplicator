@@ -47,6 +47,7 @@ public class CLIOptionsDescriptions {
             keepGeneratedStuffOptionDescription = "By default, all intermediate files and folder are removed\n",
             constraintsPathOptionDescription = "The path of the concrete domain constraints file\n",
             patternDirOptionDescription = "A JSON file containing a proof pattern\n",
-            lemmaTitleOptionDescription = "A label that will be used for the lemma in case of a match in the proof\n"
+            lemmaTitleOptionDescription = "A label that will be used for the lemma in case of a match in the proof\n",
+            diagnosisOptionDescription = "Compute all minimal diagnoses for the provided axiom w.r.t. the provided ontology using the selected reasoner"
     ;
 }
