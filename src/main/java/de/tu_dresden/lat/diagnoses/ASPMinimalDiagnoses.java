@@ -1,5 +1,6 @@
 package de.tu_dresden.lat.diagnoses;
 
+import java.io.UnsupportedEncodingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -7,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -371,7 +373,7 @@ public class ASPMinimalDiagnoses {
 		return facets;
 	}
 
-	private static void displayFacets(List<String> allFacets, String fileName) throws IOException {
+	private static void storeFacets(List<String> allFacets, String fileName) throws IOException {
 		
 		StringJoiner facets= new StringJoiner("\n");
 
@@ -417,10 +419,10 @@ public class ASPMinimalDiagnoses {
 			if (tc != 0){
 				switch(tc){
 					case 1:
-						System.out.println("No facets have been applied yet!");
+						System.out.println("\033[1;33mNo facets have been applied yet!\033[0m");
 						break;
 					case 2:
-						System.out.println("The question must be about an element of the unavailable options!");
+						System.out.println("\033[1;33mThe question must be about an element of the unavailable options!\033[0m");
 						break;
 				}
 				return ExitCode.InvalidOption;
@@ -429,7 +431,7 @@ public class ASPMinimalDiagnoses {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
 		}	
-		displayFacets(returnImpacts("corrections.txt"), "corrections.txt");	
+		storeFacets(returnImpacts("corrections.txt"), "corrections.txt");	
 		return ExitCode.terminatedSuccessfully;
 	}
 
@@ -463,7 +465,7 @@ public class ASPMinimalDiagnoses {
 			if (tc != 0){
 				switch (tc) {
 					case 1:
-						System.out.println("No facet has been applied yet!");
+						System.out.println("\033[1;33mNo facet has been applied yet!\033[0m");
 						break;
 				}
 				return ExitCode.InvalidOption;
@@ -476,7 +478,7 @@ public class ASPMinimalDiagnoses {
 		runProgram(dID, outDirStr, false, true, false, Optional.empty());
 		Set allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
-		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		storeFacets(returnFacets("facets_options.txt"), "facets_options.txt");
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, dID, outDirStr);
 		return ExitCode.terminatedSuccessfully;
@@ -505,7 +507,7 @@ public class ASPMinimalDiagnoses {
 			if (tc != 0){
 				switch(tc){
 					case 1:
-						System.out.println("No facets have been applied yet!");
+						System.out.println("\033[1;33mNo facets have been applied yet!\033[0m");
 						break;
 				}
 				return ExitCode.InvalidOption;
@@ -514,7 +516,7 @@ public class ASPMinimalDiagnoses {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
 		}
-		displayFacets(returnImpacts("impacts.txt"), "impacts.txt");
+		storeFacets(returnImpacts("impacts.txt"), "impacts.txt");
 
 		return ExitCode.terminatedSuccessfully;
 	}
@@ -551,7 +553,7 @@ public class ASPMinimalDiagnoses {
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
 		allOptimalDiagnoses.addAll(returnResult(mDsID, outDirStr));
-		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		storeFacets(returnFacets("facets_options.txt"), "facets_options.txt");
 
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, mDsID, outDirStr);
@@ -579,14 +581,14 @@ public class ASPMinimalDiagnoses {
 						.exec("python3 " + NavPath + " -path " + outDirStr + File.separator + programFileName + " -facet \"" + facetIdentifier + "\"");
 				tc = p.waitFor();
 			}
-			BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			// BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			
-			StringBuilder output = new StringBuilder();
-			String line;
-			while ((line = reader.readLine()) != null) {
-				output.append(line).append("\n");
-			}
-			System.out.println(output);
+			// StringBuilder output = new StringBuilder();
+			// String line;
+			// while ((line = reader.readLine()) != null) {
+			// 	output.append(line).append("\n");
+			// }
+			// System.out.println(output);
 			
 			
 			if(tc != 0){
@@ -606,9 +608,10 @@ public class ASPMinimalDiagnoses {
 		runProgram(dID, outDirStr, false, true, false, Optional.of(facetIdentifier));
 		Set allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
-		displayFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		storeFacets(returnFacets("facets_options.txt"), "facets_options.txt");
 		if (Files.exists(Paths.get("deep_investigation.txt"))){
-			displayFacets(returnImpacts("deep_investigation.txt"), "deep_investigation_log.txt");
+			storeFacets(returnImpacts("deep_investigation.txt"), "deep_investigation_log.txt");
+			displayWarning("deep_investigation_log.txt");
 		}	
 
 		logger.info("Generating output file");
@@ -616,6 +619,23 @@ public class ASPMinimalDiagnoses {
 		return ExitCode.terminatedSuccessfully;
 
 
+	}
+
+	public static void displayWarning(String outFile) throws IOException {
+				Path path = Paths.get(outFile);
+				Scanner scanner = new Scanner(path);
+				System.out.println("\033[1;36mDependency Information!\033[0m");
+				while (scanner.hasNextLine()) {		
+					String line = scanner.nextLine().trim();
+					if (line.toString().equals("Selection:")){
+						System.out.println("\033[1;32mThe selection:\033[0m");
+					} else if (line.toString().equals("Dependency:")){
+						System.out.println("\033[1;32mAlso applies:\033[0m");
+					} else {
+						System.out.println(line);
+					}
+					
+				}
 	}
 
 	public static String getValidFacets(String inputString){
@@ -631,7 +651,7 @@ public class ASPMinimalDiagnoses {
 				identifiers2Axioms.get(id).toString();
 				facetsStr.append(s+'/');
 			} catch (NullPointerException e){
-				System.out.printf("%1s is an invalid option\n", s);
+				System.out.printf("\033[1;31m%1s is an invalid option\n\033[0m", s);
 			}
 		} 
 		return facetsStr.toString();
