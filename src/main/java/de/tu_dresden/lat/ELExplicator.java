@@ -232,9 +232,8 @@ public class ELExplicator {
 
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);
-					System.out.println("Type help to list commands:");
+					System.out.println("\033[1;36mType help to list commands:\033[0m");
 					String user_in = scanner.nextLine();
-					System.out.print("\n");
 					if (user_in.equals("exit")){
 						flag = false;
 					}
@@ -267,7 +266,7 @@ public class ELExplicator {
 									new ArrayList<>(Arrays.asList("Find all min. correction sets to w.r.t a facet", "ex: #reactivate alpha0\n")),		
 									new ArrayList<>(Arrays.asList("Retract all facets", "delall\n")),
 									new ArrayList<>(Arrays.asList("Terminate the program", "exit\n\n")),
-									new ArrayList<>(Arrays.asList("*Note* Multiple entries and deletions must be separated by \"/\"", "\n\n"))
+									new ArrayList<>(Arrays.asList("\033[1;32m*Note* Multiple entries and deletions must be separated by \"/\"\033[0m", "\n\n"))
 								)
 							);			
 							for (List<String> i : helpText){
