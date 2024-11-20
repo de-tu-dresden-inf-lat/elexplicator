@@ -312,7 +312,7 @@ public class ASPMinimalDiagnoses {
 			String line = scanner.nextLine().trim();
 			if(!line.isEmpty()){
 				switch(line){
-					case "Selection:": case "Dependency:": case "Remove:": case "Impact:": case "To reactivate:": case "Remove all:": case "Remove combination of:": case "OR":
+					case "Selection:": case "Dependency:": case "Removing:": case "Retracts the facets:": case "To reactivate:": case "Remove all:": case "Remove combination of:": case "OR":
 						facets.add(line);
 						break;
 					default:

@@ -76,11 +76,11 @@ def what_if_delete():
 
 def write_impacts(file_name, input_list_original, impact_list):    
     with open(file_name, "w") as f:
-        f.write("Remove:\n")
+        f.write("Removing:\n")
         for e in input_list_original:
             f.write(e+"\n")
 
-        f.write("Impact:\n")
+        f.write("Retracts the facets:\n")
         for e in impact_list:
             f.write(e+"\n")
 
