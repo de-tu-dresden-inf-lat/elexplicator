@@ -1,10 +1,7 @@
 package de.tu_dresden.lat;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -15,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
 import com.google.common.collect.Sets;
 import de.tu_dresden.inf.lat.counterExample.data.ModelFormat;
 import de.tu_dresden.inf.lat.counterExample.data.ModelType;
@@ -24,7 +20,6 @@ import de.tu_dresden.inf.lat.evee.proofs.data.exceptions.ProofGenerationExceptio
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.interfaces.IModelGenerator;
 import de.tu_dresden.inf.lat.model.interfaces.IProverGenerator;
-import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.cli.CLIOptionsDefaultValues;
 import de.tu_dresden.lat.data.cli.CLIOptionsStrings;
@@ -38,7 +33,6 @@ import de.tu_dresden.lat.tools.Helper;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.easymock.internal.matchers.Or;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;

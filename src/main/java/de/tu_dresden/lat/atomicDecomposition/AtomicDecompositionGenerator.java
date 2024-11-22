@@ -77,7 +77,7 @@ public class AtomicDecompositionGenerator {
 		logger.info("Generating the atomic decomposition of the module");
 		int tc = runAtomicDecompositionTool(outDirStr, atomicDecompositionFileName);
 		if (tc == 0) {
-			logger.info(" The atomic decomposition was created successfully");
+			logger.info("The atomic decomposition was created successfully");
 		} else {
 			System.out.println(tc);
 			logger.error("Failed to create the atomic decomposition");
