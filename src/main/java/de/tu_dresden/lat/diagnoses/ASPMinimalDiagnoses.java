@@ -542,11 +542,8 @@ public class ASPMinimalDiagnoses {
 		return outDir + File.separator + fileName;
 	}
 
-	private static String getRepairFilePathStr(String outDirStr, String ontologyPathStr, String mDsID){
-		Path ontologyPath = Paths.get(ontologyPathStr);
-		String ontologyName = ontologyPath.getFileName().toString().split(".owl")[0];
-		String fileName = mDsID.isEmpty() ? "repair.owl" : "repair_"+mDsID+".owl";
-		return outDirStr + File.separator + ontologyName + fileName;
+	private static String getRepairFilePathStr(String outDirStr, String outputFileName){
+		return outDirStr + File.separator + outputFileName;
 	} 
 
 	private static Boolean checkEntailment(OWLOntology ontology, OWLAxiom axiom, ReasonerName reasonerName){
@@ -692,7 +689,7 @@ public class ASPMinimalDiagnoses {
 		return facetsStr.toString();
 	}
 	
-	public static void saveRepair(String outDirStr, String mDsID, String ontologyPath, OWLAxiom defect, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static void saveRepair(String outDirStr, String mDsID, String ontologyPath, OWLAxiom defect, ReasonerName reasonerName, String outputFileName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
 
@@ -708,7 +705,7 @@ public class ASPMinimalDiagnoses {
 			System.out.println("\033[1;32mThe repaired ontology does not entail the defect.\n\033[0m");
 		}
 		
-		File outputFile = new File(getRepairFilePathStr(outDirStr, ontologyPath, mDsID));
+		File outputFile = new File(getRepairFilePathStr(outDirStr, outputFileName));
 		OWLDocumentFormat format = manager.getOntologyFormat(ontology);
 		manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
 	}
