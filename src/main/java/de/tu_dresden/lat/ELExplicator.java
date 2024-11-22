@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +36,7 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 
 import de.tu_dresden.inf.lat.evee.data.ProofType;
 import de.tu_dresden.lat.atomicDecomposition.AtomicDecompositionGenerator;
@@ -63,7 +61,7 @@ public class ELExplicator {
 			translateAxioms = true,
 			exportMapper = false;
 
-	public static void main(String[] args) throws OWLOntologyCreationException, IOException, ProofGenerationException, EntityCheckerException, ParserConfigurationException, TransformerException {
+	public static void main(String[] args) throws OWLOntologyCreationException, IOException, ProofGenerationException, EntityCheckerException, ParserConfigurationException, TransformerException, OWLOntologyStorageException {
 
 		Options options = new Options();
 
@@ -221,8 +219,6 @@ public class ELExplicator {
 				boolean flag = true;
 				ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
-				// get first_ever_answer_set, first_ever
-				Set applied_facets = new HashSet<>();
 
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);
@@ -232,8 +228,7 @@ public class ELExplicator {
 						flag = false;
 					}
 					else{
-						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("help")){
-							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
+						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("save") && !user_in.contains("help")){	
 							ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
 						}	
 						if (user_in.contains("#impact")){
@@ -251,6 +246,10 @@ public class ELExplicator {
 						if (user_in.contains("delall")){
 							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.empty());
 						}
+						if (user_in.contains("save")){
+							ASPMinimalDiagnoses.saveRepair(outDirStr, dID, ontologyPathStr, axiom, reasonerName);
+						}
+
 						if (user_in.contains("help")){
 							List<List<String>> helpText = new ArrayList<>(
 								Arrays.asList(
@@ -259,6 +258,7 @@ public class ELExplicator {
 									new ArrayList<>(Arrays.asList("Show the impact of removing certain facets", "ex: #impact alpha0\n")),
 									new ArrayList<>(Arrays.asList("Find all min. correction sets to w.r.t a facet", "ex: #reactivate alpha0\n")),		
 									new ArrayList<>(Arrays.asList("Retract all facets", "delall\n")),
+									new ArrayList<>(Arrays.asList("Saves the repair w.r.t to the current diagnoses", "save\n")),
 									new ArrayList<>(Arrays.asList("Terminate the program", "exit\n\n")),
 									new ArrayList<>(Arrays.asList("\033[1;32m*Note* Multiple entries and deletions must be separated by \"/\"\033[0m", "\n\n"))
 								)

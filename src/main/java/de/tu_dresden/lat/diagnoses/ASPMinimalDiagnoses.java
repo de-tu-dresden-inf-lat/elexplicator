@@ -1,6 +1,5 @@
 package de.tu_dresden.lat.diagnoses;
 
-import java.io.UnsupportedEncodingException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -8,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,13 +21,24 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import org.apache.log4j.Logger;
+import org.semanticweb.HermiT.ReasonerFactory;
+import org.semanticweb.elk.owlapi.ElkReasoner;
+import org.semanticweb.elk.owlapi.ElkReasonerFactory;
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.lat.data.enums.ExitCode;
@@ -53,6 +62,8 @@ public class ASPMinimalDiagnoses {
 	// 		+ File.separator + "diag.py";
 	private static final String NavPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
 			+ File.separator + "diagnosisNav.py";
+
+	private static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
 
 	// Added this to have a SimpleOWLFormatterCL that can format using preferred labels.
 	// Need to use setOntology first.
@@ -121,16 +132,21 @@ public class ASPMinimalDiagnoses {
 	private static void saveResult(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, String mDsID,
 			String outDirStr) throws IOException {
 		StringJoiner oneDiagnosis, allDiagnoses = new StringJoiner("\n");
+		// StringJoiner oneDiagnosisOWL, allDiagnosesOWL = new StringJoiner("\n");
+		currentDiagnoses = new HashSet<Set<OWLAxiom>>();
 
 		String columnsNames = getColumnsNames(allOptimalDiagnoses);
 		allDiagnoses.add(columnsNames);
 
 		for (Set<? extends OWLAxiom> diagnosis : allOptimalDiagnoses) {
 			oneDiagnosis = new StringJoiner("; ");
-			for (OWLAxiom axiom : diagnosis)
+			Set<OWLAxiom> diagnosisSet = new HashSet<OWLAxiom>();
+			for (OWLAxiom axiom : diagnosis){
+				diagnosisSet.add(axiom);
 				oneDiagnosis.add(sOWLFormatter.format(axiom).replaceAll("\"",""));
-
+			}
 			allDiagnoses.add(oneDiagnosis.toString());
+			currentDiagnoses.add(diagnosisSet);
 		}
 
 		saveText(allDiagnoses.toString(), getMDSFilePathStr(outDirStr, mDsID));
@@ -526,6 +542,25 @@ public class ASPMinimalDiagnoses {
 		return outDir + File.separator + fileName;
 	}
 
+	private static String getRepairFilePathStr(String outDirStr, String ontologyPathStr, String mDsID){
+		Path ontologyPath = Paths.get(ontologyPathStr);
+		String ontologyName = ontologyPath.getFileName().toString().split(".owl")[0];
+		String fileName = mDsID.isEmpty() ? "repair.owl" : "repair_"+mDsID+".owl";
+		return outDirStr + File.separator + ontologyName + fileName;
+	} 
+
+	private static Boolean checkEntailment(OWLOntology ontology, OWLAxiom axiom, ReasonerName reasonerName){
+		if (reasonerName == ReasonerName.Elk){
+			ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
+			ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
+			return reasoner.isEntailed(axiom);
+		} else {
+			OWLReasonerFactory reasonerFactory = new ReasonerFactory();
+			OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
+			return reasoner.isEntailed(axiom);
+		}		
+	}
+
 	public static ExitCode getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
 			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun)
 			throws IOException, InterruptedException {
@@ -656,6 +691,28 @@ public class ASPMinimalDiagnoses {
 		} 
 		return facetsStr.toString();
 	}
+	
+	public static void saveRepair(String outDirStr, String mDsID, String ontologyPath, OWLAxiom defect, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
+
+		for (Set<OWLAxiom> axiomSets : currentDiagnoses){
+			for (OWLAxiom axiom: axiomSets){
+				manager.removeAxiom(ontology, axiom);
+			}
+		}
+		
+		if (checkEntailment(ontology, defect, reasonerName)){
+			System.out.println("\033[1;31mThe repaired ontology still entails the defect.\n\033[0m");
+		} else {
+			System.out.println("\033[1;32mThe repaired ontology does not entail the defect.\n\033[0m");
+		}
+		
+		File outputFile = new File(getRepairFilePathStr(outDirStr, ontologyPath, mDsID));
+		OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+		manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
+	}
+
 	
 
 }
