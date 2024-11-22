@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.InterruptedIOException;
 import java.io.OutputStreamWriter;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,7 +23,6 @@ import java.util.StringJoiner;
 
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.tools.GeneralTools;
-import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
@@ -33,15 +31,10 @@ import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.functional.parser.OWLFunctionalSyntaxOWLParser;
-import org.semanticweb.owlapi.io.StringDocumentSource;
-import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
-import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-import org.semanticweb.owlapi.model.OWLOntologyFormat;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
@@ -50,7 +43,6 @@ import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.tools.AxiomChecker;
-import uk.ac.man.cs.lethe.internal.dl.HermitMappedReasonerFactory;
 
 /**
  * @author Christian Alrabbaa

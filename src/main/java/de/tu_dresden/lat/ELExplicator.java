@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -221,8 +219,6 @@ public class ELExplicator {
 				boolean flag = true;
 				ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
-				// get first_ever_answer_set, first_ever
-				Set applied_facets = new HashSet<>();
 
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);
@@ -232,8 +228,7 @@ public class ELExplicator {
 						flag = false;
 					}
 					else{
-						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("save") && !user_in.contains("help")){
-							// OWLAxiom facetAxiom = ToOWLTools.getInstance().getOWLAxiomFromStr(facet, ontology);	
+						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("save") && !user_in.contains("help")){	
 							ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
 						}	
 						if (user_in.contains("#impact")){
