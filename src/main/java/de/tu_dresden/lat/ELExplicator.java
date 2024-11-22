@@ -247,7 +247,8 @@ public class ELExplicator {
 							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.empty());
 						}
 						if (user_in.contains("save")){
-							ASPMinimalDiagnoses.saveRepair(outDirStr, dID, ontologyPathStr, axiom, reasonerName);
+							String outputFileStr = user_in.substring(5);
+							ASPMinimalDiagnoses.saveRepair(outDirStr, dID, ontologyPathStr, axiom, reasonerName, outputFileStr);
 						}
 
 						if (user_in.contains("help")){
