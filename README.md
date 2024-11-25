@@ -41,6 +41,12 @@ as well as [Evee](https://github.com/de-tu-dresden-inf-lat/evee/tree/main).
 git clone -b development --single-branch https://github.com/de-tu-dresden-inf-lat/evee.git --recurse-submodules
 ```
 
+Make sure that the version of Evee is set to *0.4-SNAPSHOT*.
+
+```
+git checkout 6ae8902c5e6986562127e68195326764df14ddf0
+```
+
 Afterwards, you need to run the following command in `evee/`: 
 
 ```
@@ -128,6 +134,12 @@ as well as [Evee](https://github.com/de-tu-dresden-inf-lat/evee/tree/main).
 
 ```
 git clone -b development --single-branch https://github.com/de-tu-dresden-inf-lat/evee.git --recurse-submodules
+```
+
+Make sure that the version of Evee is set to *0.4-SNAPSHOT*.
+
+```
+git checkout 6ae8902c5e6986562127e68195326764df14ddf0
 ```
 
 Afterwards, you need to run the following command in `evee/`: 
