@@ -12,12 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Dictionary;
 import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
@@ -30,7 +27,6 @@ import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import org.apache.log4j.Logger;
-import org.omg.CORBA.Object;
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
@@ -458,9 +454,9 @@ public class ASPMinimalDiagnoses {
 		return ExitCode.terminatedSuccessfully;
 	}
 
-	public static ArrayList<java.lang.Object> delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
-		Map<String, java.lang.Object> returnElements = new HashMap<String, java.lang.Object>();
-		ArrayList<java.lang.Object> retList = new ArrayList<>();
+	public static ArrayList<Object> delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
+		Map<String, Object> returnElements = new HashMap<String, Object>();
+		ArrayList<Object> retList = new ArrayList<>();
 		String argsOpt = "";
 		if (facetIdentifiers.isPresent()){
 			String facetsStr = getValidFacets(facetIdentifiers.get().toString());
@@ -578,8 +574,8 @@ public class ASPMinimalDiagnoses {
 	public static ArrayList<?> getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
 			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun)
 			throws IOException, InterruptedException {
-		Map<String, java.lang.Object> returnElements = new HashMap<String, java.lang.Object>();
-		ArrayList<java.lang.Object> retList = new ArrayList<>();
+		Map<String, Object> returnElements = new HashMap<String, Object>();
+		ArrayList<Object> retList = new ArrayList<>();
 		if (!isAxiomSupported(reasonerName, axiom)) {
 			logger.info("Axiom is not supported!");
 			retList.add(ExitCode.NotSupportedAxiom);
@@ -637,9 +633,9 @@ public class ASPMinimalDiagnoses {
         return stringSet;
     }
 
-	public static ArrayList<java.lang.Object> applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
-		Map<String, java.lang.Object> returnElements = new HashMap<String, java.lang.Object>();
-		ArrayList<java.lang.Object> retList = new ArrayList<>();
+	public static ArrayList<Object> applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
+		Map<String, Object> returnElements = new HashMap<String, Object>();
+		ArrayList<Object> retList = new ArrayList<>();
 
 		String facetsStr = getValidFacets(facetIdentifier);
 		if (facetsStr.length() != 0){
