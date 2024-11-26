@@ -292,6 +292,8 @@ public class ASPMinimalDiagnoses {
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
 				tc = p.waitFor();
 			}
+			
+
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
@@ -318,6 +320,7 @@ public class ASPMinimalDiagnoses {
 		scanner.close();
 		return allDiagnoses;
 	}
+
 	private static List<String> returnImpacts(String outFile) throws IOException {
 		List<String> facets = new ArrayList<>();
 
@@ -328,7 +331,7 @@ public class ASPMinimalDiagnoses {
 			String line = scanner.nextLine().trim();
 			if(!line.isEmpty()){
 				switch(line){
-					case "Selection:": case "Dependency:": case "Removing:": case "Retracts the facets:": case "To reactivate:": case "Remove all:": case "Remove combination of:": case "OR":
+					case "Selection:": case "Dependency:": case "Removing:": case "Retracts the facets:": case "To reactivate:": case "Remove:": case "Remove all:": case "Remove combination of:": case "OR":
 						facets.add(line);
 						break;
 					default:
@@ -447,11 +450,13 @@ public class ASPMinimalDiagnoses {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
 		}	
-		storeFacets(returnImpacts("corrections.txt"), "corrections.txt");	
+		storeFacets(returnImpacts(outDirStr + File.separator + "corrections.txt"), outDirStr + File.separator + "corrections.txt");	
 		return ExitCode.terminatedSuccessfully;
 	}
 
-	public static ExitCode delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
+	public static ArrayList<Object> delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
+		Map<String, Object> returnElements = new HashMap<String, Object>();
+		ArrayList<Object> retList = new ArrayList<>();
 		String argsOpt = "";
 		if (facetIdentifiers.isPresent()){
 			String facetsStr = getValidFacets(facetIdentifiers.get().toString());
@@ -459,7 +464,8 @@ public class ASPMinimalDiagnoses {
 				String facetIdentifiersStr = facetsStr.substring(0, facetsStr.length()-1);	
 				argsOpt = argsOpt + " -del \"" + facetIdentifiersStr + "\"";		
 			}else{
-				return ExitCode.InvalidOption;
+				retList.add(ExitCode.InvalidOption);
+				return retList;
 			}
 			
 		} else{
@@ -484,7 +490,8 @@ public class ASPMinimalDiagnoses {
 						System.out.println("\033[1;33mNo facet has been applied yet!\033[0m");
 						break;
 				}
-				return ExitCode.InvalidOption;
+				retList.add(ExitCode.InvalidOption);
+				return retList;
 			}
 		} catch (IOException | InterruptedException e) {
 			e.printStackTrace();
@@ -494,10 +501,16 @@ public class ASPMinimalDiagnoses {
 		runProgram(dID, outDirStr, false, true, false, Optional.empty());
 		Set allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
-		storeFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		storeFacets(returnFacets(outDirStr + File.separator + "facets_options.txt"), outDirStr + File.separator + "facets_options.txt");
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, dID, outDirStr);
-		return ExitCode.terminatedSuccessfully;
+
+		Set<Set<String>> diagnosesStr = createStringSet(allOptimalDiagnoses);
+		returnElements.put("diagnoses", diagnosesStr);
+
+		retList.add(ExitCode.terminatedSuccessfully);
+		retList.add(returnElements);
+		return retList;
 	}
 
 	public static ExitCode getImpact(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
@@ -532,7 +545,7 @@ public class ASPMinimalDiagnoses {
 			e.printStackTrace();
 			System.out.println("tc = " + tc);
 		}
-		storeFacets(returnImpacts("impacts.txt"), "impacts.txt");
+		storeFacets(returnImpacts(outDirStr + File.separator + "impacts_raw.txt"), outDirStr + File.separator + "impacts.txt");
 
 		return ExitCode.terminatedSuccessfully;
 	}
@@ -558,20 +571,23 @@ public class ASPMinimalDiagnoses {
 		}		
 	}
 
-	public static ExitCode getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
+	public static ArrayList<?> getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
 			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun)
 			throws IOException, InterruptedException {
-
+		Map<String, Object> returnElements = new HashMap<String, Object>();
+		ArrayList<Object> retList = new ArrayList<>();
 		if (!isAxiomSupported(reasonerName, axiom)) {
 			logger.info("Axiom is not supported!");
-			return ExitCode.NotSupportedAxiom;
+			retList.add(ExitCode.NotSupportedAxiom);
+			return retList;
 		}
 
 		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
-			return ExitCode.NoJustificationsComputed;
+			retList.add(ExitCode.NoJustificationsComputed);
+			return retList;
 		}
 
 		if (outDirStr.isEmpty())
@@ -585,21 +601,48 @@ public class ASPMinimalDiagnoses {
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
 		allOptimalDiagnoses.addAll(returnResult(mDsID, outDirStr));
-		storeFacets(returnFacets("facets_options.txt"), "facets_options.txt");
+		
+		storeFacets(returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator +"facets_options.txt");
 
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
-		return ExitCode.terminatedSuccessfully;
+		Set<Set<String>> diagnosesStr = createStringSet(allOptimalDiagnoses);
+		returnElements.put("diagnoses", diagnosesStr);
+
+		retList.add(ExitCode.terminatedSuccessfully);
+		retList.add(returnElements);
+		return retList ;
 	}
 
-	public static ExitCode applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
-		
+	public static Set<Set<String>> createStringSet(Set<Set<? extends OWLAxiom>> axiomsSet) {
+        Set<Set<String>> stringSet = new HashSet<>();
+
+        for (Set<? extends OWLAxiom> innerSet : axiomsSet) {
+            Set<String> stringInnerSet = new HashSet<>();
+            
+            for (OWLAxiom axiom : innerSet) {
+                if (axiom != null) {
+                    stringInnerSet.add(axiom.toString()); 
+                }
+            }
+            
+            stringSet.add(stringInnerSet);
+        }
+
+        return stringSet;
+    }
+
+	public static ArrayList<Object> applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
+		Map<String, Object> returnElements = new HashMap<String, Object>();
+		ArrayList<Object> retList = new ArrayList<>();
+
 		String facetsStr = getValidFacets(facetIdentifier);
 		if (facetsStr.length() != 0){
 			facetIdentifier = facetsStr.substring(0, facetsStr.length()-1);			
 		}else{
-			return ExitCode.InvalidOption;
+			retList.add(ExitCode.InvalidOption);
+			return retList;
 		}
 		Process p;
 		int tc = -1;
@@ -640,15 +683,22 @@ public class ASPMinimalDiagnoses {
 		runProgram(dID, outDirStr, false, true, false, Optional.of(facetIdentifier));
 		Set allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(returnResult(dID, outDirStr));
-		storeFacets(returnFacets("facets_options.txt"), "facets_options.txt");
-		if (Files.exists(Paths.get("deep_investigation.txt"))){
-			storeFacets(returnImpacts("deep_investigation.txt"), "deep_investigation_log.txt");
-			displayWarning("deep_investigation_log.txt");
+		storeFacets(returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator + "facets_options.txt");
+		if (Files.exists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"))){
+			storeFacets(returnImpacts(outDirStr + File.separator +"deep_investigation.txt"), outDirStr + File.separator +"deep_investigation_log.txt");
+			displayWarning(outDirStr + File.separator +"deep_investigation_log.txt");
 		}	
 
+		
 		logger.info("Generating output file");
 		saveResult(allOptimalDiagnoses, dID, outDirStr);
-		return ExitCode.terminatedSuccessfully;
+
+		Set<Set<String>> diagnosesStr = createStringSet(allOptimalDiagnoses);
+		returnElements.put("diagnoses", diagnosesStr);
+
+		retList.add(ExitCode.terminatedSuccessfully);
+		retList.add(returnElements);
+		return retList;
 
 
 	}
