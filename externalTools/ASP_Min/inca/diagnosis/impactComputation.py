@@ -8,13 +8,13 @@ import sys
 list_of_added_knowledge=[]
 asp_file=''
 list_of_difference_white=[]
-
 def impact_function(file_path, input_text):
-    global input_list_original, input_list, list_of_added_knowledge, asp_file, list_of_difference_white
+    global input_list_original, input_list, list_of_added_knowledge, asp_file, list_of_difference_white, file_dir
 
+    file_dir = file_path[:file_path.rfind(os.sep) + 1]
     asp_file = file_path
-    minimalDiagnoses.fetch_globals()
-    minimalDiagnoses.get_added_knowledge_function()
+    minimalDiagnoses.fetch_globals(file_dir)
+    minimalDiagnoses.get_added_knowledge_function(file_dir)
     list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
     list_of_difference_white = minimalDiagnoses.list_of_difference_white
 
@@ -72,10 +72,10 @@ def what_if_delete():
         if e not in list_of_added_knowledge:
            impact_li.append(e)
     impacts_li = helperFunctions.transform_facets(impact_li)
-    write_impacts("impacts.txt", input_list_original, impacts_li)
+    write_impacts("impacts_raw.txt", input_list_original, impacts_li)
 
 def write_impacts(file_name, input_list_original, impact_list):    
-    with open(file_name, "w") as f:
+    with open(file_dir + file_name, "w") as f:
         f.write("Removing:\n")
         for e in input_list_original:
             f.write(e+"\n")

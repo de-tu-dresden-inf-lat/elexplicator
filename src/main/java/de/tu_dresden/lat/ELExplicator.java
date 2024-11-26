@@ -212,13 +212,13 @@ public class ELExplicator {
 			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
 			String dID = Helper.getMDsID(diagnosisArgs);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
-			Files.deleteIfExists(Paths.get("added_knowledge.txt"));
-			Files.deleteIfExists(Paths.get("deep_investigation.txt"));
+			Files.deleteIfExists(Paths.get(outDirStr + File.separator + "added_knowledge.txt"));
+			Files.deleteIfExists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"));
 			
 			try {
 				boolean flag = true;
-				ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
-						reasonerName, true);
+				ecode = (ExitCode) (ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
+						reasonerName, true)).get(0);
 
 				while (flag == true){
 					java.util.Scanner scanner = new java.util.Scanner(System.in);

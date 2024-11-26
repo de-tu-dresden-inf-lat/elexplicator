@@ -8,11 +8,13 @@ list_of_added_knowledge = []
 justifications_program_path = ''
 list_of_difference_red = []
 def reactivate_function(asp_file_name, input_text):
-    global input_list_original, input_list, list_of_added_knowledge, justifications_program_path
+    global input_list_original, input_list, list_of_added_knowledge, justifications_program_path, file_dir
+
+    file_dir = asp_file_name[:asp_file_name.rfind(os.sep) + 1]
     justifications_program_path = asp_file_name
-    minimalDiagnoses.fetch_globals()
+    minimalDiagnoses.fetch_globals(file_dir)
     list_of_difference_red = minimalDiagnoses.list_of_difference_red
-    minimalDiagnoses.get_added_knowledge_function()
+    minimalDiagnoses.get_added_knowledge_function(file_dir)
     list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
     input_list_original = input_text.split("/")
     input_list_original = helperFunctions.handle_input_negation(input_list_original)
@@ -84,27 +86,43 @@ def print_Correction_Sets(to_keep):
     save_correction_set(intersect_list, combinations_list)
 
 def save_correction_set(intersection_list, combinations_list):
-    with open("corrections.txt", "w") as f:
-        f.write("To reactivate:\n")
-        for input in input_list_original:
-            f.write(input+"\n")
-        if intersection_list:
-            if len(intersection_list) > 1:
-                f.write("Remove all:\n")
+    #raw file will be used for unit testing
+    f_raw = open(f"{file_dir}corrections_raw.txt", "w")
+    f = open(f"{file_dir}corrections.txt", "w")
+    
+    f.write("To reactivate:\n")
+    f_raw.write("Facet to reactivate:\n")    
+    for input in input_list_original:
+        f.write(input+"\n")
+        f_raw.write(input+"\n")
+
+    if intersection_list:
+        f_raw.write("Intersection:\n")
+        if len(intersection_list) > 1:
+            f.write("Remove all:\n")
+        else:
+            f.write("Remove:\n")
+        for i in intersection_list:
+            f.write(i+"\n")
+            f_raw.write(i+"\n")
+
+    if combinations_list:
+        f_raw.write("Combination:\n")
+        for combination in combinations_list:
+            if len(combination) > 1:
+                f.write("Remove combination of:\n")
             else:
                 f.write("Remove:\n")
-            for i in intersection_list:
-                f.write(i+"\n")
-        if combinations_list:
-            for combination in combinations_list:
-                if len(combination) > 1:
-                    f.write("Remove combination of:\n")
+            for c in combination:
+                f.write(c + "\n")
+                if combination.index(c) != len(combination)-1:
+                    f_raw.write(c + ";")
                 else:
-                    f.write("Remove:\n")
-                for c in combination:
-                    f.write(c + "\n")
-                if combinations_list.index(combination) != len(combinations_list)-1:
-                    f.write("OR\n")
+                    f_raw.write(c + "\n")
+            if combinations_list.index(combination) != len(combinations_list)-1:
+                f.write("OR\n")
+    f_raw.close()
+    f.close()
     
 
 def cs_generator_2(original_list_of_options, problematic, asp_path):
