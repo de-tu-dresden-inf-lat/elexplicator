@@ -30,7 +30,7 @@ import de.tu_dresden.lat.data.names.ReasonerName;
 
 public class FacetedNavigation {
 
-    private static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
+    private static Set<Set<OWLAxiom>> currentDiagnoses = HelperFunctions.currentDiagnoses;
     private static final String NavPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
 			+ File.separator + "diagnosisNav.py";
     private static final String programFileName = ASPMinimalDiagnoses.programFileName;
@@ -43,7 +43,8 @@ public class FacetedNavigation {
 		String facetsStr = HelperFunctions.getValidFacets(facetIdentifier);
 		if (facetsStr.length() != 0){
 			facetIdentifier = facetsStr.substring(0, facetsStr.length()-1);			
-		}else{
+		    Files.deleteIfExists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"));    
+        }else{
 			retList.add(ExitCode.InvalidOption);
 			return retList;
 		}

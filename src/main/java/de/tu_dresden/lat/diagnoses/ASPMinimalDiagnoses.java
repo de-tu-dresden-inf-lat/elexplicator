@@ -2,6 +2,8 @@ package de.tu_dresden.lat.diagnoses;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -231,6 +233,9 @@ public class ASPMinimalDiagnoses {
 		boolean flag = true;
 		ecode = (ExitCode) (ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
 				reasonerName, true)).get(0);
+
+		Files.deleteIfExists(Paths.get(outDirStr + File.separator + "added_knowledge.txt"));
+		Files.deleteIfExists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"));
 
 		while (flag == true){
 			java.util.Scanner scanner = new java.util.Scanner(System.in);

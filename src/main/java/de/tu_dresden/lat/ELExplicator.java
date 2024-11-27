@@ -213,6 +213,7 @@ public class ELExplicator {
 			String dID = Helper.getMDsID(diagnosisArgs);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
 			
+			
 			try {
 				ecode = ASPMinimalDiagnoses.parseUserInteraction(axiom, ontology, dID, outDirStr, reasonerName, ontologyPathStr);
 			} catch (InterruptedException e) {
@@ -221,7 +222,7 @@ public class ELExplicator {
 
 			System.exit(ecode.getValue());
 		}
-
+		
 		Collection<OWLEntity> signature = null;
 		if (cmd.hasOption(CLIOptionsStrings.signatureFilePathOptionShort)) {
 			File sigFile = new File(cmd.getOptionValue(CLIOptionsStrings.signatureFilePathOptionLong));

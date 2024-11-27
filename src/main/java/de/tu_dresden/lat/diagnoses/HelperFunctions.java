@@ -31,7 +31,7 @@ import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
 public class HelperFunctions {
-    private static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
+    public static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
 
     private static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
 	private static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
