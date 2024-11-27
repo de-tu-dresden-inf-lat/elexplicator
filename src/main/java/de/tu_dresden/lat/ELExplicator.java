@@ -212,74 +212,16 @@ public class ELExplicator {
 			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
 			String dID = Helper.getMDsID(diagnosisArgs);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
-			Files.deleteIfExists(Paths.get(outDirStr + File.separator + "added_knowledge.txt"));
-			Files.deleteIfExists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"));
 			
 			try {
-				boolean flag = true;
-				ecode = (ExitCode) (ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
-						reasonerName, true)).get(0);
-
-				while (flag == true){
-					java.util.Scanner scanner = new java.util.Scanner(System.in);
-					System.out.println("\033[1;36mType help to list commands:\033[0m");
-					String user_in = scanner.nextLine();
-					if (user_in.equals("exit")){
-						flag = false;
-					}
-					else{
-						if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("save") && !user_in.contains("help")){	
-							ASPMinimalDiagnoses.applyFacet(dID, outDirStr, user_in);		
-						}	
-						if (user_in.contains("#impact")){
-							ASPMinimalDiagnoses.getImpact(dID, outDirStr, user_in.substring(8));
-							// slice string, get identifier, send to function
-						}	
-						if (user_in.contains("#reactivate")){
-							ASPMinimalDiagnoses.reactivateFunction(dID, outDirStr, user_in.substring(12));
-							// slice string, get identifier, send to function
-						}
-						if (user_in.contains("#del")){
-							String del_axiom = user_in.substring(5);
-							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.of(del_axiom));
-						}
-						if (user_in.contains("delall")){
-							ASPMinimalDiagnoses.delete(dID, outDirStr, Optional.empty());
-						}
-						if (user_in.contains("save")){
-							String outputFileStr = user_in.substring(5);
-							ASPMinimalDiagnoses.saveRepair(outDirStr, dID, ontologyPathStr, axiom, reasonerName, outputFileStr);
-						}
-
-						if (user_in.contains("help")){
-							List<List<String>> helpText = new ArrayList<>(
-								Arrays.asList(
-									new ArrayList<>(Arrays.asList("Apply a nav. step using the identifier of a facet", "ex: alpha0\n")),
-									new ArrayList<>(Arrays.asList("Retract a specific facet", "ex: alpha0\n" )),
-									new ArrayList<>(Arrays.asList("Show the impact of removing certain facets", "ex: #impact alpha0\n")),
-									new ArrayList<>(Arrays.asList("Find all min. correction sets to w.r.t a facet", "ex: #reactivate alpha0\n")),		
-									new ArrayList<>(Arrays.asList("Retract all facets", "delall\n")),
-									new ArrayList<>(Arrays.asList("Saves the repair w.r.t to the current diagnoses", "save\n")),
-									new ArrayList<>(Arrays.asList("Terminate the program", "exit\n\n")),
-									new ArrayList<>(Arrays.asList("\033[1;32m*Note* Multiple entries and deletions must be separated by \"/\"\033[0m", "\n\n"))
-								)
-							);			
-							for (List<String> i : helpText){
-								System.out.printf("%1$-50s %2$s", i.get(0), i.get(1));
-							}
-						}
-												
-
-					}
-					
-				}
-			
+				ecode = ASPMinimalDiagnoses.parseUserInteraction(axiom, ontology, dID, outDirStr, reasonerName, ontologyPathStr);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 
 			System.exit(ecode.getValue());
 		}
+
 		Collection<OWLEntity> signature = null;
 		if (cmd.hasOption(CLIOptionsStrings.signatureFilePathOptionShort)) {
 			File sigFile = new File(cmd.getOptionValue(CLIOptionsStrings.signatureFilePathOptionLong));
