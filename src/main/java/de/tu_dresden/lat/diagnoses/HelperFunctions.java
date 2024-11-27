@@ -31,7 +31,7 @@ import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
 public class HelperFunctions {
-    public static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
+    // private static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
 
     private static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
 	private static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
@@ -297,7 +297,7 @@ public class HelperFunctions {
 			String outDirStr) throws IOException {
 		StringJoiner oneDiagnosis, allDiagnoses = new StringJoiner("\n");
 		// StringJoiner oneDiagnosisOWL, allDiagnosesOWL = new StringJoiner("\n");
-		currentDiagnoses = new HashSet<Set<OWLAxiom>>();
+		Set<Set<OWLAxiom>>currentDiagnoses = new HashSet<Set<OWLAxiom>>();
 
 		String columnsNames = getColumnsNames(allOptimalDiagnoses);
 		allDiagnoses.add(columnsNames);
@@ -313,6 +313,7 @@ public class HelperFunctions {
 			currentDiagnoses.add(diagnosisSet);
 		}
 
+        FacetedNavigation.setCurrentDiagnoses(currentDiagnoses);
 		saveText(allDiagnoses.toString(), getMDSFilePathStr(outDirStr, mDsID));
 	}
 

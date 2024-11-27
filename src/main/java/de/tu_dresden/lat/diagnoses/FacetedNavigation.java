@@ -30,7 +30,7 @@ import de.tu_dresden.lat.data.names.ReasonerName;
 
 public class FacetedNavigation {
 
-    private static Set<Set<OWLAxiom>> currentDiagnoses = HelperFunctions.currentDiagnoses;
+    private static Set<Set<OWLAxiom>> currentDiagnoses;
     private static final String NavPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
 			+ File.separator + "diagnosisNav.py";
     private static final String programFileName = ASPMinimalDiagnoses.programFileName;
@@ -248,6 +248,7 @@ public class FacetedNavigation {
 
 		for (Set<OWLAxiom> axiomSets : currentDiagnoses){
 			for (OWLAxiom axiom: axiomSets){
+                System.out.println(axiom);
 				manager.removeAxiom(ontology, axiom);
 			}
 		}
@@ -262,4 +263,8 @@ public class FacetedNavigation {
 		OWLDocumentFormat format = manager.getOntologyFormat(ontology);
 		manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
 	}
+
+    public static void setCurrentDiagnoses(Set<Set<OWLAxiom>> diagnosesSet){
+        currentDiagnoses = diagnosesSet;
+    }
 }
