@@ -31,13 +31,13 @@ import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
 public class HelperFunctions {
-    // private static Set<Set<OWLAxiom>> currentDiagnoses = new HashSet<Set<OWLAxiom>>();
+	public static Set<Set<OWLAxiom>>currentDiagnoses;
 
     private static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
 	private static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
     private static final String axiomPrefix = ASPMinimalDiagnoses.axiomPrefix;
 
-    private static final Logger logger = ASPMinimalDiagnoses.logger;
+    private static final Logger logger = Logger.getLogger(HelperFunctions.class);
 
     private static final String INCAPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
         + File.separator + "incaMDs.py";
@@ -46,6 +46,10 @@ public class HelperFunctions {
 
 	private static SimpleOWLFormatterCl sOWLFormatter = ASPMinimalDiagnoses.sOWLFormatter;
 
+/*
+	* input string (i.e list of facets separated by "/"), 
+	* return as a string (separated by "/") only those that are recognized in the identifiers2Axiom hashmap
+*/
     public static String getValidFacets(String inputString){
 		String[] inputStrings = inputString.split("/");
 		StringBuilder facetsStr = new StringBuilder();
@@ -65,6 +69,7 @@ public class HelperFunctions {
 		return facetsStr.toString();
 	}
 	
+	//From a specified deep_investigation_log file (outFile), read the dependency information and output to terminal
 	public static void displayWarning(String outFile) throws IOException {
 				Path path = Paths.get(outFile);
 				Scanner scanner = new Scanner(path);
@@ -82,6 +87,7 @@ public class HelperFunctions {
 				}
 	}
 
+	//from a given 2D set of OWLAxioms, parse the axioms to string and return as 2D list of String
     public static Set<Set<String>> createStringSet(Set<Set<? extends OWLAxiom>> axiomsSet) {
         Set<Set<String>> stringSet = new HashSet<>();
 
@@ -117,10 +123,12 @@ public class HelperFunctions {
 		return outDir + File.separator + fileName;
 	}
 
+	//path to save the owl ontology 
 	public static String getRepairFilePathStr(String outDirStr, String outputFileName){
 		return outDirStr + File.separator + outputFileName;
 	} 
 
+	//write the given list of facets (allFacets) to the output file (fileName)
     public static void storeFacets(List<String> allFacets, String fileName) throws IOException {
 		
 		StringJoiner facets= new StringJoiner("\n");
@@ -144,6 +152,11 @@ public class HelperFunctions {
 		}
 	}	
 
+/*	
+	* axiom identifiers format in outFile: alpha1()
+	* read the axiom identifiers from the outFile 
+	* rewrite with mapping to the simplified axiom
+*/
     public static List<String> returnFacets(String outFile) throws IOException {
 		List<String> facets = new ArrayList<>();
 
@@ -180,6 +193,11 @@ public class HelperFunctions {
 		return facets;
 	}
 
+/*	
+	* axiom identifiers format in outFile: alpha1
+	* read the axiom identifiers from the outFile  
+	* rewrite file with mapping to the simplified axiom
+*/
     public static List<String> returnImpacts(String outFile) throws IOException {
 		List<String> facets = new ArrayList<>();
 
@@ -214,6 +232,11 @@ public class HelperFunctions {
 		return facets;
 	}
 
+/*	
+	* from the given directory (outDirStr), read the mDs file corresponding to the mDsID
+	* get the axioms corresponding to the axiom ids in the mDs file 
+	* return the set of sets of axioms
+*/
     public static Set<Set<? extends OWLAxiom>> returnResult(String mDsID, String outDirStr) throws IOException {
 		Set<Set<? extends OWLAxiom>> allDiagnoses = new HashSet<>();
 		Set<OWLAxiom> diagnosis;
@@ -235,6 +258,9 @@ public class HelperFunctions {
 		return allDiagnoses;
 	}
 
+/*
+ * based on the provided arguments, construct the argument options and run the py script with the argument options
+ */
     public static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun, Optional<String> facetIdentifier) throws IOException {
 		String argsOpt = "";
 		if (minDiag){
@@ -275,6 +301,9 @@ public class HelperFunctions {
 		}
 	}
 
+/*
+ * Save the given string into the specified filePath
+ */
     public static void saveText(String str, String filePath) throws IOException {
 		
 		File file = GeneralTools.createFile(filePath);
@@ -293,11 +322,14 @@ public class HelperFunctions {
 		}
 	}
 
+/*
+ * Write the axioms in the allOptimalDiagnoses set to a mDs file (named acc to mDsID) in outDirStr
+ */
     public static void saveResult(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, String mDsID,
 			String outDirStr) throws IOException {
 		StringJoiner oneDiagnosis, allDiagnoses = new StringJoiner("\n");
 		// StringJoiner oneDiagnosisOWL, allDiagnosesOWL = new StringJoiner("\n");
-		Set<Set<OWLAxiom>>currentDiagnoses = new HashSet<Set<OWLAxiom>>();
+		currentDiagnoses = new HashSet<Set<OWLAxiom>>();
 
 		String columnsNames = getColumnsNames(allOptimalDiagnoses);
 		allDiagnoses.add(columnsNames);
@@ -313,11 +345,14 @@ public class HelperFunctions {
 			currentDiagnoses.add(diagnosisSet);
 		}
 
-        FacetedNavigation.setCurrentDiagnoses(currentDiagnoses);
 		saveText(allDiagnoses.toString(), getMDSFilePathStr(outDirStr, mDsID));
 	}
 
-    	private static String getColumnsNames(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses) {
+/*
+ * Based on the number of sets in the allOptimalDiagnoses set, make column names.
+ * column name format : axiom + index of set in the 2d set
+ */
+    private static String getColumnsNames(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses) {
 		int maxSize = 0;
 		for (Set<? extends OWLAxiom> diagnosis : allOptimalDiagnoses) {
 			if (diagnosis.size() > maxSize)

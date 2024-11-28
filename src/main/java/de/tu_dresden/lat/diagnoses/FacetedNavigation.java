@@ -29,13 +29,15 @@ import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
 public class FacetedNavigation {
-
-    private static Set<Set<OWLAxiom>> currentDiagnoses;
     private static final String NavPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
 			+ File.separator + "diagnosisNav.py";
     private static final String programFileName = ASPMinimalDiagnoses.programFileName;
-    private static final Logger logger = ASPMinimalDiagnoses.logger;
+    private static final Logger logger = Logger.getLogger(FacetedNavigation.class);
 
+/*
+	* handle facet application, computes the new minimal diagnoses and list of facet options.
+	* If any dependency found while facet application, notify the user about it (deep_investigation) 
+*/
     public static ArrayList<Object> applyFacet(String dID, String outDirStr, String facetIdentifier) throws IOException, InterruptedException {
 		Map<String, Object> returnElements = new HashMap<String, Object>();
 		ArrayList<Object> retList = new ArrayList<>();
@@ -97,6 +99,7 @@ public class FacetedNavigation {
 		logger.info("Generating output file");
 		HelperFunctions.saveResult(allOptimalDiagnoses, dID, outDirStr);
 
+		// parse the axioms in the current sets of diagnoses to string and return as a 2D set. 
 		Set<Set<String>> diagnosesStr = HelperFunctions.createStringSet(allOptimalDiagnoses);
 		returnElements.put("diagnoses", diagnosesStr);
 
@@ -107,6 +110,7 @@ public class FacetedNavigation {
 
 	}
 
+	// compute the impact of retracting certain facets and write to a text file
     public static ExitCode getImpact(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
 		String facetsStr = HelperFunctions.getValidFacets(facetIdentifiers);
 		if (facetsStr.length() != 0){
@@ -144,6 +148,7 @@ public class FacetedNavigation {
 		return ExitCode.terminatedSuccessfully;
 	}
 
+	//compute the correction set for making a facet applicable and write to a text file
     public static ExitCode reactivateFunction(String dID, String outDirStr, String facetIdentifiers) throws IOException, InterruptedException {
 		String facetsStr = HelperFunctions.getValidFacets(facetIdentifiers);
 		if (facetsStr.length() != 0){
@@ -183,6 +188,7 @@ public class FacetedNavigation {
 		return ExitCode.terminatedSuccessfully;
 	}
 
+	// retract a (set of) applied facets, recompute the new minimal diagnoses sets and facet options.
     public static ArrayList<Object> delete(String dID, String outDirStr, Optional<String> facetIdentifiers) throws IOException, InterruptedIOException{
 		Map<String, Object> returnElements = new HashMap<String, Object>();
 		ArrayList<Object> retList = new ArrayList<>();
@@ -242,13 +248,16 @@ public class FacetedNavigation {
 		return retList;
 	}
 
+/*
+	* remove the axioms present in the current minimal diagnoses sets from the ontology and save as owl file.
+	* Also check for the entailment of the defect in the saved ontology
+*/
     public static void saveRepair(String outDirStr, String mDsID, String ontologyPath, OWLAxiom defect, ReasonerName reasonerName, String outputFileName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
 
-		for (Set<OWLAxiom> axiomSets : currentDiagnoses){
+		for (Set<OWLAxiom> axiomSets : HelperFunctions.currentDiagnoses){
 			for (OWLAxiom axiom: axiomSets){
-                System.out.println(axiom);
 				manager.removeAxiom(ontology, axiom);
 			}
 		}
@@ -263,8 +272,4 @@ public class FacetedNavigation {
 		OWLDocumentFormat format = manager.getOntologyFormat(ontology);
 		manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
 	}
-
-    public static void setCurrentDiagnoses(Set<Set<OWLAxiom>> diagnosesSet){
-        currentDiagnoses = diagnosesSet;
-    }
 }

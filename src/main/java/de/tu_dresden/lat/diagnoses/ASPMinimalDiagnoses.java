@@ -34,7 +34,7 @@ import de.tu_dresden.lat.tools.AxiomChecker;
  */
 public class ASPMinimalDiagnoses {
 
-	public static final Logger logger = Logger.getLogger(ASPMinimalDiagnoses.class);
+	private static final Logger logger = Logger.getLogger(ASPMinimalDiagnoses.class);
 
 	public static Map<OWLAxiom, String> axioms2Identifiers;
 	public static Map<String, OWLAxiom> identifiers2Axioms;
@@ -183,6 +183,10 @@ public class ASPMinimalDiagnoses {
 		return ruleHead + ruleBody + ".";
 	}	
 	
+/* 
+	* compute and save all the minimal diagnoses (in the first run with no facets applied yet), 
+	* store the list of available facets in a text file 
+*/
 	public static ArrayList<?> getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
 			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun)
 			throws IOException, InterruptedException {
