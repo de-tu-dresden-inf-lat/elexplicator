@@ -483,7 +483,7 @@ def compare(old_model, new_model, deep_investigation):
             if set(helperFunctions.add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
                 
                 first = f"Selection:\n"
-                for i in input_list:
+                for i in helperFunctions.handle_input_negation(input_list):
                     first += i+"\n"
                 
                 second = "Dependency:\n"

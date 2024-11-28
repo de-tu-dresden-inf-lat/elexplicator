@@ -29,6 +29,7 @@ import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
+import de.tu_dresden.lat.diagnoses.FacetedNavigation;
 import de.tu_dresden.lat.tools.Helper;
 
 import static org.assertj.core.api.Assertions.*;
@@ -95,7 +96,7 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        Map returnElements = (Map) ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput).get(1);
+        Map returnElements = (Map) FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput).get(1);
         
         assertEquals("Facet application generated inaccurate diagnoses.", diagnoses_expected, returnElements.get("diagnoses"));
     }
@@ -120,7 +121,7 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput);
+        FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
 
         File generatedDeepInvFile = new File(outDirStr+File.separator+"deep_investigation.txt");
 
@@ -165,8 +166,8 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput);
-        ASPMinimalDiagnoses.getImpact(mDsID, outDirStr, simulatedImpactInput);
+        FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
+        FacetedNavigation.getImpact(mDsID, outDirStr, simulatedImpactInput);
 
         File generatedImpactFile = new File(outDirStr+File.separator+"impacts_raw.txt");
 
@@ -215,8 +216,8 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput);
-        ASPMinimalDiagnoses.reactivateFunction(mDsID, outDirStr, simulatedReactivateInput);
+        FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
+        FacetedNavigation.reactivateFunction(mDsID, outDirStr, simulatedReactivateInput);
 
         File generatedCorrectionFile = new File(outDirStr+File.separator+"corrections_raw.txt");
         BufferedReader reader = new BufferedReader(new FileReader(generatedCorrectionFile));
@@ -255,8 +256,8 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput);
-        Map returnElements = (Map) ASPMinimalDiagnoses.delete(mDsID, outDirStr, Optional.of(simulatedDelInput)).get(1);
+        FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
+        Map returnElements = (Map) FacetedNavigation.delete(mDsID, outDirStr, Optional.of(simulatedDelInput)).get(1);
 
         assertEquals("The diagnosis set generated in first run is inaccurate!", diagnoses_expected, returnElements.get("diagnoses"));
     }
@@ -270,8 +271,8 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput);
-        Map returnElements = (Map) ASPMinimalDiagnoses.delete(mDsID, outDirStr, Optional.empty()).get(1);
+        FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
+        Map returnElements = (Map) FacetedNavigation.delete(mDsID, outDirStr, Optional.empty()).get(1);
 
         assertEquals("The diagnosis set generated in first run is inaccurate!", diagnoses_expected, returnElements.get("diagnoses"));
     }
@@ -283,9 +284,9 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        ASPMinimalDiagnoses.applyFacet(mDsID, outDirStr, simulatedFacetInput);
+        FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
 
-        ASPMinimalDiagnoses.saveRepair(outDirStr, mDsID, ontologyPathStr, axiom, reasonerName, "saved_ontology.owl");
+        FacetedNavigation.saveRepair(outDirStr, mDsID, ontologyPathStr, axiom, reasonerName, "saved_ontology.owl");
 
         File generatedOWLFile = new File(outDirStr+File.separator+"saved_ontology.owl");
         File expectedOWLFile = new File(expectedOutDir + File.separator + "save"  + File.separator+"ontology_expected.owl");
