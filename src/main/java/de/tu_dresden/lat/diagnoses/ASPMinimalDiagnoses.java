@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -18,6 +19,7 @@ import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import org.apache.log4j.Logger;
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
@@ -187,23 +189,53 @@ public class ASPMinimalDiagnoses {
 	* compute and save all the minimal diagnoses (in the first run with no facets applied yet), 
 	* store the list of available facets in a text file 
 */
-	public static ArrayList<?> getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
+	public static ExitCode getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
 			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun)
 			throws IOException, InterruptedException {
-		Map<String, Object> returnElements = new HashMap<String, Object>();
-		ArrayList<Object> retList = new ArrayList<>();
 		if (!isAxiomSupported(reasonerName, axiom)) {
 			logger.info("Axiom is not supported!");
-			retList.add(ExitCode.NotSupportedAxiom);
-			return retList;
+			return ExitCode.NotSupportedAxiom;
 		}
 
 		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
-			retList.add(ExitCode.NoJustificationsComputed);
-			return retList;
+			return ExitCode.NoJustificationsComputed;
+		}
+
+		if (outDirStr.isEmpty())
+			outDirStr = "defaultMDsFolder";
+
+		fillMap(allJustifications);
+
+		logger.info("Creating Program");
+		createProgram(allJustifications, outDirStr);
+
+		logger.info("Extracting All Minimal Classical Diagnoses");
+		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
+		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		
+		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator +"facets_options.txt");
+
+		logger.info("Generating output file");
+		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+		return ExitCode.terminatedSuccessfully;
+	}
+
+	public static Set<Set<String>> getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun, Boolean unitTest)
+			throws IOException, InterruptedException{
+		Set<Set<String>> diagnosesSet = new HashSet<>();
+		if (!isAxiomSupported(reasonerName, axiom)) {
+			logger.info("Axiom is not supported!");
+			return diagnosesSet;
+		}
+
+		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+
+		if (!isJustified(allJustifications)) {
+			logger.info("No justifications available for the provided statement");
+			return diagnosesSet;
 		}
 
 		if (outDirStr.isEmpty())
@@ -223,20 +255,17 @@ public class ASPMinimalDiagnoses {
 		logger.info("Generating output file");
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
-		Set<Set<String>> diagnosesStr = HelperFunctions.createStringSet(allOptimalDiagnoses);
-		returnElements.put("diagnoses", diagnosesStr);
+		diagnosesSet = HelperFunctions.createStringSet(allOptimalDiagnoses);
 
-		retList.add(ExitCode.terminatedSuccessfully);
-		retList.add(returnElements);
-		return retList ;
+		return diagnosesSet;
 	}
 
 	public static ExitCode parseUserInteraction(OWLAxiom axiom, OWLOntology ontology, String dID, String outDirStr, ReasonerName reasonerName, String ontologyPathStr) throws IOException, InterruptedException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 
 		boolean flag = true;
-		ecode = (ExitCode) (ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
-				reasonerName, true)).get(0);
+		ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
+				reasonerName, true);
 
 		Files.deleteIfExists(Paths.get(outDirStr + File.separator + "added_knowledge.txt"));
 		Files.deleteIfExists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"));

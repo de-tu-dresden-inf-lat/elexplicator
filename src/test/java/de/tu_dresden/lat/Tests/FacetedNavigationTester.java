@@ -5,8 +5,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,7 +34,6 @@ import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
 import de.tu_dresden.lat.diagnoses.FacetedNavigation;
 import de.tu_dresden.lat.tools.Helper;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.junit.Assert.assertEquals;
 public class FacetedNavigationTester{
 
@@ -80,9 +81,9 @@ public class FacetedNavigationTester{
         Set<Set<String>> diagnoses_expected = new HashSet<>();        
         diagnoses_expected.addAll(Arrays.asList(axiom1, axiom2, axiom3, axiom4));
 
-        Map returnElements = (Map) (ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),reasonerName, true)).get(1);        
+        Set<Set<String>> returnElements = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),reasonerName, true, true);        
 
-        assertEquals("The diagnosis set generated in first run is inaccurate!", diagnoses_expected, returnElements.get("diagnoses"));
+        assertEquals("The diagnosis set generated in first run is inaccurate!", diagnoses_expected, returnElements);
 
     }
 
@@ -96,9 +97,9 @@ public class FacetedNavigationTester{
         ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, mDsID, outDirStr, Sets.newHashSet(),
 						reasonerName, true);
 
-        Map returnElements = (Map) FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput).get(1);
+        Set<Set<String>> returnElements =FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput, true);
         
-        assertEquals("Facet application generated inaccurate diagnoses.", diagnoses_expected, returnElements.get("diagnoses"));
+        assertEquals("Facet application generated inaccurate diagnoses.", diagnoses_expected, returnElements);
     }
 
     @Test
@@ -141,6 +142,7 @@ public class FacetedNavigationTester{
                     
             }
         }
+        reader.close();
 
         assertEquals("Inaccurate deep investigation result generated.", expected_output, generated_output);
 
@@ -187,6 +189,7 @@ public class FacetedNavigationTester{
                     
             }
         }
+        reader.close();
         assertEquals("Inaccurate impacts generated.", expected_output, generated_output);
     }
 
@@ -243,13 +246,13 @@ public class FacetedNavigationTester{
                     
             }
         }
+        reader.close();
         assertEquals("Inaccurate correction set generated.", expected_output, generated_output);
     }
 
     @Test
     public void testDelete() throws IOException, InterruptedException{
         Set<Set<String>> diagnoses_expected = new HashSet<>(Arrays.asList(axiom2, axiom4));        
-        diagnoses_expected.addAll(Arrays.asList());
         String simulatedFacetInput = "alpha0/alpha1/alpha2";
         String simulatedDelInput = "alpha1";
 
@@ -257,9 +260,9 @@ public class FacetedNavigationTester{
 						reasonerName, true);
 
         FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
-        Map returnElements = (Map) FacetedNavigation.delete(mDsID, outDirStr, Optional.of(simulatedDelInput)).get(1);
+        Set<Set<String>> returnElements = FacetedNavigation.delete(mDsID, outDirStr, Optional.of(simulatedDelInput), true);
 
-        assertEquals("The diagnosis set generated in first run is inaccurate!", diagnoses_expected, returnElements.get("diagnoses"));
+        assertEquals("The diagnosis set generated after facet retraction is inaccurate!", diagnoses_expected, returnElements);
     }
 
     @Test
@@ -272,9 +275,9 @@ public class FacetedNavigationTester{
 						reasonerName, true);
 
         FacetedNavigation.applyFacet(mDsID, outDirStr, simulatedFacetInput);
-        Map returnElements = (Map) FacetedNavigation.delete(mDsID, outDirStr, Optional.empty()).get(1);
+        Set<Set<String>> returnElements = FacetedNavigation.delete(mDsID, outDirStr, Optional.empty(), true);
 
-        assertEquals("The diagnosis set generated in first run is inaccurate!", diagnoses_expected, returnElements.get("diagnoses"));
+        assertEquals("The diagnosis set generated after retracting all facets is inaccurate!", diagnoses_expected, returnElements);
     }
 
     @Test
@@ -289,9 +292,13 @@ public class FacetedNavigationTester{
         FacetedNavigation.saveRepair(outDirStr, mDsID, ontologyPathStr, axiom, reasonerName, "saved_ontology.owl");
 
         File generatedOWLFile = new File(outDirStr+File.separator+"saved_ontology.owl");
+        OWLOntology generatedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(generatedOWLFile);
+        Set<OWLAxiom> generatedOntologyAxioms = generatedOntology.getAxioms();
         File expectedOWLFile = new File(expectedOutDir + File.separator + "save"  + File.separator+"ontology_expected.owl");
+        OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedOWLFile);
+        Set<OWLAxiom> expectedOntologyAxioms = expectedOntology.getAxioms();
 
-        assertThat(generatedOWLFile).hasSameTextualContentAs(expectedOWLFile);
+        assertEquals("The saved ontology is inaccurate.", expectedOntologyAxioms, generatedOntologyAxioms);
     }
 
 
