@@ -35,6 +35,7 @@ first_list_of_predicates = []
 justifications_program_path =''
 input_facet =''
 input_list = []
+file_dir = ""
 
 minimal_conflict_sets_asp = []
 
@@ -47,7 +48,10 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     """
     global all_optimal_classical_repairs, optimal_classical_repairs_file_path, intermediate_optimal_classical_repairs, first_ever, \
     first_answer_set_ever, last_answer_set, init_first_answer_set, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate, input_list
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate, input_list,\
+    file_dir
+
+    file_dir = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
     all_optimal_classical_repairs = []
     intermediate_optimal_classical_repairs = []
     # path = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
@@ -75,23 +79,23 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
         program.close()
 
 
-    if facet_diag and not first_run and os.path.exists("pyglobals.pk1"):
-        get_added_knowledge_function()
-        fetch_globals()
+    if facet_diag and not first_run and os.path.exists(f"{file_dir}pyglobals.pk1"):
+        get_added_knowledge_function(file_dir)
+        fetch_globals(file_dir)
 
     if facet_diag:
         if input_facet is None:
             res=translator(justifications_program_path, False)
         else:
             res = translator(justifications_program_path, deep_investigation)
-        store_globals()
+        store_globals(file_dir)
         
     return compute_all_optimal_classical_repairs(justifications_program_path, max_index+1)
 
-def get_added_knowledge_function():
+def get_added_knowledge_function(dir_str):
     global list_of_added_knowledge
     try:
-        with open("added_knowledge.txt", "r") as f:
+        with open(f"{dir_str}added_knowledge.txt", "r") as f:
             lines = f.readlines()
             for line in lines:
                 list_of_added_knowledge.append(line.strip())
@@ -479,7 +483,7 @@ def compare(old_model, new_model, deep_investigation):
             if set(helperFunctions.add_point(flat_list_white)).difference(set(list_of_added_knowledge)).difference(set(flat_prev_white)):
                 
                 first = f"Selection:\n"
-                for i in input_list:
+                for i in helperFunctions.handle_input_negation(input_list):
                     first += i+"\n"
                 
                 second = "Dependency:\n"
@@ -509,7 +513,7 @@ def print_red_blue_white():
     two = True
     three = True        
 
-    disp_file = open("facets_options.txt", "w")
+    disp_file = open(f"{file_dir}facets_options.txt", "w")
     if len(set(tuple(i) for i in list_of_difference_red).intersection(set(tuple(i) for i in list_of_difference_red))) > 1:
         disp_file.write("Unavailable facets\n")
         to_print = get_facets_to_print(list_of_difference_red)   
@@ -548,7 +552,7 @@ def initial_display(clingo_return):
                         predicate = element.p_name + "(" + arguments + ")."
                         if predicate not in first_ever:
                             to_print.append(predicate)
-            disp_file = open("facets_options.txt", "w")
+            disp_file = open(f"{file_dir}facets_options.txt", "w")
             disp_file.write("Available facets\n")
             if to_print:
                 allowed_entries = set(to_print)        
@@ -617,8 +621,8 @@ class PredicateIndex:
         self.p_index = ind 
 
 
-def store_globals():
-    with open("pyglobals.pk1", 'wb') as f:
+def store_globals(dir_str):
+    with open(f"{dir_str}pyglobals.pk1", 'wb') as f:
             pickle.dump({
                 'first_ever': first_ever,
                 'first_answer_set_ever': first_answer_set_ever,
@@ -632,14 +636,16 @@ def store_globals():
                 'tmp_prev_red' : tmp_prev_red,
                 'tmp_prev_white' : tmp_prev_white,
                 'allowed_entries' : allowed_entries,
-                'list_of_predicates_not_to_negate' : list_of_predicates_not_to_negate
+                'list_of_predicates_not_to_negate' : list_of_predicates_not_to_negate,
+                'file_dir' : file_dir
             }, f)
 
 
-def fetch_globals():
+def fetch_globals(dir_str):
     global first_ever, first_answer_set_ever, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
-    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate
-    with open("pyglobals.pk1", 'rb') as f:
+    list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries,\
+    list_of_predicates_not_to_negate, file_dir
+    with open(f"{dir_str}pyglobals.pk1", 'rb') as f:
         data = pickle.load(f)
         first_ever = data['first_ever']
         first_answer_set_ever = data['first_answer_set_ever']
@@ -654,6 +660,7 @@ def fetch_globals():
         tmp_prev_white = data['tmp_prev_white']
         allowed_entries = data['allowed_entries']
         list_of_predicates_not_to_negate = data['list_of_predicates_not_to_negate']
+        file_dir = data['file_dir']
 
 def get_facets_to_print(list_of_facets):
     to_print = []
@@ -675,5 +682,5 @@ def get_facets_to_print(list_of_facets):
     return set(to_print)
 
 def save_deep_investigation(save_text):
-    with open("deep_investigation.txt", "w") as f:
+    with open(f"{file_dir}deep_investigation.txt", "w") as f:
         f.write(save_text)

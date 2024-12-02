@@ -47,13 +47,15 @@ def is_valid_file(parser, arg):
 
 def updateJustificationFile(justificationsFilePath, facets): 
 
+    file_dir = justificationsFilePath[:justificationsFilePath.rfind(os.sep) + 1]
+
     facets_list = facets.split("/")
     facets_list = helperFunctions.handle_input_negation(facets_list)
 
     list_of_added_knowledge = []
     applicable_options = []
     try:
-        with open("added_knowledge.txt", "r") as f:
+        with open(f"{file_dir}added_knowledge.txt", "r") as f:
             lines = f.readlines()
             for line in lines:
                 list_of_added_knowledge.append(line.strip())
@@ -61,7 +63,7 @@ def updateJustificationFile(justificationsFilePath, facets):
         list_of_added_knowledge = []
 
     
-    minimalDiagnoses.fetch_globals()
+    minimalDiagnoses.fetch_globals(file_dir)
     if not list_of_added_knowledge:
         # if no facet has been applied yet, use the initial allowed_entries as list of applicable facets else use the list_of_difference_blue
         applicable_options = minimalDiagnoses.allowed_entries
@@ -71,7 +73,7 @@ def updateJustificationFile(justificationsFilePath, facets):
     facets_list = [e for e in facets_list if helperFunctions.transform_alpha_to_remove(e+'.') in applicable_options]
 
     asp_file = open(justificationsFilePath, "a")
-    log_file = open("added_knowledge.txt", "a")
+    log_file = open(f"{file_dir}added_knowledge.txt", "a")
 
     for i in facets_list:
         facetId = i.split("alpha")[1]

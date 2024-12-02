@@ -1,5 +1,6 @@
 from diagnosis import helperFunctions, minimalDiagnoses
 import sys
+import os
 
 def del_function(to_delete_from_file_name, input_text, print_message=True):
     """
@@ -9,9 +10,13 @@ def del_function(to_delete_from_file_name, input_text, print_message=True):
     :param print_message:
     :return: 
     """
-    global list_of_added_knowledge, list_of_difference_red, list_of_predicates_not_to_negate, tmp_prev_white
-    get_global_variables()
+    global list_of_added_knowledge, list_of_difference_red, list_of_predicates_not_to_negate, tmp_prev_white, file_dir
     
+    
+    file_dir = to_delete_from_file_name[:to_delete_from_file_name.rfind(os.sep) + 1]
+
+    get_global_variables()
+
     to_delete_list = get_del_list(input_text)
 
     to_delete_list = [":- " + helperFunctions.negate(helperFunctions.transform_alpha_to_remove(x+'.')) for x in to_delete_list]
@@ -54,7 +59,8 @@ def del_function(to_delete_from_file_name, input_text, print_message=True):
     update_globals()
 
 def del_all(to_delete_from_file_name):
-    global list_of_added_knowledge
+    global list_of_added_knowledge, file_dir
+    file_dir = to_delete_from_file_name[:to_delete_from_file_name.rfind(os.sep) + 1]
     get_global_variables()
     to_delete = "/".join([i[:i.index("()")]+'.' for i in list_of_added_knowledge if "alpha" in i])
     del_function(to_delete_from_file_name, to_delete)
@@ -77,18 +83,18 @@ def remove_from_knowledge(line):
             if helperFunctions.transform_alpha_to_remove(x[:x.index('()')]+'.') == helperFunctions.negate(atom):
                 to_remove.append(x)
     list_of_added_knowledge = [x for x in list_of_added_knowledge if x not in to_remove]
-    with open("added_knowledge.txt", "w") as f:
+    with open(f"{file_dir}added_knowledge.txt", "w") as f:
         for i in list_of_added_knowledge:
             f.write(i + '\n')
         
 
 def get_global_variables():
     global list_of_added_knowledge, list_of_difference_red, list_of_predicates_not_to_negate, tmp_prev_white
-    minimalDiagnoses.fetch_globals()
+    minimalDiagnoses.fetch_globals(file_dir)
     list_of_difference_red = minimalDiagnoses.list_of_difference_red
     list_of_predicates_not_to_negate = minimalDiagnoses.list_of_predicates_not_to_negate
     tmp_prev_white = minimalDiagnoses.tmp_prev_white
-    minimalDiagnoses.get_added_knowledge_function()
+    minimalDiagnoses.get_added_knowledge_function(file_dir)
     list_of_added_knowledge = minimalDiagnoses.list_of_added_knowledge
 
 def update_globals():
@@ -96,5 +102,5 @@ def update_globals():
     minimalDiagnoses.list_of_difference_red = list_of_difference_red
     minimalDiagnoses.list_of_predicates_not_to_negate = list_of_predicates_not_to_negate
     minimalDiagnoses.tmp_prev_white = tmp_prev_white
-    minimalDiagnoses.store_globals()
+    minimalDiagnoses.store_globals(file_dir)
 
