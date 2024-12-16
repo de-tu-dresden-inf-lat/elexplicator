@@ -14,6 +14,7 @@ public class CLIOptionsArgs {
     nameArg = "Name",
     labelArg = "Label",
     mDsOptionArgs = "Reasoner, Identifier",
-    diagnosisOptionArgs = "Reasoner, Identifier" 
+    diagnosisOptionArgs = "Reasoner, Identifier",
+    repairOptionArgs = "Reasoner"
     ;
 }

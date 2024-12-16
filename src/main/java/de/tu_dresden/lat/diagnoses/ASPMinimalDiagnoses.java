@@ -59,7 +59,7 @@ public class ASPMinimalDiagnoses {
 			return ExitCode.NotSupportedAxiom;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
@@ -82,14 +82,6 @@ public class ASPMinimalDiagnoses {
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
 		return ExitCode.terminatedSuccessfully;
-	}
-
-	private static Set<Set<? extends OWLAxiom>> getAllJustifications(ReasonerName reasonerName, OWLAxiom axiom,
-																	 OWLOntology ontology) {
-		if (reasonerName == ReasonerName.Elk)
-			return JustificationsGenerator.getAllELKJustifications(axiom, ontology);
-
-		return JustificationsGenerator.getAllHermitJustifications(axiom, ontology);
 	}
 
 	private static boolean isAxiomSupported(ReasonerName reasonerName, OWLAxiom axiom) {
@@ -196,7 +188,7 @@ public class ASPMinimalDiagnoses {
 			return ExitCode.NotSupportedAxiom;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
@@ -230,7 +222,7 @@ public class ASPMinimalDiagnoses {
 			return diagnosesSet;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");

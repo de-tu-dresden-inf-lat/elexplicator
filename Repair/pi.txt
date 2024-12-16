@@ -1,0 +1,14 @@
+%All Justifications
+statement :- alpha0(),alpha1(),alpha2(),alpha3().
+%Choices
+{alpha2;alpha3;alpha0;alpha1}.
+:- not alpha2().
+:- not alpha0().
+:- not alpha1().
+:- not alpha3().
+:- not remove(_).
+remove(0):- not alpha0.
+remove(1):- not alpha1.
+remove(2):- not alpha2.
+remove(3):- not alpha3.
+:- statement.

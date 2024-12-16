@@ -114,6 +114,14 @@ public class CLIOptions {
 
     public final Option diagnosisOption = new Option(CLIOptionsStrings.diagnosisOptionShort, CLIOptionsStrings.diagnosisOptionLong, 
             true, CLIOptionsDescriptions.diagnosisOptionDescription);
+
+    public final Option repairOption = new Option(CLIOptionsStrings.repairOptionShort, CLIOptionsStrings.repairOptionLong, 
+            true, CLIOptionsDescriptions.repairOptionDescription);
+
+    public final Option interestingAxiomOption = new Option(CLIOptionsStrings.interestingAxiomOptionShort, CLIOptionsStrings.interestingAxiomOptionLong, 
+            true, CLIOptionsDescriptions.interestingAxiomDescription);
+    public final Option interestingAxiomOptionREQUIRED = new Option(CLIOptionsStrings.interestingAxiomOptionShort, CLIOptionsStrings.interestingAxiomOptionLong, 
+            true, CLIOptionsDescriptions.interestingAxiomDescription);
     
     private CLIOptions() {
         formatter.setWidth(200);
@@ -205,6 +213,17 @@ public class CLIOptions {
         diagnosisOption.setOptionalArg(true);
         diagnosisOption.setValueSeparator(',');
         diagnosisOption.setArgName(CLIOptionsArgs.diagnosisOptionArgs);
+
+        repairOption.setRequired(false);
+        repairOption.setArgs(1);
+        repairOption.setOptionalArg(true);
+        repairOption.setArgName(CLIOptionsArgs.repairOptionArgs);
+
+        interestingAxiomOption.setRequired(false);
+        interestingAxiomOption.setArgName(CLIOptionsArgs.pathArg);
+        interestingAxiomOptionREQUIRED.setRequired(true);
+        interestingAxiomOption.setArgName(CLIOptionsArgs.pathArg);
+
     }
 
     private static class LazyHolder {
