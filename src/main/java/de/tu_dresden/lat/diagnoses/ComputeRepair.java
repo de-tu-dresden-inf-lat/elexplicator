@@ -13,6 +13,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import org.apache.log4j.Logger;
+import org.easymock.internal.matchers.Null;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
@@ -20,6 +21,8 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+
+import com.fasterxml.jackson.annotation.ObjectIdGenerators.None;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
@@ -51,40 +54,72 @@ public class ComputeRepair {
         keepAxioms = new HashSet<>();
         removeAxioms = new HashSet<>();
         Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
-        fillMap(allJustifications);
+        
+		fillMap(allJustifications);
         HelperFunctions.identifiers2Axioms = identifiers2Axioms;
         System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
         
 		while (inputFlag){
 			java.util.Scanner scanner = new java.util.Scanner(System.in);
-			for (OWLAxiom justificationAxiom : identifiers2Axioms.values()){
-				while (true){
-					System.out.println(sOWLFormatter.format(justificationAxiom).toString());
-					String user_in = scanner.nextLine();
-					switch(user_in.toLowerCase()){
-						case "yes":
-							keepAxioms.add(justificationAxiom);
-							break;
-						case "no":
-							removeAxioms.add(justificationAxiom);
-							break;
-						case "not sure":
-							getAxiomWeight(allJustifications, new HashSet<>());
-							continue;
-						case "save":
-							System.out.println("Enter the filename to save as: ");
-							String save_filename = scanner.nextLine();
-							computeDiagnoses(allJustifications, new HashSet<>() ,save_filename);
-							continue;
-						case "exit":
-							System.out.println("Exiting repair mode!");
-							inputFlag = false;
-							break;
-						default:
-							System.out.println("invalid option!");
-							continue;
+			//if we're not allowing users to select "yes" for all justification axioms then for set<owl axiom> in allJustifications
+			//if set not subset of removeAxioms+current axiom in iteration then ask for user input else skip to next justification set (break)
+			for (Set<? extends OWLAxiom> justificationSet : allJustifications){
+				System.out.println("Justification Set");
+				for (OWLAxiom justificationAxiom : justificationSet){
+					if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom)){
+						System.out.println(sOWLFormatter.format(justificationAxiom).toString() + " -- selection already made for the axiom!");
+						continue;
 					}
-					break;
+					while (true){
+						System.out.println(sOWLFormatter.format(justificationAxiom).toString());
+						String user_in = scanner.nextLine();
+						switch(user_in.toLowerCase()){
+							case "yes":
+								keepAxioms.add(justificationAxiom);
+								break;
+							case "no":
+								removeAxioms.add(justificationAxiom);
+								break;
+							case "not sure":
+								{Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications);
+								if (selectedJustification != null){
+									System.out.println("Repair not possible!");
+									System.out.println("You have selected the following axioms to be in the repair which all belong to the same justification set.");
+									for (OWLAxiom selectedAxiom : selectedJustification){
+										System.out.println(sOWLFormatter.format(selectedAxiom).toString());
+									}
+								} else {
+									getAxiomWeight(allJustifications, new HashSet<>());
+								}}
+								continue;
+							case "save":
+								{Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications);
+								if (selectedJustification != null){
+									System.out.println("Repair not possible!");
+									System.out.println("You have selected the following axioms to be in the repair which ll belong to the same justification set.");
+									for (OWLAxiom selectedAxiom : selectedJustification){
+										System.out.println(sOWLFormatter.format(selectedAxiom).toString());
+									}
+								} else {
+									System.out.println("Enter the filename to save as: ");
+									String save_filename = scanner.nextLine();
+									computeDiagnoses(allJustifications, new HashSet<>(),save_filename);
+								}
+								}
+								continue;
+							case "exit":
+								System.out.println("Exiting repair mode!");
+								inputFlag = false;
+								break;
+							default:
+								System.out.println("invalid option!");
+								continue;
+						}
+						break;
+					}
+					if (!inputFlag){
+						break;
+					}
 				}
 				if (!inputFlag){
 					break;
@@ -102,10 +137,22 @@ public class ComputeRepair {
 						inputFlag = false;
 						break;
 					case "save":
-						System.out.println("Enter the filename to save as: ");
-						String save_filename = scanner.nextLine();
-						computeDiagnoses(allJustifications, new HashSet<>() ,save_filename);
-						inputFlag = false;
+						{
+							Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications);
+							if (selectedJustification != null){
+								System.out.println("Repair not possible!");
+								System.out.println("You have selected the following axioms to be in the repair which ll belong to the same justification set.");
+								for (OWLAxiom selectedAxiom : selectedJustification){
+									System.out.println(sOWLFormatter.format(selectedAxiom).toString());
+								}
+							} else {
+								System.out.println("Enter the filename to save as: ");
+								String save_filename = scanner.nextLine();
+								computeDiagnoses(allJustifications, new HashSet<>(), save_filename);
+								inputFlag = false;
+							}
+						}
+						
 						break;
 					default:
 						System.out.println("Invalid input!");
@@ -135,6 +182,15 @@ public class ComputeRepair {
 			writer.close();
 			logger.info("Done writing to -> " + filePath);
 		}
+	}
+
+	private static Set<? extends OWLAxiom> checkAxiomSelection(Set<Set<? extends OWLAxiom>> allJustifications){
+		for (Set<? extends OWLAxiom> justificationSet : allJustifications){
+			if (keepAxioms.containsAll(justificationSet)){
+				return justificationSet;
+			} 
+		}
+		return null;
 	}
 
 	private static void computeDiagnoses(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outFileName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
@@ -175,7 +231,19 @@ public class ComputeRepair {
 		logger.info("Generating output file");
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
-		computeRepairs(outDirStr, mDsID, ontologyPathStr, outFileName);
+		int counter = 1;
+		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
+			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPathStr));
+
+			for (OWLAxiom axiom: axiomSets){
+				manager.removeAxiom(ontology, axiom);
+			}
+			File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outFileName+"_"+Integer.toString(counter)+".owl"));
+			OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+			manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
+			counter += 1;
+		}
 	}
 
     private static void getAxiomWeight(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
@@ -240,6 +308,7 @@ public class ComputeRepair {
 	 * @param allJustifications
 	 */
 	private static void fillMap(Set<Set<? extends OWLAxiom>> allJustifications) {
+
 		axioms2Identifiers = new HashMap<>();
 		identifiers2Axioms = new HashMap<>();
         String axiomPrefix = "alpha";
