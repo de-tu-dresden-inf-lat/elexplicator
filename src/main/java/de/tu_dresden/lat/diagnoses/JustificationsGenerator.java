@@ -1,7 +1,10 @@
 package de.tu_dresden.lat.diagnoses;
 
+
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 
 import org.apache.log4j.Logger;
 import org.liveontologies.puli.DynamicProof;
@@ -10,6 +13,7 @@ import org.liveontologies.puli.InferenceJustifier;
 import org.liveontologies.puli.InferenceJustifiers;
 import org.liveontologies.puli.pinpointing.InterruptMonitor;
 import org.liveontologies.puli.pinpointing.MinimalSubsetCollector;
+import org.liveontologies.puli.pinpointing.MinimalSubsetEnumerator;
 import org.liveontologies.puli.pinpointing.MinimalSubsetEnumerators;
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.elk.owlapi.ElkReasoner;
@@ -60,6 +64,25 @@ public class JustificationsGenerator {
 		return allJustifications;
 	}
 
+	public static Set<Set<? extends OWLAxiom>> getAllELKJustificationsAsync(OWLAxiom axiom, OWLOntology ontology, BlockingQueue<Set<? extends OWLAxiom>> queue) {
+		ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
+		ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
+
+		DynamicProof<ElkOwlInference> proof = ElkOwlProof.create(reasoner, axiom);
+
+		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = InferenceJustifiers
+				.justifyAssertedInferences();
+
+		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
+
+		MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
+				new CustomSubsetCollector<>(allJustifications));
+
+		if (logger.isDebugEnabled())
+			allJustifications.forEach(logger::debug);
+
+		return allJustifications;
+	}
 	/**
 	 * Return a set of all justifications using Hermit
 	 * 
@@ -84,4 +107,22 @@ public class JustificationsGenerator {
 		return allJustifications;
 
 	}
+
+	public static Set<Set<? extends OWLAxiom>> getAllHermitJustificationsAsync(OWLAxiom axiom, OWLOntology ontology) {
+		OWLReasonerFactory factory = new ReasonerFactory();
+
+		OWLReasoner reasoner = factory.createReasoner(ontology);
+
+		DefaultExplanationGenerator explainer = new DefaultExplanationGenerator(OWLManager.createOWLOntologyManager(),
+				factory, ontology, reasoner, new SilentExplanationProgressMonitor());
+
+		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>(explainer.getExplanations(axiom));
+
+		if (logger.isDebugEnabled())
+			allJustifications.forEach(logger::debug);
+
+		return allJustifications;
+
+	}
 }
+
