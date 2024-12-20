@@ -2,11 +2,8 @@ package de.tu_dresden.lat.diagnoses;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ThreadFactory;
 
 import org.liveontologies.puli.pinpointing.MinimalSubsetCollector;
-import org.liveontologies.puli.pinpointing.MinimalSubsetEnumerator;
 import org.semanticweb.owlapi.model.OWLAxiom;
 
 public class CustomSubsetCollector<E> extends MinimalSubsetCollector<E> {
@@ -25,7 +22,8 @@ public class CustomSubsetCollector<E> extends MinimalSubsetCollector<E> {
 		try {
 			ComputeRepair.justificationQueue.put((Set<? extends OWLAxiom>) set);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+            Thread.currentThread().interrupt();
+            return;
 		}
 		
 	}

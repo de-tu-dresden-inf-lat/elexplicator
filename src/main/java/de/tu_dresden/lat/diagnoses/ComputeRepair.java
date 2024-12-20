@@ -14,7 +14,6 @@ import java.util.StringJoiner;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -33,6 +32,7 @@ import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.tools.AxiomChecker;
+import de.tu_dresden.lat.tools.LoadingScreen;
 
 class ComputeJustificationsThread implements Runnable{
 	private ReasonerName reasonerName;
@@ -54,7 +54,7 @@ class ComputeJustificationsThread implements Runnable{
 			HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
 		} catch (Exception e) {
 			Thread.currentThread().interrupt(); // Set the interrupt status again for any further handlers
-			e.printStackTrace();
+			// e.printStackTrace();
 		}
 		
 	}
@@ -90,15 +90,17 @@ public class ComputeRepair {
 			ComputeJustificationsThread runnable1 = new ComputeJustificationsThread(reasonerName, axiom, ontology);
 			Thread justificationsThread = new Thread(runnable1); 
 			justificationsThread.start();
-			
 
 			// Set<? extends OWLAxiom> justificationSet = justificationQueue.poll(1000, TimeUnit.MILLISECONDS);
 			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
-			Thread.sleep(1500);
+			// Thread.sleep(1500);
 			java.util.Scanner scanner = new java.util.Scanner(System.in);
+			
 			while(inputFlag){
 				while (!justificationQueue.isEmpty() || justificationsThread.isAlive()){
-
+					while(justificationQueue.isEmpty()){
+						LoadingScreen.main(null);
+					}
 					Set<? extends OWLAxiom> justificationSet = justificationQueue.take();
 					System.out.println("Justification Set");
 						//if we're not allowing users to select "yes" for all justification axioms then for set<owl axiom> in allJustifications
@@ -153,6 +155,7 @@ public class ComputeRepair {
 								case "exit":
 									System.out.println("Exiting repair mode!");
 									inputFlag = false;
+									justificationsThread.interrupt();
 									break;
 								default:
 									System.out.println("invalid option!");
@@ -165,7 +168,9 @@ public class ComputeRepair {
 					if (!inputFlag){break;}
 					Thread.sleep(1000);
 				}
-				if (!inputFlag){break;}
+				if (!inputFlag){
+					break;
+				}
 				System.out.println("All justifications have been computed.\nWould you like to exit or save the repair?");
 				while(true){
 					String user_in = scanner.nextLine();
@@ -197,10 +202,9 @@ public class ComputeRepair {
 						
 					}
 					if (!inputFlag){
-						justificationsThread.interrupt();
 						break;
 					}
-				}
+				} 
 			}
 		} catch (Exception e){
 			e.printStackTrace();

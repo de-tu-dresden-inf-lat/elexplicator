@@ -1,7 +1,6 @@
 package de.tu_dresden.lat.diagnoses;
 
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -13,7 +12,6 @@ import org.liveontologies.puli.InferenceJustifier;
 import org.liveontologies.puli.InferenceJustifiers;
 import org.liveontologies.puli.pinpointing.InterruptMonitor;
 import org.liveontologies.puli.pinpointing.MinimalSubsetCollector;
-import org.liveontologies.puli.pinpointing.MinimalSubsetEnumerator;
 import org.liveontologies.puli.pinpointing.MinimalSubsetEnumerators;
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.elk.owlapi.ElkReasoner;
