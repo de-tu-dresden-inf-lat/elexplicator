@@ -60,6 +60,30 @@ class ComputeJustificationsThread implements Runnable{
 	}
 }
 
+class ComputeAxiomWeightThread implements Runnable{
+	String outDirStr;
+	String mDsID;
+	String ontologyPath;
+	String outputFileName;
+	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName){
+		this.outDirStr = outDirStr;
+		this.mDsID = mDsID;
+		this.ontologyPath = ontologyPath;
+		this.outputFileName = outputFileName;
+	}
+
+	@Override
+	public void run(){
+		try{
+			ComputeRepair.computeRepairs(outDirStr, mDsID, ontologyPath, outputFileName);
+		} catch (Exception e){
+			Thread.currentThread().interrupt();
+			// e.printStackTrace();
+		}
+		
+	}
+}
+
 public class ComputeRepair {
     private static final Logger logger = Logger.getLogger(ComputeRepair.class);
     private static Map<OWLAxiom, String> axioms2Identifiers;
@@ -71,11 +95,10 @@ public class ComputeRepair {
 	private static Set<? extends OWLAxiom> interestingAxiomsSet; 
 	public static Set<Set<? extends OWLAxiom>> allJustifications;
 	public static BlockingQueue<Set<? extends OWLAxiom>> justificationQueue;
+	public static Map<OWLAxiom,Integer> axiomWeightMap;
 
     private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
         true);
-
-
 
     public static void computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
         ontologyPathStr = ontologyPath;
@@ -132,6 +155,7 @@ public class ComputeRepair {
 											}
 										} else {
 											getAxiomWeight(allJustifications, new HashSet<>());
+											displayAxiomWeights(axiomWeightMap);
 										}
 									}
 									continue;
@@ -333,23 +357,17 @@ public class ComputeRepair {
 		logger.info("Generating output file");
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
-		computeRepairs(outDirStr, mDsID, ontologyPathStr, "repairOntology");
+		try{
+		ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, mDsID, ontologyPathStr, "repairOntology");
+		Thread axiomWeightThread = new Thread(runnable2); 
+		axiomWeightThread.start();
+		
+		while(axiomWeightThread.isAlive()){
+			LoadingScreen.main(null);
+		}} catch (InterruptedException e){
+			e.printStackTrace();
+		}
     }
-
-    private static boolean isAxiomSupported(ReasonerName reasonerName, OWLAxiom axiom) {
-		if (reasonerName == ReasonerName.Elk)
-			return AxiomChecker.isInEL(axiom);
-
-		return AxiomChecker.isInALC(axiom);
-	}
-
-	private static boolean isJustified(Set<Set<? extends OWLAxiom>> allJustifications) {
-		if (allJustifications.size() == 1)
-			if (allJustifications.iterator().next().isEmpty())
-				return false;
-
-		return !allJustifications.isEmpty();
-	}
 
 	/**
 	 * Map every axiom to an identifier of the form "alpha" + integer
@@ -431,12 +449,17 @@ public class ComputeRepair {
 		return ruleHead + ruleBody + ".";
 	}
 
+	//make this part an asynchronous thread. 
+	//idea: make the dictionary public, load the axiom weights into the dictionary....in the main method, while this thread is alive LoadingScreen.
+	//after that, call function that prints the axiom weight
 	public static void computeRepairs(String outDirStr, String mDsID, String ontologyPath, String outputFileName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
 		outDirStr = outDirStr + "/" + tempfolderPath;
 		File repFolder = new File(outDirStr);
 		repFolder.mkdir();
 		int counter = 1;
+
+		//from the produced diagnoses set, compute repair ontology for each diagnosis set and save as ontology
 		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
@@ -450,8 +473,9 @@ public class ComputeRepair {
 			counter += 1;
 		}
 
-		Map<OWLAxiom,Integer> axiomWeightMap = new HashMap<>();
+		axiomWeightMap = new HashMap<>();
 		
+		//get the axiom weight of the interesting axioms
 		for (OWLAxiom interestingAxiom : interestingAxiomsSet){
 			axiomWeightMap.putIfAbsent(interestingAxiom, 0);
 			for (int i=1; i<counter; i++){
@@ -465,9 +489,7 @@ public class ComputeRepair {
 			}
 		}
 
-		for (Map.Entry<OWLAxiom,Integer> axiomWeightEntry : axiomWeightMap.entrySet()) {
-			System.out.println(sOWLFormatter.format(axiomWeightEntry.getKey()).toString() + " = " + axiomWeightEntry.getValue());
-		}
+		
 
 	File[] allContents = repFolder.listFiles();
     if (allContents != null) {
@@ -476,6 +498,12 @@ public class ComputeRepair {
         }
     }
 	repFolder.delete();
+	}
+
+	private static void displayAxiomWeights(Map<OWLAxiom,Integer> axiomWeightMap){
+		for (Map.Entry<OWLAxiom,Integer> axiomWeightEntry : axiomWeightMap.entrySet()) {
+			System.out.println(sOWLFormatter.format(axiomWeightEntry.getKey()).toString() + " = " + axiomWeightEntry.getValue());
+		}
 	}
 
 	public static Set<Set<? extends OWLAxiom>> getAllJustificationsAsync(ReasonerName reasonerName, OWLAxiom axiom, OWLOntology ontology, BlockingQueue<Set<? extends OWLAxiom>> queue) {
