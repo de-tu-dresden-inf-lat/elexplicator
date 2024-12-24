@@ -84,6 +84,28 @@ class ComputeAxiomWeightThread implements Runnable{
 	}
 }
 
+class ComputeDiagnosesThread implements Runnable{
+	Set<Set<? extends OWLAxiom>> allJustifications;
+	Set<Set<? extends OWLAxiom>> allOptDiagnoses;
+	String outFileName;
+
+	public ComputeDiagnosesThread(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outFileName){
+		this.allJustifications = allJustifications;
+		this.allOptDiagnoses = allOptDiagnoses;
+		this.outFileName = outFileName;
+	}
+
+	@Override
+	public void run() {
+		try{
+			ComputeRepair.computeDiagnoses(allJustifications, allOptDiagnoses, outFileName);
+		} catch (Exception e){
+			Thread.currentThread().interrupt();
+		}
+	}
+	
+}
+
 public class ComputeRepair {
     private static final Logger logger = Logger.getLogger(ComputeRepair.class);
     private static Map<OWLAxiom, String> axioms2Identifiers;
@@ -172,7 +194,19 @@ public class ComputeRepair {
 										} else {
 											System.out.println("Enter the filename to save as: ");
 											String save_filename = scanner.nextLine();
-											computeDiagnoses(allJustifications, new HashSet<>(),save_filename);
+											try{
+												ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename);
+												Thread diagnosesThread = new Thread(diagnosesRunnable);
+												diagnosesThread.start();
+												while (diagnosesThread.isAlive()){
+													LoadingScreen.main(null);
+												}
+												diagnosesThread.join(0);
+												System.out.println("Repaired ontologies saved!");
+											} catch(Exception e) {
+												e.printStackTrace();
+											}
+											
 										}
 									}
 									continue;
@@ -215,7 +249,18 @@ public class ComputeRepair {
 							} else {
 								System.out.println("Enter the filename to save as: ");
 								String save_filename = scanner.nextLine();
-								computeDiagnoses(allJustifications, new HashSet<>(), save_filename);
+								try{
+									ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename);
+									Thread diagnosesThread = new Thread(diagnosesRunnable);
+									diagnosesThread.start();
+									while (diagnosesThread.isAlive()){
+										LoadingScreen.main(null);
+									}
+									diagnosesThread.join(0);
+									System.out.println("Repaired ontologies saved!");
+								} catch(Exception e) {
+									e.printStackTrace();
+								}
 								inputFlag = false;
 							}
 						}						
@@ -266,7 +311,7 @@ public class ComputeRepair {
 		return null;
 	}
 
-	private static void computeDiagnoses(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outFileName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
+	public static void computeDiagnoses(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outFileName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
 		allOptimalDiagnoses = allOptDiagnoses;
 		String outDirStr = "Repair";
         String mDsID = "repair";
@@ -358,13 +403,14 @@ public class ComputeRepair {
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
 		try{
-		ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, mDsID, ontologyPathStr, "repairOntology");
-		Thread axiomWeightThread = new Thread(runnable2); 
-		axiomWeightThread.start();
-		
-		while(axiomWeightThread.isAlive()){
-			LoadingScreen.main(null);
-		}} catch (InterruptedException e){
+			ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, mDsID, ontologyPathStr, "repairOntology");
+			Thread axiomWeightThread = new Thread(runnable2); 
+			axiomWeightThread.start();
+			
+			while(axiomWeightThread.isAlive()){
+				LoadingScreen.main(null);
+			}
+		} catch (InterruptedException e){
 			e.printStackTrace();
 		}
     }
@@ -449,9 +495,6 @@ public class ComputeRepair {
 		return ruleHead + ruleBody + ".";
 	}
 
-	//make this part an asynchronous thread. 
-	//idea: make the dictionary public, load the axiom weights into the dictionary....in the main method, while this thread is alive LoadingScreen.
-	//after that, call function that prints the axiom weight
 	public static void computeRepairs(String outDirStr, String mDsID, String ontologyPath, String outputFileName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
 		outDirStr = outDirStr + "/" + tempfolderPath;
