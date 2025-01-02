@@ -59,7 +59,7 @@ public class ASPMinimalDiagnoses {
 			return ExitCode.NotSupportedAxiom;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
@@ -70,9 +70,10 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
@@ -82,14 +83,6 @@ public class ASPMinimalDiagnoses {
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
 		return ExitCode.terminatedSuccessfully;
-	}
-
-	private static Set<Set<? extends OWLAxiom>> getAllJustifications(ReasonerName reasonerName, OWLAxiom axiom,
-																	 OWLOntology ontology) {
-		if (reasonerName == ReasonerName.Elk)
-			return JustificationsGenerator.getAllELKJustifications(axiom, ontology);
-
-		return JustificationsGenerator.getAllHermitJustifications(axiom, ontology);
 	}
 
 	private static boolean isAxiomSupported(ReasonerName reasonerName, OWLAxiom axiom) {
@@ -129,28 +122,6 @@ public class ASPMinimalDiagnoses {
 			}
 		}
 	}
-
-	private static void createProgram(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr)
-			throws IOException {
-		StringJoiner program = new StringJoiner("\n");
-
-		program.add("%All Justifications");
-		allJustifications.forEach(justification -> {
-			{
-				program.add(getRule(justification));
-			}			
-		});
-
-		program.add("%Choices");
-		program.add(getChoices());
-
-		File outDir = new File(outDirStr);
-		if (!outDir.exists())
-			throw new IOException("Directory does not exist -> " + outDirStr);
-
-		HelperFunctions.saveText(program.toString(), outDirStr + File.separator + programFileName);
-	}
-
 	
 	/**
 	 * Return a string representing the ASP choice rule of the form {alpha1; ... ;
@@ -196,7 +167,7 @@ public class ASPMinimalDiagnoses {
 			return ExitCode.NotSupportedAxiom;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
@@ -207,9 +178,10 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
@@ -230,7 +202,7 @@ public class ASPMinimalDiagnoses {
 			return diagnosesSet;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
@@ -241,9 +213,10 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr,axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());

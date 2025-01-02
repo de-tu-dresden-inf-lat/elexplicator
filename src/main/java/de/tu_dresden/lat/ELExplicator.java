@@ -5,10 +5,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
-import java.util.Optional;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import com.google.common.collect.Sets;
 import de.tu_dresden.inf.lat.counterExample.data.ModelFormat;
@@ -43,6 +39,7 @@ import de.tu_dresden.lat.atomicDecomposition.AtomicDecompositionGenerator;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.OutputType;
 import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
+import de.tu_dresden.lat.diagnoses.ComputeRepair;
 import de.tu_dresden.lat.managers.MyELKModelManager;
 import de.tu_dresden.lat.managers.MyELkProofManager;
 
@@ -106,6 +103,10 @@ public class ELExplicator {
 		options.addOption(myOpts.exportMapperOption);
 
 		options.addOption(myOpts.diagnosisOption);
+
+		options.addOption(myOpts.repairOption);
+
+		options.addOption(myOpts.interestingAxiomOption);
 
 		CommandLine cmd = null;
 
@@ -221,6 +222,19 @@ public class ELExplicator {
 			}
 
 			System.exit(ecode.getValue());
+		}
+
+		
+		if (cmd.hasOption(CLIOptionsStrings.repairOptionShort)){
+			String reasonerName = cmd.getOptionValue(CLIOptionsStrings.repairOptionLong);
+			String axiomsPath = cmd.getOptionValue(CLIOptionsStrings.interestingAxiomOptionLong);
+			OWLOntology axiomsOntology = OWLManager.createOWLOntologyManager()
+				.loadOntologyFromOntologyDocument(new File(axiomsPath));
+			if (reasonerName != null){
+				ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, ReasonerName.getReasonerName(reasonerName), outDirStr, ontologyPathStr);
+			} else {
+				ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, ReasonerName.Elk, outDirStr, ontologyPathStr);
+			}				
 		}
 		
 		Collection<OWLEntity> signature = null;

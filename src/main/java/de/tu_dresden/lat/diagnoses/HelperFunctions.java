@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +30,15 @@ import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
+import de.tu_dresden.lat.tools.AxiomChecker;
 
 public class HelperFunctions {
 	public static Set<Set<OWLAxiom>>currentDiagnoses;
 
-    private static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
-	private static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
+    // private static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
+	// private static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
+	public static Map<String, OWLAxiom> identifiers2Axioms;
+	
     private static final String axiomPrefix = ASPMinimalDiagnoses.axiomPrefix;
 
     private static final Logger logger = Logger.getLogger(HelperFunctions.class);
@@ -45,6 +49,13 @@ public class HelperFunctions {
     private static final String programFileName = ASPMinimalDiagnoses.programFileName;
 
 	private static SimpleOWLFormatterCl sOWLFormatter = ASPMinimalDiagnoses.sOWLFormatter;
+
+	public static Set<Set<? extends OWLAxiom>> getAllJustifications(ReasonerName reasonerName, OWLAxiom axiom, OWLOntology ontology) {
+		if (reasonerName == ReasonerName.Elk)
+			return JustificationsGenerator.getAllELKJustifications(axiom, ontology);
+
+		return JustificationsGenerator.getAllHermitJustifications(axiom, ontology);
+	}
 
 /*
 	* input string (i.e list of facets separated by "/"), 

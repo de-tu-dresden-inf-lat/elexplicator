@@ -209,4 +209,16 @@ public class ELOntologyGenerator {
         //Save the ontology
         manager.saveOntology(ontology, ontologyFormat, outputstream);
     }
+
+    // public static void main(String[] args) {
+    //     String lhsStr= "A", rhsStr="C";
+
+    //     OWLClass lhs = NameGenerator.getInstance().getAsNameGeneratorConceptName(lhsStr);
+    //     OWLClass rhs = NameGenerator.getInstance().getAsNameGeneratorConceptName(rhsStr);
+
+    //     OWLSubClassOfAxiom axiom = ToOWLTools.getInstance().getOWLSubClassOfAxiom(lhs,rhs);
+    //     ELOntologyGenerator generator = new ELOntologyGenerator(axiom);
+    //     generator.generateOntology(5, 6,
+    //                                  4, "TestOntology");
+    // }
 }

@@ -75,6 +75,12 @@ public class CLIOptionsStrings {
             lemmaTitleOptionLong="lemma-title",
 
             diagnosisOptionShort = "d",
-            diagnosisOptionLong = "diagnosis"
+            diagnosisOptionLong = "diagnosis",
+
+            repairOptionShort = "r",
+            repairOptionLong = "repair",
+
+            interestingAxiomOptionShort = "ia",
+            interestingAxiomOptionLong = "interesting-axiom"
     ;
 }
