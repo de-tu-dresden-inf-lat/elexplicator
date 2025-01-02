@@ -70,6 +70,7 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
@@ -177,6 +178,7 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
@@ -211,6 +213,7 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr,axioms2Identifiers, identifiers2Axioms, programFileName);

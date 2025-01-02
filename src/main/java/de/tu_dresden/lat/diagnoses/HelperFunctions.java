@@ -35,11 +35,10 @@ import de.tu_dresden.lat.tools.AxiomChecker;
 public class HelperFunctions {
 	public static Set<Set<OWLAxiom>>currentDiagnoses;
 
-    public static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
-	public static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
-
-    // private static Map<OWLAxiom, String> axioms2Identifiers = ComputeRepair.axioms2Identifiers;
-	// private static Map<String, OWLAxiom> identifiers2Axioms = ComputeRepair.identifiers2Axioms;	
+    // private static Map<OWLAxiom, String> axioms2Identifiers = ASPMinimalDiagnoses.axioms2Identifiers;
+	// private static Map<String, OWLAxiom> identifiers2Axioms = ASPMinimalDiagnoses.identifiers2Axioms;
+	public static Map<String, OWLAxiom> identifiers2Axioms;
+	
     private static final String axiomPrefix = ASPMinimalDiagnoses.axiomPrefix;
 
     private static final Logger logger = Logger.getLogger(HelperFunctions.class);
