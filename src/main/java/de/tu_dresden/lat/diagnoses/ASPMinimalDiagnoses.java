@@ -121,28 +121,6 @@ public class ASPMinimalDiagnoses {
 			}
 		}
 	}
-
-	// private static void createProgram(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr)
-	// 		throws IOException {
-	// 	StringJoiner program = new StringJoiner("\n");
-
-	// 	program.add("%All Justifications");
-	// 	allJustifications.forEach(justification -> {
-	// 		{
-	// 			program.add(getRule(justification));
-	// 		}			
-	// 	});
-
-	// 	program.add("%Choices");
-	// 	program.add(getChoices());
-
-	// 	File outDir = new File(outDirStr);
-	// 	if (!outDir.exists())
-	// 		throw new IOException("Directory does not exist -> " + outDirStr);
-
-	// 	HelperFunctions.saveText(program.toString(), outDirStr + File.separator + programFileName);
-	// }
-
 	
 	/**
 	 * Return a string representing the ASP choice rule of the form {alpha1; ... ;
