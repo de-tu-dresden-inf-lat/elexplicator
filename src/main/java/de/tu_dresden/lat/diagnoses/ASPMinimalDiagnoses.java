@@ -72,7 +72,7 @@ public class ASPMinimalDiagnoses {
 		fillMap(allJustifications);
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
@@ -122,26 +122,26 @@ public class ASPMinimalDiagnoses {
 		}
 	}
 
-	private static void createProgram(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr)
-			throws IOException {
-		StringJoiner program = new StringJoiner("\n");
+	// private static void createProgram(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr)
+	// 		throws IOException {
+	// 	StringJoiner program = new StringJoiner("\n");
 
-		program.add("%All Justifications");
-		allJustifications.forEach(justification -> {
-			{
-				program.add(getRule(justification));
-			}			
-		});
+	// 	program.add("%All Justifications");
+	// 	allJustifications.forEach(justification -> {
+	// 		{
+	// 			program.add(getRule(justification));
+	// 		}			
+	// 	});
 
-		program.add("%Choices");
-		program.add(getChoices());
+	// 	program.add("%Choices");
+	// 	program.add(getChoices());
 
-		File outDir = new File(outDirStr);
-		if (!outDir.exists())
-			throw new IOException("Directory does not exist -> " + outDirStr);
+	// 	File outDir = new File(outDirStr);
+	// 	if (!outDir.exists())
+	// 		throw new IOException("Directory does not exist -> " + outDirStr);
 
-		HelperFunctions.saveText(program.toString(), outDirStr + File.separator + programFileName);
-	}
+	// 	HelperFunctions.saveText(program.toString(), outDirStr + File.separator + programFileName);
+	// }
 
 	
 	/**
@@ -201,7 +201,7 @@ public class ASPMinimalDiagnoses {
 		fillMap(allJustifications);
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
@@ -235,7 +235,7 @@ public class ASPMinimalDiagnoses {
 		fillMap(allJustifications);
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr,axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
