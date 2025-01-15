@@ -2,6 +2,7 @@ package de.tu_dresden.lat.diagnoses;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -40,16 +41,16 @@ import de.tu_dresden.lat.tools.LoadingScreen;
 
 
 public class ComputeRepair {
-    private static final Logger logger = Logger.getLogger(ComputeRepair.class);
-    private static Map<OWLAxiom, String> axioms2Identifiers;	
-    private static Set<OWLAxiom> keepAxioms;
-    private static Set<OWLAxiom> removeAxioms;
+	private static final Logger logger = Logger.getLogger(ComputeRepair.class);
+	private static Map<OWLAxiom, String> axioms2Identifiers;	
+	private static Set<OWLAxiom> keepAxioms;
+	private static Set<OWLAxiom> removeAxioms;
 	private static Set<Set<? extends OWLAxiom>> allOptimalDiagnoses;
 	private static String ontologyPathStr;
 	private static Set<? extends OWLAxiom> interestingAxiomsSet; 	
-	// private static ReasonerName selectedReasonerName;
-	// private static OWLAxiom defectAxiom;
-	// private static OWLOntology defectOntology;
+	private static ReasonerName selectedReasonerName;
+	private static OWLAxiom defectAxiom;
+	private static OWLOntology defectOntology;
 
 	public static Boolean isSnapshotActive;
 	public static Map<String, OWLAxiom> identifiers2Axioms;
@@ -62,11 +63,11 @@ public class ComputeRepair {
 
 	public static final String programFileName = "pi.txt";
 
-    private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
-        true);
+	private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
+		true);
 
-    public static void computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
-        defectAxiom = axiom;
+	public static void computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+		defectAxiom = axiom;
 		defectOntology = ontology;
 		selectedReasonerName = reasonerName;
 		ontologyPathStr = ontologyPath;
@@ -80,7 +81,7 @@ public class ComputeRepair {
 		justificationQueue = new LinkedBlockingQueue<>();
 		axiomMap = new ConcurrentHashMap<>();
 		keepAxioms = new HashSet<>();
-        removeAxioms = new HashSet<>();
+		removeAxioms = new HashSet<>();
 		Boolean inputFlag = true;
 		justificationsCompleted = false;
 		isSnapshotActive = true;
@@ -180,14 +181,14 @@ public class ComputeRepair {
 											String save_filename = scanner.nextLine();
 				
 											try{
-												ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename, outDirStr);
-												Thread diagnosesThread = new Thread(diagnosesRunnable);
-												diagnosesThread.start();
-												while (diagnosesThread.isAlive()){
-													LoadingScreen.main(null);
-												}
-												diagnosesThread.join(0);
-												
+												// ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename, outDirStr);
+												// Thread diagnosesThread = new Thread(diagnosesRunnable);
+												// diagnosesThread.start();
+												// while (diagnosesThread.isAlive()){
+												// 	LoadingScreen.main(null);
+												// }
+												// diagnosesThread.join(0);
+												saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
 												System.out.println("Repaired ontologies saved!");
 											} catch(Exception e) {
 												e.printStackTrace();
@@ -239,13 +240,15 @@ public class ComputeRepair {
 								String save_filename = scanner.nextLine();
 								//get all minimal diagnoses, compute repair ontologies for the minimal ones.
 								try{
-									ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename, outDirStr);
-									Thread diagnosesThread = new Thread(diagnosesRunnable);
-									diagnosesThread.start();
-									while (diagnosesThread.isAlive()){
-										LoadingScreen.main(null);
-									}
-									diagnosesThread.join(0);
+									// ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename, outDirStr);
+									// Thread diagnosesThread = new Thread(diagnosesRunnable);
+									// diagnosesThread.start();
+									// while (diagnosesThread.isAlive()){
+									// 	LoadingScreen.main(null);
+									// }
+									// diagnosesThread.join(0);
+									// saveOntology(allJustifications, new HashSet<>(), outDirStr, save_filename);
+									saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
 									System.out.println("Repaired ontologies saved!");
 								} catch(Exception e) {
 									e.printStackTrace();
@@ -273,7 +276,7 @@ public class ComputeRepair {
 /**
  * append constraints the logic program file
  */
-    public static void appendTextToFile(String str, String filePath) throws IOException {
+	public static void appendTextToFile(String str, String filePath) throws IOException {
 
 		FileOutputStream outStream = new FileOutputStream(new File(filePath), true);
 
@@ -303,49 +306,116 @@ public class ComputeRepair {
 
 /**
  * compute the diagnoses for the current justification sets and save the repaired ontologies
+  * @throws IOException 
   * 
   */
-	public static void computeDiagnoses(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outDirStr, String outFileName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
-		allOptimalDiagnoses = allOptDiagnoses;
-        String mDsID = "repair";
-        logger.info("Creating Program");
-		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
+ public static void computeDiagnosis(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses,  String outDirStr) throws IOException{
+	String mDsID = "repair";
+	allOptimalDiagnoses = allOptDiagnoses;
+	logger.info("Creating program");
+	SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
-		StringJoiner keepAxiomsProgram = new StringJoiner("\n");
-		keepAxiomsProgram.add("");
-		StringJoiner removeAxiomsProgram = new StringJoiner("\n");
-		removeAxiomsProgram.add("");
+	StringJoiner keepAxiomsProgram = new StringJoiner("\n");
+	keepAxiomsProgram.add("");
+	StringJoiner removeAxiomsProgram = new StringJoiner("\n");
+	removeAxiomsProgram.add("");
 
-		applyUserSelection(outDirStr);
+	applyUserSelection(outDirStr);
 
-		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
-		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+	logger.info("Extracting Diagnoses Sets");
+	HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
+	allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
 
-		logger.info("Generating output file");
-		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+	logger.info("Generating the diagnoses output file");
+	HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+}
 
+public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outDirStr, String outFileName) throws IOException, InterruptedException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
+	computeDiagnosis(allJustifications, allOptDiagnoses, outDirStr);
+	Set<? extends OWLAxiom> selectedDiagnosisSet;
+	ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), selectedReasonerName);
+
+	if(allOptimalDiagnoses.size() > 1){
+		Boolean minDiagExists = false;
+		Set<Set<? extends OWLAxiom>> minDiagSets = new HashSet<>();
+		//check if any of the diagnoses sets are in the ASPMinimalDiagnoses.allOptimalDiagnosesMin, and if exists, prompt user to select one of them else just display all diagnoses sets are ask user to select one
+		for(Set<? extends OWLAxiom> diagnosisSet : allOptimalDiagnoses){
+			if (ASPMinimalDiagnoses.allOptimalDiagnosesMin.contains(diagnosisSet)){
+				System.out.println(diagnosisSet);
+				minDiagSets.add(diagnosisSet);
+				minDiagExists = true;
+			}
+		}
+		if (minDiagExists){
+			System.out.println("The following diagnoses sets are minimal. Select one to compute maximal repair:");
+			int counter = 1;
+			for (Set<? extends OWLAxiom> minDiagSet : minDiagSets){
+				System.out.println("Diagnosis set " + counter);
+				for (OWLAxiom axiom : minDiagSet){
+					System.out.println(sOWLFormatter.format(axiom).toString());
+				}
+				counter += 1;
+			}
+			// System.out.println("Minimal diagnoses exists: " + minDiagSets.size());
+		} else {
+			System.out.println("Select one of the following diagnoses sets to compute maximal repair:");
+			int counter = 1;
+			for (Set<? extends OWLAxiom> diagnosisSet : allOptimalDiagnoses){
+				System.out.println("Diagnosis set " + counter);
+				for (OWLAxiom axiom : diagnosisSet){
+					System.out.println(sOWLFormatter.format(axiom).toString());
+				}
+				counter += 1;
+			}
+			// System.out.println("No minimal diagnosis exists: " + allOptimalDiagnoses.size());
+		}
+		java.util.Scanner scanner = new java.util.Scanner(System.in);
+		String user_in = scanner.nextLine();
+		int userSelectedDiagnosisSet = Integer.parseInt(user_in);
+		selectedDiagnosisSet = allOptimalDiagnoses.toArray(new Set[0])[userSelectedDiagnosisSet-1];
+
+	} else {
+		selectedDiagnosisSet = allOptimalDiagnoses.iterator().next();
+	}
+
+	if(ASPMinimalDiagnoses.allOptimalDiagnosesMin.contains(selectedDiagnosisSet)){
+		System.out.println("The selected diagnosis set is minimal. Computing maximal repair...");
+		//compute repair and save function
+		saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
+	} else {
+		System.out.println("The selected diagnosis set is not minimal. Choose one of the following minimal diagnoses sets...");
+		//function that gets recommended minimal diagnoses sets and prompt user to select one
+		Set<Set<? extends OWLAxiom>> recommendedDiagnosesSet = recommendDiagnosisSet(ASPMinimalDiagnoses.allOptimalDiagnosesMin, selectedDiagnosisSet);
 		int counter = 1;
-		String outFileNameStr;
-		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
-			if (allOptDiagnoses.size() > 1){
-				outFileNameStr = outFileName + "_" + Integer.toString(counter) + ".owl";
-			} else{
-				outFileNameStr = outFileName + ".owl";
+		for (Set<? extends OWLAxiom> diagnosisSet : recommendedDiagnosesSet){
+			System.out.println("Diagnosis set " + counter);
+			for (OWLAxiom axiom : diagnosisSet){
+				System.out.println(sOWLFormatter.format(axiom).toString());
 			}
-			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPathStr));
-
-			for (OWLAxiom axiom: axiomSets){
-				manager.removeAxiom(ontology, axiom);
-			}
-			File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outFileNameStr));
-			OWLDocumentFormat format = manager.getOntologyFormat(ontology);
-			manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
 			counter += 1;
 		}
+		// System.out.println("Recommended Minimal diagnoses: " + recommendedDiagnosesSet.size());
+		java.util.Scanner scanner = new java.util.Scanner(System.in);
+		String user_in = scanner.nextLine();
+		int userSelectedDiagnosisSet = Integer.parseInt(user_in);
+		selectedDiagnosisSet = recommendedDiagnosesSet.toArray(new Set[0])[userSelectedDiagnosisSet-1];
+		//compute repair and save function
+		saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
+	}	
+}
+
+public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, FileNotFoundException{
+	OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+	OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPathStr));
+
+	for (OWLAxiom axiom: diagnosisSet){
+		manager.removeAxiom(ontology, axiom);
 	}
-	
+	File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outFileNameStr + ".owl"));
+	OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+	manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
+}
+
 /**
  * add constraints respective to keepAxioms and removeAxioms to the logic program file
  */
@@ -547,28 +617,22 @@ public class ComputeRepair {
         }
     }
 
-	private static Map<String,  Set<? extends OWLAxiom>> checkMaximalRepair(OWLAxiom axiom, OWLOntology ontology, String outDirStr, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Set<Set<? extends OWLAxiom>> repairDiagnoses) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
-		ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, "minimal", outDirStr, allOptimalDiagnoses, reasonerName);
-		Map<String, Set<? extends OWLAxiom>> recommendationMap = new HashMap<>();
+	private static Set<Set<? extends OWLAxiom>> recommendDiagnosisSet(Set<Set<? extends OWLAxiom>> allMinimalOptimalDiagnoses, Set<? extends OWLAxiom> repairDiagnosis) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
+		Set<Set<? extends OWLAxiom>> recommendationSet = new HashSet<>();
 		Boolean isMaxRepair = false;
-		System.out.println(repairDiagnoses);
-		for (Set<? extends OWLAxiom> min_diagSet : ASPMinimalDiagnoses.allOptimalDiagnosesMin){
-			if (repairDiagnoses.iterator().next().equals(min_diagSet)){
-				isMaxRepair = true;
-				break;
-			}
+		if (allMinimalOptimalDiagnoses.contains(repairDiagnosis)){
+			isMaxRepair = true;
+			recommendationSet.add(repairDiagnosis);
 		}
 
 		if (!isMaxRepair){
-			int counter = 1;
-			for (Set<? extends OWLAxiom> currentSet : ASPMinimalDiagnoses.allOptimalDiagnosesMin) {
-				if(repairDiagnoses.iterator().next().containsAll(currentSet)){
-					recommendationMap.put("diag"+counter, currentSet);
-					counter += 1;
+			for (Set<? extends OWLAxiom> diagSet : allMinimalOptimalDiagnoses) {
+				if(repairDiagnosis.containsAll(diagSet)){
+					recommendationSet.add(diagSet);
 				}
         	}
 		}
-        return recommendationMap;
+        return recommendationSet;
     
 	}
 

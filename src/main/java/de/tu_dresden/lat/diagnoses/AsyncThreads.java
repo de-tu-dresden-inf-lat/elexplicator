@@ -76,7 +76,7 @@ class ComputeDiagnosesThread implements Runnable{
 	@Override
 	public void run() {
 		try{
-			ComputeRepair.computeDiagnoses(allJustifications, allOptDiagnoses, outDirStr, outFileName);
+			ComputeRepair.saveFunction(allJustifications, allOptDiagnoses, outDirStr, outFileName);
 		} catch (Exception e){
 			Thread.currentThread().interrupt();
 		}
