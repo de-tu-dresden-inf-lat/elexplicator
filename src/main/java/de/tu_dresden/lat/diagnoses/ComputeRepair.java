@@ -378,30 +378,53 @@ public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, 
 		selectedDiagnosisSet = allOptimalDiagnoses.iterator().next();
 	}
 
-	if(ASPMinimalDiagnoses.allOptimalDiagnosesMin.contains(selectedDiagnosisSet)){
-		System.out.println("The selected diagnosis set is minimal. Computing maximal repair...");
-		//compute repair and save function
-		saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
-	} else {
-		System.out.println("The selected diagnosis set is not minimal. Choose one of the following minimal diagnoses sets...");
-		//function that gets recommended minimal diagnoses sets and prompt user to select one
+	if(!ASPMinimalDiagnoses.allOptimalDiagnosesMin.contains(selectedDiagnosisSet)){
 		Set<Set<? extends OWLAxiom>> recommendedDiagnosesSet = recommendDiagnosisSet(ASPMinimalDiagnoses.allOptimalDiagnosesMin, selectedDiagnosisSet);
-		int counter = 1;
-		for (Set<? extends OWLAxiom> diagnosisSet : recommendedDiagnosesSet){
-			System.out.println("Diagnosis set " + counter);
-			for (OWLAxiom axiom : diagnosisSet){
-				System.out.println(sOWLFormatter.format(axiom).toString());
+		if (recommendedDiagnosesSet.size() < 2){
+			System.out.println("The selected diagnosis set is minimal. Enter \"save\" to proceed with current diagnosis or \"min\" to make it minimal.");
+			java.util.Scanner scanner = new java.util.Scanner(System.in);
+			String user_in = scanner.nextLine();
+			if (user_in.equals("save")){
+				// Do nothing
+			} else if (user_in.equals("min")){
+				selectedDiagnosisSet = recommendedDiagnosesSet.iterator().next();
+			} else {
+				System.out.println("Invalid input!");
 			}
-			counter += 1;
-		}
-		// System.out.println("Recommended Minimal diagnoses: " + recommendedDiagnosesSet.size());
-		java.util.Scanner scanner = new java.util.Scanner(System.in);
-		String user_in = scanner.nextLine();
-		int userSelectedDiagnosisSet = Integer.parseInt(user_in);
-		selectedDiagnosisSet = recommendedDiagnosesSet.toArray(new Set[0])[userSelectedDiagnosisSet-1];
-		//compute repair and save function
-		saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
+		} else {
+			System.out.println("The selected diagnosis set is not minimal. Enter \"save\" to proceed with current diagnosis or \"min\" to make it minimal.");
+			java.util.Scanner scanner = new java.util.Scanner(System.in);
+			String user_in = scanner.nextLine();
+			if (user_in.equals("save")){
+				// Do nothing
+			} else if (user_in.equals("min")){
+				System.out.println("For the following axioms, enter \"yes\" to keep in maximal repair, \"no\" to remove from maximal repair.");
+				while (recommendedDiagnosesSet.size()>1){
+					//get the most common axiom in the set of sets
+					OWLAxiom diagAxiom = mostFrequentAxiom(recommendedDiagnosesSet);	
+						while (true){
+						System.out.println(sOWLFormatter.format(diagAxiom).toString());
+						String user_in2 = scanner.nextLine();
+						if (user_in2.equals("yes")){
+							recommendedDiagnosesSet = recommendedDiagnosesSet.stream().filter(diagnosisSet -> !diagnosisSet.contains(diagAxiom)).collect(Collectors.toSet());
+							break;
+						} else if (user_in2.equals("no")){
+							recommendedDiagnosesSet = recommendedDiagnosesSet.stream().filter(diagnosisSet -> diagnosisSet.contains(diagAxiom)).collect(Collectors.toSet());
+							break;
+						} else {
+							System.out.println("Invalid input!");
+						}
+					}
+					
+
+				}
+				selectedDiagnosisSet = recommendedDiagnosesSet.iterator().next();
+			} else {
+				System.out.println("Invalid input!");
+			}
+		}		
 	}	
+	saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
 }
 
 public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, FileNotFoundException{
@@ -563,27 +586,24 @@ public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, Stri
 		}
 	}
 
-	public static Map<OWLAxiom, Integer> justificationFrequencyMap() throws InterruptedException{
-		Set<Set<? extends OWLAxiom>> justificationsSnapshot = new HashSet<>();
-		Map<OWLAxiom, Integer> justificationAxiomFrequencyMap = new HashMap<>();
-		try{
-			// Thread.sleep(1000); 
-			while (!justificationQueue.isEmpty()){
-				justificationsSnapshot.add(justificationQueue.take());
-
-				for (Set<? extends OWLAxiom> justificationSet : justificationsSnapshot){			
-					for (OWLAxiom justificationAxiom : justificationSet){
-						//if the axiom is already in the map, increment the frequency else add it with frequency 1	
-						justificationAxiomFrequencyMap.put(justificationAxiom, justificationAxiomFrequencyMap.getOrDefault(justificationAxiom, 0) + 1);
-					}
+/**
+ * get the most frequent axiom the set of sets of axioms provided
+ * @param axioms2DSet
+ * @return
+ */
+	public static OWLAxiom mostFrequentAxiom(Set<Set<? extends OWLAxiom>> axioms2DSet){
+		Map<OWLAxiom, Integer> frequencyMap = new HashMap<>();
+		for (Set<? extends OWLAxiom> axiomsSet : axioms2DSet){
+			for (OWLAxiom axiom : axiomsSet){
+				frequencyMap.putIfAbsent(axiom, 0);
+				frequencyMap.put(axiom, frequencyMap.get(axiom)+1);
+				if(frequencyMap.get(axiom) == axioms2DSet.size()){
+					frequencyMap.remove(axiom);
 				}
 			}
-		} catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
 		}
-		System.out.println(justificationAxiomFrequencyMap);
-		return justificationAxiomFrequencyMap;		
-
+		OWLAxiom frequentAxiom = frequencyMap.entrySet().stream().max(Map.Entry.comparingByValue()).get().getKey();
+		return frequentAxiom;
 	}
 
 	// Method to display the axiom weights
