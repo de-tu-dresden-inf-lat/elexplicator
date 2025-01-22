@@ -54,7 +54,7 @@ class ComputeAxiomWeightThread implements Runnable{
 			ComputeRepair.computeRepairs(outDirStr, mDsID, ontologyPath, outputFileName);
 		} catch (Exception e){
 			Thread.currentThread().interrupt();
-			// e.printStackTrace();
+			e.printStackTrace();
 		}
 		
 	}

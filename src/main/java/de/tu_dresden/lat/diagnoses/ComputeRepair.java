@@ -232,7 +232,7 @@ public class ComputeRepair {
 								String save_filename = scanner.nextLine();
 								Boolean saveFunctionRet = saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
 								if (saveFunctionRet){
-									System.out.println("Repaired ontologiy saved!");
+									System.out.println("Repaired ontology saved!");
 									inputFlag = false;
 									break;
 								} else {
@@ -500,6 +500,7 @@ public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, Stri
 			while(axiomWeightThread.isAlive()){
 				LoadingScreen.main(null);
 			}
+			axiomWeightThread.join();
 		} catch (InterruptedException e){
 			e.printStackTrace();
 		}
@@ -538,7 +539,7 @@ public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, Stri
 		String tempOutDirStr = outDirStr + "/" + tempfolderPath;
 		File repFolder = new File(tempOutDirStr);
 		repFolder.mkdir();
-		int counter = 1;
+		int counter = 0;
 
 		//from the produced diagnoses set, compute repair ontology for each diagnosis set and save as ontology
 		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
@@ -663,8 +664,9 @@ public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, Stri
 	}
 
 	public static Set<Set<? extends OWLAxiom>> getAllJustificationsAsync(ReasonerName reasonerName, OWLAxiom axiom, OWLOntology ontology, BlockingQueue<Set<? extends OWLAxiom>> queue) {
-		if (reasonerName == ReasonerName.Elk)
-			return JustificationsGenerator.getAllELKJustificationsAsync(axiom, ontology, queue);
+		if (reasonerName == ReasonerName.Elk){
+		 	return JustificationsGenerator.getAllELKJustificationsAsync(axiom, ontology, queue);
+		}
 
 		return JustificationsGenerator.getAllHermitJustificationsAsync(axiom, ontology);
 	}

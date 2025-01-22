@@ -111,7 +111,7 @@ public class JustificationsGenerator {
 
 		OWLReasoner reasoner = factory.createReasoner(ontology);
 
-		DefaultExplanationGenerator explainer = new DefaultExplanationGenerator(OWLManager.createOWLOntologyManager(),
+		CustomDefaultExplanationGenerator explainer = new CustomDefaultExplanationGenerator(OWLManager.createOWLOntologyManager(),
 				factory, ontology, reasoner, new SilentExplanationProgressMonitor());
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>(explainer.getExplanations(axiom));
