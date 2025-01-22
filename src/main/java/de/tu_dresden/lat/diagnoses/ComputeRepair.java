@@ -179,21 +179,12 @@ public class ComputeRepair {
 											
 											System.out.println("Enter the filename to save as: ");
 											String save_filename = scanner.nextLine();
-				
-											try{
-												// ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename, outDirStr);
-												// Thread diagnosesThread = new Thread(diagnosesRunnable);
-												// diagnosesThread.start();
-												// while (diagnosesThread.isAlive()){
-												// 	LoadingScreen.main(null);
-												// }
-												// diagnosesThread.join(0);
-												saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
-												System.out.println("Repaired ontologies saved!");
-											} catch(Exception e) {
-												e.printStackTrace();
-											}
-											
+											Boolean saveFunctionRet = saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
+											if (saveFunctionRet){
+												System.out.println("Repaired ontology saved!");
+												inputFlag = false;
+												break;				
+											}						
 										}
 									}
 									continue;
@@ -218,8 +209,9 @@ public class ComputeRepair {
 				if (!inputFlag){
 					break;
 				}
-				System.out.println("All justifications have been computed.\nWould you like to exit or save the repair?");
+				
 				while(true){
+					System.out.println("All justifications have been computed.\nWould you like to exit or save the repair?");
 					String user_in = scanner.nextLine();
 					switch(user_in.toLowerCase()){
 						case "exit":
@@ -231,32 +223,23 @@ public class ComputeRepair {
 							Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications);
 							if (selectedJustification != null){
 								System.out.println("Repair not possible!");
-								System.out.println("You have selected the following axioms to be in the repair which ll belong to the same justification set.");
+								System.out.println("You have selected the following axioms to be in the repair which all belong to the same justification set.");
 								for (OWLAxiom selectedAxiom : selectedJustification){
 									System.out.println(sOWLFormatter.format(selectedAxiom).toString());
 								}
 							} else {
 								System.out.println("Enter the filename to save as: ");
 								String save_filename = scanner.nextLine();
-								//get all minimal diagnoses, compute repair ontologies for the minimal ones.
-								try{
-									// ComputeDiagnosesThread diagnosesRunnable = new ComputeDiagnosesThread(allJustifications, new HashSet<>(), save_filename, outDirStr);
-									// Thread diagnosesThread = new Thread(diagnosesRunnable);
-									// diagnosesThread.start();
-									// while (diagnosesThread.isAlive()){
-									// 	LoadingScreen.main(null);
-									// }
-									// diagnosesThread.join(0);
-									// saveOntology(allJustifications, new HashSet<>(), outDirStr, save_filename);
-									saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
-									System.out.println("Repaired ontologies saved!");
-								} catch(Exception e) {
-									e.printStackTrace();
-								}
-								inputFlag = false;
+								Boolean saveFunctionRet = saveFunction(allJustifications, new HashSet<>(), outDirStr, save_filename);
+								if (saveFunctionRet){
+									System.out.println("Repaired ontologiy saved!");
+									inputFlag = false;
+									break;
+								} else {
+									continue;
+								}	
 							}
-						}						
-						break;
+						}	
 						default:
 							System.out.println("Invalid input!");
 							continue;
@@ -330,7 +313,7 @@ public class ComputeRepair {
 	HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 }
 
-public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outDirStr, String outFileName) throws IOException, InterruptedException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
+public static Boolean saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> allOptDiagnoses, String outDirStr, String outFileName) throws IOException, InterruptedException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
 	computeDiagnosis(allJustifications, allOptDiagnoses, outDirStr);
 	Set<? extends OWLAxiom> selectedDiagnosisSet;
 	ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), selectedReasonerName);
@@ -346,6 +329,7 @@ public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, 
 				minDiagExists = true;
 			}
 		}
+		System.out.println("minDiagSet size" + minDiagSets.size());
 		if (minDiagExists){
 			System.out.println("The following diagnoses sets are minimal. Select one to compute maximal repair:");
 			int counter = 1;
@@ -356,7 +340,6 @@ public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, 
 				}
 				counter += 1;
 			}
-			// System.out.println("Minimal diagnoses exists: " + minDiagSets.size());
 		} else {
 			System.out.println("Select one of the following diagnoses sets to compute maximal repair:");
 			int counter = 1;
@@ -367,12 +350,18 @@ public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, 
 				}
 				counter += 1;
 			}
-			// System.out.println("No minimal diagnosis exists: " + allOptimalDiagnoses.size());
 		}
 		java.util.Scanner scanner = new java.util.Scanner(System.in);
-		String user_in = scanner.nextLine();
-		int userSelectedDiagnosisSet = Integer.parseInt(user_in);
-		selectedDiagnosisSet = allOptimalDiagnoses.toArray(new Set[0])[userSelectedDiagnosisSet-1];
+		while(true){
+			String user_in = scanner.nextLine();			
+			try{
+				int userSelectedDiagnosisSet = Integer.parseInt(user_in);
+				selectedDiagnosisSet = allOptimalDiagnoses.toArray(new Set[0])[userSelectedDiagnosisSet-1];
+				break;
+			} catch (Exception e){
+				System.out.println("Invalid input! Please select a valid diagnosis set.");
+			}
+		}
 
 	} else {
 		selectedDiagnosisSet = allOptimalDiagnoses.iterator().next();
@@ -381,18 +370,23 @@ public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, 
 	if(!ASPMinimalDiagnoses.allOptimalDiagnosesMin.contains(selectedDiagnosisSet)){
 		Set<Set<? extends OWLAxiom>> recommendedDiagnosesSet = recommendDiagnosisSet(ASPMinimalDiagnoses.allOptimalDiagnosesMin, selectedDiagnosisSet);
 		if (recommendedDiagnosesSet.size() < 2){
-			System.out.println("The selected diagnosis set is minimal. Enter \"save\" to proceed with current diagnosis or \"min\" to make it minimal.");
+			System.out.println("Enter \"save\" to proceed with selected diagnosis, \"min\" to proceed with minimal diagnosis or \"cancel\" to cancel.");
 			java.util.Scanner scanner = new java.util.Scanner(System.in);
 			String user_in = scanner.nextLine();
 			if (user_in.equals("save")){
 				// Do nothing
 			} else if (user_in.equals("min")){
 				selectedDiagnosisSet = recommendedDiagnosesSet.iterator().next();
-			} else {
+			} else if (user_in.equals("cancel")){
+				System.out.println("Cancelling save!");
+				return false;
+			} 
+			else {
 				System.out.println("Invalid input!");
+				return false;
 			}
 		} else {
-			System.out.println("The selected diagnosis set is not minimal. Enter \"save\" to proceed with current diagnosis or \"min\" to make it minimal.");
+			System.out.println("Enter \"save\" to proceed with selected diagnosis, \"min\" to make it minimal or \"cancel\" to cancel.");
 			java.util.Scanner scanner = new java.util.Scanner(System.in);
 			String user_in = scanner.nextLine();
 			if (user_in.equals("save")){
@@ -419,12 +413,24 @@ public static void saveFunction(Set<Set<? extends OWLAxiom>> allJustifications, 
 
 				}
 				selectedDiagnosisSet = recommendedDiagnosesSet.iterator().next();
-			} else {
+			} else if (user_in.equals("cancel")){
+				System.out.println("Cancelling save!");
+				return false;
+			}
+			else{
 				System.out.println("Invalid input!");
+				return false;
 			}
 		}		
 	}	
-	saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
+	try{
+		saveRepairOntology(selectedDiagnosisSet, outDirStr, outFileName);
+		return true;
+	} catch (Exception e){
+		e.printStackTrace();
+		return false;
+	}
+	
 }
 
 public static void saveRepairOntology(Set<? extends OWLAxiom> diagnosisSet, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, FileNotFoundException{
