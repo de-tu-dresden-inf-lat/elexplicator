@@ -8,6 +8,7 @@ public class LoadingScreen {
                 Thread.sleep(500); 
 
             }
+            System.out.print("\r" + "          "+"\r");
     }
 }
 

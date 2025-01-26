@@ -62,6 +62,14 @@ public class JustificationsGenerator {
 		return allJustifications;
 	}
 
+	/**
+	 * Asynchronous calculation of all justifications using ELK
+	 * The blockingqueue of justifications is written to while the computation is ongoing
+	 * 
+	 * @param axiom
+	 * @param ontology
+	 * @return
+	 */
 	public static Set<Set<? extends OWLAxiom>> getAllELKJustificationsAsync(OWLAxiom axiom, OWLOntology ontology, BlockingQueue<Set<? extends OWLAxiom>> queue) {
 		ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
 		ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
@@ -81,6 +89,7 @@ public class JustificationsGenerator {
 
 		return allJustifications;
 	}
+
 	/**
 	 * Return a set of all justifications using Hermit
 	 * 
@@ -106,12 +115,20 @@ public class JustificationsGenerator {
 
 	}
 
+	/**
+	 * Asynchronous calculation of all justifications using Hermit
+	 * The blockingqueue of justifications is written to while the computation is ongoing
+	 * 
+	 * @param axiom
+	 * @param ontology
+	 * @return
+	 */
 	public static Set<Set<? extends OWLAxiom>> getAllHermitJustificationsAsync(OWLAxiom axiom, OWLOntology ontology) {
 		OWLReasonerFactory factory = new ReasonerFactory();
 
 		OWLReasoner reasoner = factory.createReasoner(ontology);
 
-		DefaultExplanationGenerator explainer = new DefaultExplanationGenerator(OWLManager.createOWLOntologyManager(),
+		CustomDefaultExplanationGenerator explainer = new CustomDefaultExplanationGenerator(OWLManager.createOWLOntologyManager(),
 				factory, ontology, reasoner, new SilentExplanationProgressMonitor());
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>(explainer.getExplanations(axiom));

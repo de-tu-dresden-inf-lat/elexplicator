@@ -42,7 +42,7 @@ public class ASPMinimalDiagnoses {
 	public static final String axiomPrefix = "alpha";
 	public static final String programFileName = "pi.txt";
 
-
+	public static Set<Set<? extends OWLAxiom>> allOptimalDiagnosesMin = new HashSet<>();
 	// Added this to have a SimpleOWLFormatterCL that can format using preferred labels.
 	// Need to use setOntology first.
 	public static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
@@ -78,6 +78,7 @@ public class ASPMinimalDiagnoses {
 		logger.info("Extracting All Minimal Classical Diagnoses");
 		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		allOptimalDiagnosesMin = allOptimalDiagnoses;
 
 		logger.info("Generating output file");
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
