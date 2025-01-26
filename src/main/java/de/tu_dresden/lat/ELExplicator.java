@@ -230,11 +230,15 @@ public class ELExplicator {
 			String axiomsPath = cmd.getOptionValue(CLIOptionsStrings.interestingAxiomOptionLong);
 			OWLOntology axiomsOntology = OWLManager.createOWLOntologyManager()
 				.loadOntologyFromOntologyDocument(new File(axiomsPath));
-			if (reasonerName != null){
-				ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, ReasonerName.getReasonerName(reasonerName), outDirStr, ontologyPathStr);
-			} else {
-				ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, ReasonerName.Elk, outDirStr, ontologyPathStr);
-			}				
+			ReasonerName reasoner = ReasonerName.getReasonerName(reasonerName);
+			ExitCode ecode = ExitCode.terminatedSuccessfully;
+			try{
+				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasoner, outDirStr, ontologyPathStr);	
+			} catch (Exception e){
+				e.printStackTrace();
+			}		
+
+			System.exit(ecode.getValue());	
 		}
 		
 		Collection<OWLEntity> signature = null;
