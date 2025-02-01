@@ -53,7 +53,10 @@ class ComputeAxiomWeightThread implements Runnable{
 	@Override
 	public void run(){
 		try{
-			ComputeRepair.computeRepairs(outDirStr, mDsID, ontologyPath, outputFileName);
+			String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
+			String tempOutDirStr = outDirStr + "/" + tempfolderPath;
+			int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName);
+			ComputeRepair.computeAxiomWeight(counter, tempOutDirStr);
 		} catch (Exception e){
 			Thread.currentThread().interrupt();
 			e.printStackTrace();
