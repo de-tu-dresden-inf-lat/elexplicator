@@ -45,7 +45,7 @@ public class RepairModeTester {
     
     private Path tempDir;
     private String outDirStr;
-    private static Set<? extends OWLAxiom> interestingAxiomsSet; 	
+    private static Set<OWLAxiom> interestingAxiomsSet; 	
 
     Map<OWLAxiom, String> axioms2Identifiers;	
     Map<String, OWLAxiom> identifiers2Axioms;	
@@ -55,6 +55,7 @@ public class RepairModeTester {
     String interestingAxiomsOntologyPath = "src/test/TestOntology/interestingAxiomTest.owl";
     String programFileName = "pi.txt";
     String mDsID = "repair";
+    ReasonerName reasonerName = ReasonerName.Elk;
 
     List<OWLAxiom> justificationAxioms;
 
@@ -100,25 +101,6 @@ public class RepairModeTester {
         fieldCRid2axioms.setAccessible(true);
         fieldHFid2axioms.set(null, fieldCRid2axioms.get(null));
 
-        Field fieldInterestingAxiomSet = ComputeRepair.class.getDeclaredField("interestingAxiomsSet");
-        fieldInterestingAxiomSet.setAccessible(true);
-        fieldInterestingAxiomSet.set(null, interestingAxiomsSet);
-
-        Field fieldDefectAxiom = ComputeRepair.class.getDeclaredField("defectAxiom");
-        fieldDefectAxiom.setAccessible(true);
-        fieldDefectAxiom.set(null, axiom);
-
-        Field fieldDefectOntology = ComputeRepair.class.getDeclaredField("defectOntology");
-        fieldDefectOntology.setAccessible(true);
-        fieldDefectOntology.set(null, ontology);
-
-        Field fieldReasonerName = ComputeRepair.class.getDeclaredField("selectedReasonerName");
-        fieldReasonerName.setAccessible(true);
-        fieldReasonerName.set(null, ReasonerName.Elk);
-
-        Field fieldOntologyPathStr = ComputeRepair.class.getDeclaredField("ontologyPathStr");
-        fieldOntologyPathStr.setAccessible(true);
-        fieldOntologyPathStr.set(null, ontologyPathString);
     }
 
     @Test
@@ -139,11 +121,6 @@ public class RepairModeTester {
         expectedAxiomWeight.put(justificationAxioms.get(13), 50);
         expectedAxiomWeight.put(justificationAxioms.get(7), 83);
 
-        Field fieldKeepAxioms = ComputeRepair.class.getDeclaredField("keepAxioms");
-        fieldKeepAxioms.setAccessible(true);
-        Field fieldRemoveAxioms = ComputeRepair.class.getDeclaredField("removeAxioms");
-        fieldRemoveAxioms.setAccessible(true);
-
         Path tempOutDir = Files.createTempDirectory(tempDir,"tempOutDirStr");
         String tempOutDirStr = tempOutDir.toString();
 
@@ -153,99 +130,35 @@ public class RepairModeTester {
             justificationAxioms.get(16),
             justificationAxioms.get(14)
             ));
-        fieldKeepAxioms.set(null, keepAxioms);
         removeAxioms = new HashSet<>(Arrays.asList(
             justificationAxioms.get(1),
             justificationAxioms.get(2),
             justificationAxioms.get(3),
             justificationAxioms.get(5)
             ));
-        fieldRemoveAxioms.set(null, removeAxioms);
 
-        Set<Set<? extends OWLAxiom>> diagnoses =  ComputeRepair.computeDiagnosis(Optional.empty(), allJustifications, new HashSet<>(), outDirStr);
+        Set<Set<? extends OWLAxiom>> diagnoses =  ComputeRepair.computeDiagnosis(Optional.empty(), allJustifications, keepAxioms, removeAxioms, outDirStr);
         assertNotNull("null diagnosis", diagnoses);
-        int counter = ComputeRepair.computeRepairs(tempOutDirStr, "repair", ontologyPathString, "repairOntology");
-		Map<OWLAxiom, Integer> actualAxiomWeight =  ComputeRepair.computeAxiomWeight(counter, tempOutDirStr);
+        int counter = ComputeRepair.computeRepairs(tempOutDirStr, "repair", ontologyPathString, "repairOntology", diagnoses);
+		Map<OWLAxiom, Integer> actualAxiomWeight =  ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxiomsSet, reasonerName);
 
         assertEquals("The axiom weight calculation is inaccurate", expectedAxiomWeight, actualAxiomWeight);
         
     }
 
-    // @Test
-    // public void testSingleMaxRepair() throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, InterruptedException, EntityCheckerException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
-    //     String simulatedInput = "";
-    //     Scanner scanner = new Scanner(new ByteArrayInputStream(simulatedInput.getBytes()));
-    //     Set<OWLAxiom> minimalDiagnosis = new HashSet<>(Arrays.asList(
-    //         justificationAxioms.get(15),
-    //         justificationAxioms.get(16),
-    //         justificationAxioms.get(17),
-    //         justificationAxioms.get(18)
-    //     ));
+    @Test
+    public void testNoRepair(){
 
-    //     // keepAxioms is all the axioms from justificationAxioms except the minimal diagnosis	
-    //     Set<OWLAxiom> keepAxioms = new HashSet<>(justificationAxioms);
-    //     keepAxioms.removeAll(minimalDiagnosis);        
+    }
 
-    //     Set<OWLAxiom> removeAxioms = new HashSet<>(minimalDiagnosis);
+    @Test
+    public void testMaxRepair(){
 
-    //     Field fieldKeepAxioms = ComputeRepair.class.getDeclaredField("keepAxioms");
-    //     fieldKeepAxioms.setAccessible(true);
-    //     Field fieldRemoveAxioms = ComputeRepair.class.getDeclaredField("removeAxioms");
-    //     fieldRemoveAxioms.setAccessible(true);
-    //     fieldKeepAxioms.set(null, keepAxioms);
-    //     fieldRemoveAxioms.set(null, removeAxioms);
+    }
 
-    //     Set<Set<? extends OWLAxiom>> allOptDiagnoses = new HashSet<>(Arrays.asList(minimalDiagnosis));
+    @Test 
+    public void testNonMaxRepair(){
 
-    //     Boolean result = ComputeRepair.saveFunction(allJustifications, allOptDiagnoses, outDirStr, "singleMaxRepairOutput", scanner);
-    //     assertTrue("Error in save function!", result);
+    }
 
-    //     File generatedRepairFile = new File(outDirStr+File.separator+"singleMaxRepairOutput.owl");
-    //     OWLOntology generatedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(generatedRepairFile);
-    //     Set<OWLAxiom> actualRepairOntoAxioms = generatedOntology.getAxioms();
-    //     File expectedRepairFile = new File(expectedOutDir +File.separator+"testMaxRepair.owl");
-    //     OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedRepairFile);
-    //     Set<OWLAxiom> expectedRepairOntoAxioms = expectedOntology.getAxioms();
-
-    //     assertEquals("The maximal repair ontology is inaccurate!", expectedRepairOntoAxioms, actualRepairOntoAxioms);
-    // }
-
-    // @Test
-    // public void testMultipleNonMaxRepair() throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, InterruptedException, EntityCheckerException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
-    //     String simulatedInput = "1\nmin\nyes\n";
-    //     Scanner scanner = new Scanner(new ByteArrayInputStream(simulatedInput.getBytes()));
-
-    //     Set<OWLAxiom> keepAxioms = new HashSet<>(Arrays.asList(
-    //         justificationAxioms.get(3),	 
-    //         justificationAxioms.get(5)
-    //     ));        
-
-    //     Set<OWLAxiom> removeAxioms = new HashSet<>(Arrays.asList(
-    //         justificationAxioms.get(0),
-    //         justificationAxioms.get(1),
-    //         justificationAxioms.get(2),
-    //         justificationAxioms.get(14),
-    //         justificationAxioms.get(16)            
-    //     ));
-
-    //     Field fieldKeepAxioms = ComputeRepair.class.getDeclaredField("keepAxioms");
-    //     fieldKeepAxioms.setAccessible(true);
-    //     Field fieldRemoveAxioms = ComputeRepair.class.getDeclaredField("removeAxioms");
-    //     fieldRemoveAxioms.setAccessible(true);
-    //     fieldKeepAxioms.set(null, keepAxioms);
-    //     fieldRemoveAxioms.set(null, removeAxioms);
-
-
-    //     Boolean result = ComputeRepair.saveFunction(allJustifications, new HashSet<>(), outDirStr, "multipleMaxRepairOutput", scanner);
-    //     assertTrue("Error in save function!", result);
-
-    //     File generatedRepairFile = new File(outDirStr+File.separator+"multipleMaxRepairOutput.owl");
-    //     OWLOntology generatedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(generatedRepairFile);
-    //     Set<OWLAxiom> actualRepairOntoAxioms = generatedOntology.getAxioms();
-    //     File expectedRepairFile = new File(expectedOutDir +File.separator+"testMaxRepair2.owl");
-    //     OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedRepairFile);
-    //     Set<OWLAxiom> expectedRepairOntoAxioms = expectedOntology.getAxioms();
-
-    //     assertEquals("The maximal repair ontology is inaccurate!", expectedRepairOntoAxioms, actualRepairOntoAxioms);
-    // }
 }

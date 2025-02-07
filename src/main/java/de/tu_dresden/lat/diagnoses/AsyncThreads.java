@@ -1,7 +1,9 @@
 package de.tu_dresden.lat.diagnoses;
 
+import java.security.cert.CertPathValidatorException.Reason;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -43,11 +45,17 @@ class ComputeAxiomWeightThread implements Runnable{
 	String mDsID;
 	String ontologyPath;
 	String outputFileName;
-	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName){
+	Set<Set<? extends OWLAxiom>> allOptimalDiagnoses;
+	Set<OWLAxiom> interestingAxioms;
+	ReasonerName reasonerName;
+	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<OWLAxiom> interestingAxioms, ReasonerName reasonerName){
 		this.outDirStr = outDirStr;
 		this.mDsID = mDsID;
 		this.ontologyPath = ontologyPath;
 		this.outputFileName = outputFileName;
+		this.allOptimalDiagnoses = allOptimalDiagnoses;
+		this.interestingAxioms = interestingAxioms;
+		this.reasonerName = reasonerName;
 	}
 
 	@Override
@@ -55,8 +63,8 @@ class ComputeAxiomWeightThread implements Runnable{
 		try{
 			String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
 			String tempOutDirStr = outDirStr + "/" + tempfolderPath;
-			int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName);
-			ComputeRepair.computeAxiomWeight(counter, tempOutDirStr);
+			int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName, allOptimalDiagnoses);
+			ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
 		} catch (Exception e){
 			Thread.currentThread().interrupt();
 			e.printStackTrace();
@@ -96,4 +104,26 @@ class SortJustificationsThread implements Runnable{
 			e.printStackTrace();
 		}
 	}
+}
+
+class CheckMinimalityThread implements Callable<Boolean>{
+	private OWLOntology ontology;
+	private OWLAxiom axiom;
+	private Set<OWLAxiom> removeAxioms;
+	private String outDirStr;
+	private ReasonerName reasonerName;
+	
+	public CheckMinimalityThread(OWLOntology ontology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName){
+		this.ontology = ontology;
+		this.axiom = axiom;
+		this.removeAxioms = removeAxioms;
+		this.outDirStr = outDirStr;
+		this.reasonerName = reasonerName;
+	}
+	
+	@Override
+	public Boolean call() throws Exception {
+		return ComputeRepair.checkDiagMinimality(ontology, axiom, removeAxioms, outDirStr, reasonerName);
+	}
+	
 }
