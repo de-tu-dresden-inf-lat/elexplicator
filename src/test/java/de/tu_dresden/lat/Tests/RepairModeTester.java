@@ -50,7 +50,7 @@ public class RepairModeTester {
     Map<OWLAxiom, String> axioms2Identifiers;	
     Map<String, OWLAxiom> identifiers2Axioms;	
     
-    String expectedOutDir = "src\\test\\resources\\expected_outputs";
+    String expectedOutDir = "src\\test\\resources\\expected_outputs\\save";
     String ontologyPathString = "src/test/TestOntology/RepairTestOntology.owl";
     String interestingAxiomsOntologyPath = "src/test/TestOntology/interestingAxiomTest.owl";
     String programFileName = "pi.txt";
@@ -147,18 +147,77 @@ public class RepairModeTester {
     }
 
     @Test
-    public void testNoRepair(){
+    public void testNoRepair() throws OWLOntologyCreationException{
+        keepAxioms = new HashSet<>(Arrays.asList(justificationAxioms.get(10), justificationAxioms.get(18)));
+        Set<OWLAxiom> removeAxioms = new HashSet<>(justificationAxioms);
+        removeAxioms.removeAll(keepAxioms); 
+
+        String save_filename = "resultOntology";
+
+        String simulatedInput = "continue\n";
+        Scanner scanner = new Scanner(new ByteArrayInputStream(simulatedInput.getBytes()));
+
+        Boolean savedFlag = ComputeRepair.saveProcess(ontology, axiom, removeAxioms, ontologyPathString, outDirStr, save_filename, reasonerName, scanner);
+        assertTrue("The resulting ontology should have been saved!", savedFlag);
+
+        File generatedOntologyFile = new File(outDirStr+File.separator+"resultOntology.owl");
+        OWLOntology generatedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(generatedOntologyFile);
+        Set<OWLAxiom> actualResultOntoAxioms = generatedOntology.getAxioms();
+        File expectedResultFile = new File(expectedOutDir +File.separator+"ontoNoRepair.owl");
+        OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedResultFile);
+        Set<OWLAxiom> expectedResultOntoAxioms = expectedOntology.getAxioms();
+        assertEquals("The generated result ontology is inaccurate!", expectedResultOntoAxioms, actualResultOntoAxioms);
+
 
     }
 
     @Test
-    public void testMaxRepair(){
+    public void testMaxRepair() throws OWLOntologyCreationException{
+        removeAxioms = new HashSet<>(Arrays.asList(
+            justificationAxioms.get(11), 
+            justificationAxioms.get(14), 
+            justificationAxioms.get(18)));
 
+        String save_filename = "resultOntology";
+
+        String simulatedInput = "";
+        Scanner scanner = new Scanner(new ByteArrayInputStream(simulatedInput.getBytes()));
+
+        Boolean savedFlag = ComputeRepair.saveProcess(ontology, axiom, removeAxioms, ontologyPathString, outDirStr, save_filename, reasonerName, scanner);
+        assertTrue("The resulting ontology should have been saved!", savedFlag);
+
+        File generatedOntologyFile = new File(outDirStr+File.separator+"resultOntology.owl");
+        OWLOntology generatedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(generatedOntologyFile);
+        Set<OWLAxiom> actualResultOntoAxioms = generatedOntology.getAxioms();
+        File expectedResultFile = new File(expectedOutDir +File.separator+"ontoMaxRepair.owl");
+        OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedResultFile);
+        Set<OWLAxiom> expectedResultOntoAxioms = expectedOntology.getAxioms();
+        assertEquals("The generated result ontology is inaccurate!", expectedResultOntoAxioms, actualResultOntoAxioms);
     }
 
     @Test 
-    public void testNonMaxRepair(){
+    public void testNonMaxRepair() throws OWLOntologyCreationException{
+        removeAxioms = new HashSet<>(Arrays.asList(
+            justificationAxioms.get(10), 
+            justificationAxioms.get(11), 
+            justificationAxioms.get(14), 
+            justificationAxioms.get(18)));
 
+        String save_filename = "resultOntology";
+
+        String simulatedInput = "max\n2\n";
+        Scanner scanner = new Scanner(new ByteArrayInputStream(simulatedInput.getBytes()));
+
+        Boolean savedFlag = ComputeRepair.saveProcess(ontology, axiom, removeAxioms, ontologyPathString, outDirStr, save_filename, reasonerName, scanner);
+        assertTrue("The resulting ontology should have been saved!", savedFlag);
+
+        File generatedOntologyFile = new File(outDirStr+File.separator+"resultOntology.owl");
+        OWLOntology generatedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(generatedOntologyFile);
+        Set<OWLAxiom> actualResultOntoAxioms = generatedOntology.getAxioms();
+        File expectedResultFile = new File(expectedOutDir +File.separator+"ontoMaxRepair.owl");
+        OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedResultFile);
+        Set<OWLAxiom> expectedResultOntoAxioms = expectedOntology.getAxioms();
+        assertEquals("The generated result ontology is inaccurate!", expectedResultOntoAxioms, actualResultOntoAxioms);
     }
 
 }

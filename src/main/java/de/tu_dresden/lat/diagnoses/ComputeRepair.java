@@ -1,5 +1,6 @@
 package de.tu_dresden.lat.diagnoses;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -184,18 +185,14 @@ public class ComputeRepair {
 										System.out.println("Enter the filename to save as: ");
 										String save_filename = scanner.nextLine();
 
-										OWLOntology repairOntology = computeRepair(removeAxioms, ontologyPath);
-										if (HelperFunctions.checkEntailment(repairOntology, axiom, reasonerName)){
-											inputFlag = noRepair(repairOntology, outDirStr, save_filename, scanner);											
-										} else {
-											inputFlag = refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
-										}
-										if (!inputFlag){
+										Boolean savedFlag = saveProcess(ontology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
+
+										if(savedFlag){
+											inputFlag = false;
 											break;
 										} else {
 											continue;
 										}
-										
 									}
 								case "exit":
 									System.out.println("Exiting repair mode!");
@@ -232,17 +229,16 @@ public class ComputeRepair {
 							System.out.println("Enter the filename to save as: ");
 							String save_filename = scanner.nextLine();
 
-							OWLOntology repairOntology = computeRepair(removeAxioms, ontologyPath);
-							if (HelperFunctions.checkEntailment(repairOntology, axiom, reasonerName)){
-								inputFlag = noRepair(repairOntology, outDirStr, save_filename, scanner);											
-							} else {
-								inputFlag = refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
-							}
-							if (!inputFlag){
+							Boolean savedFlag = saveProcess(ontology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
+
+							if(savedFlag){
+								inputFlag = false;
 								break;
 							} else {
 								continue;
 							}
+
+							
 						}	
 						default:
 							System.out.println("Invalid input!");
@@ -450,7 +446,7 @@ public class ComputeRepair {
  * @return
  * @throws OWLOntologyCreationException
  */
-	private static OWLOntology computeRepair(Set<? extends OWLAxiom> selectedMinDiagnosis, String ontologyPath) throws OWLOntologyCreationException{
+	public static OWLOntology computeRepair(Set<? extends OWLAxiom> selectedMinDiagnosis, String ontologyPath) throws OWLOntologyCreationException{
 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 			OWLOntology repairOntology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
 	
@@ -461,13 +457,34 @@ public class ComputeRepair {
 		return repairOntology;
 	}
 
+	public static Boolean saveProcess(OWLOntology ontology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName, Scanner scanner){
+		OWLOntology repairOntology;
+		try {
+			repairOntology = computeRepair(removeAxioms, ontologyPath);
+		} catch (OWLOntologyCreationException e) {
+			e.printStackTrace();
+			return false;
+		}
+		if (HelperFunctions.checkEntailment(repairOntology, axiom, reasonerName)){
+			return noRepair(repairOntology, outDirStr, save_filename, scanner);											
+		} else {
+			try {
+				return refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
+			} catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException | EntityCheckerException
+					| InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+	} 
+
 /**
  * if the resulting ontology is not a repair, prompt the user to save or cancel
  * @param resultOntology
  * @param outDirStr
  * @param save_filename
  * @param scanner
- * @return true if the ontology not saved, false if the user saves the ontology (indicating the inputFlag)
+ * @return true if the ontology is saved, false if not saved 
  */
 	private static Boolean noRepair(OWLOntology resultOntology, String outDirStr, String save_filename, Scanner scanner){
 		String user_in;
@@ -475,18 +492,18 @@ public class ComputeRepair {
 		user_in = scanner.nextLine();
 		if (user_in.toLowerCase().equals("cancel")){
 			System.out.println("Cancelling save!");
-			return true;
+			return false;
 		} else if (user_in.toLowerCase().equals("continue")){
 			try{
 				saveRepairOntology(resultOntology, outDirStr, save_filename);
-				return false;
+				return true;
 			} catch (Exception e){
 				e.printStackTrace();
-				return true;
+				return false;
 			}															
 		} else {
 			System.out.println("Invalid input!");
-			return true;
+			return false;
 		}
 	} 
 
@@ -528,10 +545,10 @@ public class ComputeRepair {
 				saveRepairOntology(repairOntology, outDirStr, save_filename);
 			} catch (Exception e){
 				e.printStackTrace();
-				return true;
+				return false;
 			}
 			System.out.println("Repair Saved!");
-			return false; //i.e inputFlag = false
+			return true; 
 		} else {
 			System.out.println("The resulting ontology is not maximal repair.\nEnter \"max\" to compute maximal or \"continue\" to save.");
 			user_in = scanner.nextLine();
@@ -540,10 +557,10 @@ public class ComputeRepair {
 					saveRepairOntology(repairOntology, outDirStr, save_filename);
 				} catch (Exception e){
 					e.printStackTrace();
-					return true;
+					return false;
 				}
 				System.out.println("Repair Saved!");
-				return false;
+				return true;
 			} else if(user_in.toLowerCase().equals("max")){
 				List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(minimalDiagnoses, removeAxioms);
 				if (recommendedDiagnoses.size() < 2){
@@ -553,10 +570,10 @@ public class ComputeRepair {
 						saveRepairOntology(repairOntologyMax, outDirStr, save_filename);
 					} catch (Exception e){
 						e.printStackTrace();
-						return true;
+						return false;
 					}
 					System.out.println("Repair Saved!");
-					return false;
+					return true;
 				}
 				for (Set<? extends OWLAxiom> diagnosisSet : recommendedDiagnoses){
 					System.out.println("Diagnosis set: " + (recommendedDiagnoses.indexOf(diagnosisSet)+1));
@@ -583,14 +600,14 @@ public class ComputeRepair {
 					saveRepairOntology(repairOntologyMax, outDirStr, save_filename);														
 				} catch (Exception e){
 					e.printStackTrace();
-					return true;
+					return false;
 				}
 				System.out.println("Repair Saved!");
-				return false;
+				return true;
 				
 			} else {
 				System.out.println("Invalid input!");
-				return true;
+				return false;
 			}
 		}	
 									
