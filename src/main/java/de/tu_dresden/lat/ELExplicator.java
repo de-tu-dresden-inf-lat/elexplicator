@@ -2,6 +2,7 @@ package de.tu_dresden.lat;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -59,6 +60,7 @@ public class ELExplicator {
 			exportMapper = false;
 
 	public static void main(String[] args) throws OWLOntologyCreationException, IOException, ProofGenerationException, EntityCheckerException, ParserConfigurationException, TransformerException, OWLOntologyStorageException {
+		System.setOut(new PrintStream(System.out, true, "UTF-8")); // Set the output stream to UTF-8
 
 		Options options = new Options();
 
