@@ -134,7 +134,7 @@ public class ComputeRepair {
 						LinkedHashMap::new 
 					));;
 					for (OWLAxiom justificationAxiom : freqMap.keySet()){
-						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom)){
+						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom) | justificationAxiom.equals(axiom)){
 							// System.out.println(sOWLFormatter.format(justificationAxiom).toString() + " -- selection already made for the axiom!");
 							continue;
 						}
@@ -157,18 +157,21 @@ public class ComputeRepair {
 								case "not sure":
 									{
 										computeJustificationsThread.join();
+										keepAxioms.add(justificationAxiom);
 										Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications, keepAxioms);
 										if (selectedJustification != null){
+											keepAxioms.remove(justificationAxiom);
 											System.out.println("Repair not possible!");
 											System.out.println("You have selected the following axioms to be in the repair which all belong to the same justification set.");
 											for (OWLAxiom selectedAxiom : selectedJustification){
 												System.out.println(sOWLFormatter.format(selectedAxiom).toString());
 											}
 										} else {
-											getAxiomWeight(justificationAxiom, allJustifications, outDirStr, ontologyPath, interestingAxiomsSet, keepAxioms, removeAxioms, reasonerName);
+											getAxiomWeight(allJustifications, outDirStr, ontologyPath, interestingAxiomsSet, keepAxioms, removeAxioms, reasonerName);
 											displayAxiomWeights(axiomWeightMap);
 											cleanup(outDirStr+"/tempRepairsFolder");
 										}
+										keepAxioms.remove(justificationAxiom);
 
 										scanner.nextLine();
 
@@ -301,20 +304,13 @@ public class ComputeRepair {
  * @param outDirStr
  * @throws IOException
  */
-	public static Set<Set<? extends OWLAxiom>> computeDiagnosis(Optional<OWLAxiom> selectedAxiom, Set<Set<? extends OWLAxiom>> allJustifications, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr) throws IOException{
+	public static Set<Set<? extends OWLAxiom>> computeDiagnosis(Set<Set<? extends OWLAxiom>> allJustifications, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr) throws IOException{
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = new HashSet<>();
 		String mDsID = "repair";
 		logger.info("Creating program");
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
-		if (selectedAxiom.isPresent()){
-			keepAxioms.add(selectedAxiom.get());
-		}
 		applyUserSelection(keepAxioms, removeAxioms, outDirStr);
-
-		if (selectedAxiom.isPresent()){
-			keepAxioms.remove(selectedAxiom.get());
-		}
 
 		logger.info("Extracting Diagnoses Sets");
 		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
@@ -364,8 +360,8 @@ public class ComputeRepair {
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
  */
-	private static void getAxiomWeight(OWLAxiom selectedAxiom, Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr, String ontologyPath, Set<OWLAxiom> interestingAxiomsSet, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
-		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(Optional.of(selectedAxiom), allJustifications, keepAxioms, removeAxioms, outDirStr);
+	private static void getAxiomWeight(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr, String ontologyPath, Set<OWLAxiom> interestingAxiomsSet, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
 
 		try{
 			ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, "repair", ontologyPath, "repairOntology", allOptimalDiagnoses, interestingAxiomsSet, reasonerName);

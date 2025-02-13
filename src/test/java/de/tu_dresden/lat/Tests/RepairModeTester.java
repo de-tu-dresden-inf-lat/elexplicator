@@ -137,12 +137,12 @@ public class RepairModeTester {
             justificationAxioms.get(5)
             ));
 
-        Set<Set<? extends OWLAxiom>> diagnoses =  ComputeRepair.computeDiagnosis(Optional.empty(), allJustifications, keepAxioms, removeAxioms, outDirStr);
-        assertNotNull("null diagnosis", diagnoses);
+        Set<Set<? extends OWLAxiom>> diagnoses =  ComputeRepair.computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
+        assertNotNull("Diagnosis not computed!", diagnoses);
         int counter = ComputeRepair.computeRepairs(tempOutDirStr, "repair", ontologyPathString, "repairOntology", diagnoses);
 		Map<OWLAxiom, Integer> actualAxiomWeight =  ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxiomsSet, reasonerName);
 
-        assertEquals("The axiom weight calculation is inaccurate", expectedAxiomWeight, actualAxiomWeight);
+        assertEquals("The axiom weight calculation is inaccurate!", expectedAxiomWeight, actualAxiomWeight);
         
     }
 
