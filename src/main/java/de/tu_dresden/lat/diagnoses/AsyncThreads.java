@@ -1,10 +1,10 @@
 package de.tu_dresden.lat.diagnoses;
 
-import java.security.cert.CertPathValidatorException.Reason;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import org.apache.log4j.Logger;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -17,6 +17,8 @@ class ComputeJustificationsThread implements Runnable{
 	private OWLAxiom axiom;
 	private OWLOntology ontology;
 
+	Logger logger = Logger.getLogger(ComputeJustificationsThread.class);
+
 	public ComputeJustificationsThread(ReasonerName reasonerName, OWLAxiom axiom, OWLOntology ontology){
 		this.reasonerName = reasonerName;
 		this.axiom = axiom;
@@ -27,14 +29,16 @@ class ComputeJustificationsThread implements Runnable{
 	public void run(){	
 		try{
 			ComputeRepair.allJustifications = ComputeRepair.getAllJustificationsAsync(reasonerName, axiom, ontology, ComputeRepair.justificationQueue);        
-			
-			ComputeRepair.fillMap(ComputeRepair.allJustifications);
-			HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
+			if (ComputeRepair.allJustifications != null){
+				ComputeRepair.fillMap(ComputeRepair.allJustifications);
+				HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
+			}			
 		} catch (Exception e) {
+			logger.warn("Thread exception: " + e.getMessage());
 			Thread.currentThread().interrupt(); 
-			e.printStackTrace();
+		} finally {
+			ComputeRepair.justificationsCompleted = true;
 		}
-		ComputeRepair.justificationsCompleted = true;
 		
 	}
 }
@@ -60,14 +64,17 @@ class ComputeAxiomWeightThread implements Runnable{
 
 	@Override
 	public void run(){
-		try{
-			String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
-			String tempOutDirStr = outDirStr + "/" + tempfolderPath;
+		String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
+		String tempOutDirStr = outDirStr + "/" + tempfolderPath;
+		try{			
 			int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName, allOptimalDiagnoses);
 			ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
 		} catch (Exception e){
-			Thread.currentThread().interrupt();
 			e.printStackTrace();
+			Thread.currentThread().interrupt();
+		} finally {
+			// ComputeRepair.cleanup(tempOutDirStr);
+			ComputeRepair.cleanup();
 		}
 		
 	}
@@ -76,7 +83,7 @@ class ComputeAxiomWeightThread implements Runnable{
 //Thread where a snapshot of justifications is taken every 5 seconds and the frequency of each axiom is updated in the map
 class SortJustificationsThread implements Runnable{
 	private static final long SNAPSHOT_INTERVAL = 5000; 
-	
+	private static final Logger logger = Logger.getLogger(SortJustificationsThread.class);
 	@Override
 	public void run(){
 		try{
@@ -84,9 +91,14 @@ class SortJustificationsThread implements Runnable{
 				Set<Set<? extends OWLAxiom>> justificationsSnapshot = new HashSet<>();
 				long startTime = System.currentTimeMillis();
 				while (System.currentTimeMillis() - startTime < SNAPSHOT_INTERVAL) {
-					Set<? extends OWLAxiom> queueElement = ComputeRepair.justificationQueue.poll(SNAPSHOT_INTERVAL, TimeUnit.MILLISECONDS);
-					if (queueElement != null){
-						justificationsSnapshot.add(queueElement);
+					try{
+						Set<? extends OWLAxiom> queueElement = ComputeRepair.justificationQueue.poll(SNAPSHOT_INTERVAL, TimeUnit.MILLISECONDS);
+						if (queueElement != null){
+							justificationsSnapshot.add(queueElement);
+						}
+					} catch (InterruptedException e){
+						logger.warn("Thread interrupted");
+						Thread.currentThread().interrupt();
 					}
 				}
 				if (!justificationsSnapshot.isEmpty()){
@@ -99,9 +111,9 @@ class SortJustificationsThread implements Runnable{
 					ComputeRepair.isSnapshotActive = true;
 				} 
 			}
-		} catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-			e.printStackTrace();
+		} catch (Exception e) {
+			logger.warn("Thread exception: " + e.getMessage());
+            // Thread.currentThread().interrupt();
 		}
 	}
 }

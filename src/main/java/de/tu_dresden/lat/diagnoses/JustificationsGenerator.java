@@ -45,20 +45,33 @@ public class JustificationsGenerator {
 	public static Set<Set<? extends OWLAxiom>> getAllELKJustifications(OWLAxiom axiom, OWLOntology ontology) {
 		ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
 		ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-
-		DynamicProof<ElkOwlInference> proof = ElkOwlProof.create(reasoner, axiom);
-
 		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = InferenceJustifiers
 				.justifyAssertedInferences();
+		DynamicProof<ElkOwlInference> proof = null;
+		try{
+			proof = ElkOwlProof.create(reasoner, axiom);
+		} catch (Exception e){
+			logger.error("Justification computation interrupted");
+			return null;
+		} finally {
+			reasoner.dispose();
+		}		
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
 
-		MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
+		try{
+			MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
 				new MinimalSubsetCollector<>(allJustifications));
 
-		if (logger.isDebugEnabled())
-			allJustifications.forEach(logger::debug);
-
+			if (logger.isDebugEnabled())
+				allJustifications.forEach(logger::debug);
+		} catch (Exception e){
+			logger.error("Justification computation interrupted");
+			Thread.currentThread().interrupt();
+			return null;
+		} finally {
+			reasoner.dispose();
+		}
 		return allJustifications;
 	}
 
@@ -74,19 +87,34 @@ public class JustificationsGenerator {
 		ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
 		ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
 
-		DynamicProof<ElkOwlInference> proof = ElkOwlProof.create(reasoner, axiom);
-
 		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = InferenceJustifiers
 				.justifyAssertedInferences();
+		DynamicProof<ElkOwlInference> proof = null;
+
+		try{
+			proof = ElkOwlProof.create(reasoner, axiom);
+		} catch (Exception e){
+			logger.error("Justification asynchronous computation interrupted");
+			Thread.currentThread().interrupt();
+			return null;
+		} finally {
+			reasoner.dispose();
+		}		
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
 
-		MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
+		try{
+			MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
 				new CustomSubsetCollector<>(allJustifications));
 
-		if (logger.isDebugEnabled())
-			allJustifications.forEach(logger::debug);
-
+			if (logger.isDebugEnabled())
+				allJustifications.forEach(logger::debug);
+		} catch (Exception e){
+			logger.error("Justification computation interrupted");
+			return null;
+		} finally {
+			reasoner.dispose();
+		}
 		return allJustifications;
 	}
 

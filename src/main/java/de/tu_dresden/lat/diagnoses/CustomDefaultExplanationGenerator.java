@@ -18,7 +18,6 @@ import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import com.clarkparsia.owlapi.explanation.BlackBoxExplanation;
 import com.clarkparsia.owlapi.explanation.DefaultExplanationGenerator;
 import com.clarkparsia.owlapi.explanation.MultipleExplanationGenerator;
-import com.clarkparsia.owlapi.explanation.SatisfiabilityConverter;
 import com.clarkparsia.owlapi.explanation.util.ExplanationProgressMonitor;
 
 public class CustomDefaultExplanationGenerator extends DefaultExplanationGenerator {

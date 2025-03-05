@@ -22,8 +22,7 @@ public class CustomSubsetCollector<E> extends MinimalSubsetCollector<E> {
 		try {
 			ComputeRepair.justificationQueue.put((Set<? extends OWLAxiom>) set);
 		} catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return;
+			e.printStackTrace();
 		}
 		
 	}

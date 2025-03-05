@@ -5,6 +5,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -32,33 +40,64 @@ public class BenchmarkImpactComputation {
         this.iterations = iterations;
     }
 
-    public long run() throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, EntityCheckerException{
-        
+    public List<Long> run() throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, EntityCheckerException{
+        List<Long> runtime = new ArrayList<>();
+
         PrintStream originalOut = System.out;
         PrintStream devNull = new PrintStream(new OutputStream() {
             @Override
             public void write(int b) { }
         });
-        System.setOut(devNull);
+        // System.setOut(devNull);      
 
-        simulateUserInput("not sure\n\nexit");
+        long timeout = 2; //1.5min timeout
 
-        long startTime = System.currentTimeMillis();
-
-        int i = 1;
-        while (i<=iterations){
-            ComputeRepair.computeRepairOntology(defect, ontology, interestingAxiomOntology, ReasonerName.getReasonerName("Elk"), outdir, ontologyPath);
-            
-            i += 1;
-        }
         
-        long endTime = System.currentTimeMillis();
-        long totalRunTime = endTime - startTime;
-        long avgRunTime = totalRunTime/iterations;
 
+        // long startTime = System.nanoTime();
+
+        for (int i=1; i<=iterations; i++){
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            System.gc();
+            Callable<Long> impactTask = () -> {
+                long itr_start = System.nanoTime();
+                System.out.println("Start time"+System.currentTimeMillis());
+                simulateUserInput("not sure\n\nexit");
+                ComputeRepair.computeRepairOntology(defect, ontology, interestingAxiomOntology, ReasonerName.getReasonerName("Elk"), outdir, ontologyPath);
+                long itr_end = System.nanoTime();
+                return(itr_end - itr_start);
+            };
+
+            Future<Long> future = executor.submit(impactTask);
+            try{
+                runtime.add(future.get(timeout, TimeUnit.MINUTES)/1000000);                
+            } catch(TimeoutException e){
+                runtime.add(timeout*60000);
+                future.cancel(true);             
+            } catch(Exception e){
+                e.printStackTrace();
+            } finally {
+                System.out.println("End time"+System.currentTimeMillis());
+                executor.shutdownNow();
+                try {
+                    executor.awaitTermination(timeout, TimeUnit.MINUTES);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    System.out.println("Executor shutdown interrupted");
+                }
+            }
+            
+        }
+        // long endTime = System.nanoTime();
+        
+        // long totalRunTime = (endTime - startTime)/1000000;
+        // long avgRunTime = totalRunTime/iterations;
+        // runtime.add(avgRunTime);
         System.setOut(originalOut);
+        // System.out.print("totalRunTime: " + totalRunTime + "ms\n");
+        System.out.println(runtime);
 
-        return avgRunTime;
+        return runtime;
     }
 
     public static void simulateUserInput(String simulatedInput){

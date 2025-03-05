@@ -58,13 +58,13 @@ public class ELOntologyGenerator {
         List<OWLAxiom> justification;
         Set<List<OWLAxiom>> justifications = new HashSet<>();
 
-        System.out.println("Entailment = " + SimpleOWLFormatter.format(axiom) + ", total justifications = " + totalJustification);
+        // System.out.println("Entailment = " + SimpleOWLFormatter.format(axiom) + ", total justifications = " + totalJustification);
 
         for(int i = 0; i < totalJustification; i++){
             justification = createJustification(startLHS,endRHS,justificationMaxSize,
                     justificationMaxCommonAxioms, helper, i==0);
 
-            System.out.println(justification.stream().map(SimpleOWLFormatter::format).collect(Collectors.toList()));
+            // System.out.println(justification.stream().map(SimpleOWLFormatter::format).collect(Collectors.toList()));
 
             if(justifications.contains(justification))
                 i--;
@@ -93,7 +93,7 @@ public class ELOntologyGenerator {
         while(justificationCommonAxiomsCount >= justificationSize)
             justificationCommonAxiomsCount = Selector.getRandomInt(0, justificationMaxCommonAxioms);
 
-        System.out.println("Justification size = " + justificationSize + " common axioms count = " + justificationCommonAxiomsCount);
+        // System.out.println("Justification size = " + justificationSize + " common axioms count = " + justificationCommonAxiomsCount);
 
         List<OWLAxiom> currentCommonAxioms = helper.getCommonAxiomsList().size()>0 ?
                 helper.getCommonAxiomsList().subList(0, justificationCommonAxiomsCount) : new LinkedList<>();

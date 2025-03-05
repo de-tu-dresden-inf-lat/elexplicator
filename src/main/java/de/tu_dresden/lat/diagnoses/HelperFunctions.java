@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,12 +24,12 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
+import org.semanticweb.owlapi.reasoner.ReasonerInternalException;
 
 import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
-import de.tu_dresden.lat.tools.AxiomChecker;
 
 public class HelperFunctions {
 	public static Set<Set<OWLAxiom>>currentDiagnoses;
@@ -121,11 +120,31 @@ public class HelperFunctions {
 		if (reasonerName == ReasonerName.Elk){
 			ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
 			ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-			return reasoner.isEntailed(axiom);
+			Boolean entailment;
+			try{
+				entailment = reasoner.isEntailed(axiom);
+				return entailment;
+			} catch (ReasonerInternalException e){
+				logger.warn("Failed to check entailment");
+				throw e;
+			} catch (Exception e){
+				logger.error("Failed to check entailment");
+				throw e;
+			} 
+			finally {
+				reasoner.dispose();
+			}
 		} else {
 			OWLReasonerFactory reasonerFactory = new ReasonerFactory();
 			OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
-			return reasoner.isEntailed(axiom);
+			try{
+				return reasoner.isEntailed(axiom);
+			} catch (Exception e){
+				logger.error("Failed to check entailment");
+				throw e;
+			} finally {
+				reasoner.dispose();
+			}
 		}		
 	}
 
@@ -286,7 +305,7 @@ public class HelperFunctions {
 		if (facetIdentifier.isPresent()){
 			argsOpt = argsOpt + " -facet \"" + facetIdentifier.get().toString() +"\"";
 		}
-		Process p;
+		Process p = null;
 		int tc = -1;
 		
 		try {
@@ -295,20 +314,29 @@ public class HelperFunctions {
 						.exec("py " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
-				tc = p.waitFor();			
+				try{
+					tc = p.waitFor();	
+				}catch(InterruptedException e){
+					p.destroyForcibly();
+				}
+						
 
 			} else {
 				p = Runtime.getRuntime()
 						.exec("python3 " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
-				tc = p.waitFor();
+				try{
+					tc = p.waitFor();	
+				}catch(InterruptedException e){
+					p.destroyForcibly();
+				}
 			}
 			
 
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
-			System.out.println("tc = " + tc);
+			System.out.println("tc = " + tc);		
 		}
 	}
 
