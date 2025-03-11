@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -337,8 +334,13 @@ public class BenchmarkOntologies {
                 for(int i=1; i <= iterations; i++){
                     
                     String key = "Iteration "+i;
-                    String val = String.valueOf(runtime.get(i-1));
                     benchmarkMap.put(key, benchmarkMap.getOrDefault(key, new ArrayList<>()));
+                    Long iter_runtime = runtime.get(i-1);
+                    if (iter_runtime > 120000){
+                        benchmarkMap.get(key).add("Timeout");
+                        continue;
+                    }
+                    String val = String.valueOf(runtime.get(i-1));                    
                     benchmarkMap.get(key).add(val);
                 }
                 

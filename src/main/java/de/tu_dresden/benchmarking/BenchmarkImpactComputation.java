@@ -50,11 +50,7 @@ public class BenchmarkImpactComputation {
         });
         // System.setOut(devNull);      
 
-        long timeout = 2; //1.5min timeout
-
-        
-
-        // long startTime = System.nanoTime();
+        long timeout = 2; //2min timeout
 
         for (int i=1; i<=iterations; i++){
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -72,7 +68,7 @@ public class BenchmarkImpactComputation {
             try{
                 runtime.add(future.get(timeout, TimeUnit.MINUTES)/1000000);                
             } catch(TimeoutException e){
-                runtime.add(timeout*60000);
+                runtime.add(timeout*60000+1);
                 future.cancel(true);             
             } catch(Exception e){
                 e.printStackTrace();
@@ -82,20 +78,12 @@ public class BenchmarkImpactComputation {
                 try {
                     executor.awaitTermination(timeout, TimeUnit.MINUTES);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
                     System.out.println("Executor shutdown interrupted");
                 }
             }
             
         }
-        // long endTime = System.nanoTime();
-        
-        // long totalRunTime = (endTime - startTime)/1000000;
-        // long avgRunTime = totalRunTime/iterations;
-        // runtime.add(avgRunTime);
         System.setOut(originalOut);
-        // System.out.print("totalRunTime: " + totalRunTime + "ms\n");
-        System.out.println(runtime);
 
         return runtime;
     }
