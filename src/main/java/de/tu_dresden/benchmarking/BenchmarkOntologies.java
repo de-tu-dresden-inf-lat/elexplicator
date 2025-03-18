@@ -1,16 +1,19 @@
 package de.tu_dresden.benchmarking;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +34,10 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.diagnoses.HelperFunctions;
@@ -41,12 +48,9 @@ public class BenchmarkOntologies {
 
     private static Logger logger = Logger.getLogger(BenchmarkOntologies.class);
     public static List<Map<String, Object>> generateExampleInstances(String outDirString){
-        int[] totalJustificationsList = {2, 5, 8};
-        int[] justificationMaxSizeList = {5, 8, 12};
-        int[] maxCommonAxiomsList = {0, 3, 8};
-        // int[] totalJustificationsList = {8};
-        // int[] justificationMaxSizeList = {5, 8};
-        // int[] maxCommonAxiomsList = {0, 3};
+        int[] totalJustificationsList = {2, 5, 8, 12};
+        int[] justificationMaxSizeList = {3, 5, 8};
+        int[] maxCommonAxiomsList = {0, 3, 5};
         String ontologyPathStr = null;
 
         String lhsStr= "A", rhsStr="C";
@@ -265,27 +269,35 @@ public class BenchmarkOntologies {
         return infoMap;
     }
 
-    private static void writeToBenchFile(String filePath, Map<String, List<String>> benchMap) throws IOException{
-        FileWriter writer = new FileWriter(filePath);
-        List<String> headers = new ArrayList<>(benchMap.keySet());
+    private static void writeToBenchFile(String filePath, List<Map<String, Object>> benchMap) throws IOException{
+        FileWriter writer = new FileWriter(filePath+File.separator+"result.csv");
+        List<String> headers = new ArrayList<>(benchMap.get(0).keySet());
+        headers.removeAll(Arrays.asList("ontology", "interestingAxiomOntology", "ontologyPathStr"));
         writer.append(String.join(",", headers)).append("\n");
-
-        int rowCount = benchMap.values().iterator().next().size();
-
-        for (int i = 0; i < rowCount; i++){
-            List<String> row = new ArrayList<>();
+        for (Map<String, Object> row : benchMap){
+            List<String> values = new ArrayList<>();
             for (String header : headers){
-                row.add(benchMap.get(header).get(i));
+                values.add(row.get(header).toString());
             }
-            writer.append(String.join(",", row)).append("\n");
+            writer.append(String.join(",", values));
+            writer.append("\n");
         }
-
+        writer.flush();
         writer.close();
         logger.info("Benchmark results written to file: "+filePath);
     }
 
+    public static void writeBenchLog() throws IOException{
+        ObjectMapper jsonObjectMapper = new ObjectMapper();
+        ObjectNode jsonNode = jsonObjectMapper.createObjectNode();
+        jsonNode.put("Status", "Success");
+        jsonObjectMapper.writeValue(new File("Benchmark/benchmark_log.json"), jsonNode);
+    }
+
     public static void main(String[] args) {
-        int iterations = 10;
+        Boolean firstRun = Boolean.parseBoolean(args[0]);
+
+        int iterations = 3;
 
         String outDirString = "Benchmark";
         if(!(new File(outDirString)).exists()){
@@ -295,86 +307,113 @@ public class BenchmarkOntologies {
                 e.printStackTrace();
                 return;
             }
-        }                
+        }
 
-        Map<String, List<String>> benchmarkMap = new LinkedHashMap<>();
-        benchmarkMap.put("Example", new ArrayList<>());        
-        benchmarkMap.put("Num of Justifications", new ArrayList<>());
-        benchmarkMap.put("Max Justification Size", new ArrayList<>());
-        benchmarkMap.put("Max Common Axioms", new ArrayList<>());
-        benchmarkMap.put("Average Runtime", new ArrayList<>());
-        benchmarkMap.put("Standard Deviation", new ArrayList<>());
-        benchmarkMap.put("Std Dev %", new ArrayList<>());
+        List<Map<String, Object>> exampleList = new ArrayList<>();
+        int iteration_index = 0;
+        int instance_index = 0;
+        List<Long> runtime = new ArrayList<>();
+        if (firstRun){
+            exampleList = generateExampleInstances(outDirString);
+            for (Map<String, Object> example : exampleList){
+                OWLOntology ontology = (OWLOntology) example.get("ontology");
+                OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
+    
+                Map<String, Integer>justificationInfo = getJustificationInfo(ontology, axiom);
+                example.put("Num of Justifications", String.valueOf(justificationInfo.get("totalJustifications")));
+                example.put("Max Justification Size", String.valueOf(justificationInfo.get("maxJustificationSize")));
+                example.put("Max Common Axioms", String.valueOf(justificationInfo.get("maxCommonAxioms")));
+            }
+            try {
+                FileOutputStream exampleOut = new FileOutputStream("examples.ser");
+                ObjectOutputStream out = new ObjectOutputStream(exampleOut);
+                out.writeObject(exampleList);
+                out.close();
+                exampleOut.close();
+                System.out.println("Serialization done!");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+        } else {
+            ObjectMapper objMapper = new ObjectMapper();
+            try {
+				JsonNode jsonNode = objMapper.readTree(new File("Benchmark/benchmark_log.json"));
+                instance_index = jsonNode.get("Instance").asInt();
+                iteration_index = jsonNode.get("Iteration").asInt();
+                runtime = objMapper.convertValue(jsonNode.get("Runtimes"), List.class);
+			} catch (Exception e) {
+				e.printStackTrace();
+			} 
+            try{
+                FileInputStream exampleIn = new FileInputStream("examples.ser");
+                ObjectInputStream in = new ObjectInputStream(exampleIn);
+                exampleList = (List<Map<String, Object>>) in.readObject();
 
-        List<Map<String, Object>> exampleList = generateExampleInstances(outDirString);
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+            
+        }
 
-        // List<Map<String, Object>> exampleList = loadExampleInstances("C:\\Users\\kansa\\Desktop\\BenchmarkOWLExamples");
-
-        for (Map<String, Object> example : exampleList){
-            // System.out.println("Defect: " + example.get("defectAxiom"));
-            // System.out.println("InterestingAxiom: "+ ((OWLOntology) example.get("interestingAxiomOntology")).getAxioms());
+        
+        while (instance_index < exampleList.size()){
+            Map<String, Object> example = exampleList.get(instance_index);
             String exampleName = (String) example.get("example");
             OWLOntology ontology = (OWLOntology) example.get("ontology");
             OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
             OWLOntology interestingAxiomOntology = (OWLOntology) example.get("interestingAxiomOntology");
             String ontologyPathStr = (String) example.get("ontologyPathStr");
 
-            Map<String, Integer>justificationInfo = getJustificationInfo(ontology, axiom);
-            benchmarkMap.get("Num of Justifications").add(String.valueOf(justificationInfo.get("totalJustifications")));
-            benchmarkMap.get("Max Justification Size").add(String.valueOf(justificationInfo.get("maxJustificationSize")));
-            benchmarkMap.get("Max Common Axioms").add(String.valueOf(justificationInfo.get("maxCommonAxioms")));
-
             BenchmarkImpactComputation bench = new BenchmarkImpactComputation(
-                ontology, interestingAxiomOntology, axiom, ontologyPathStr, iterations
+                ontology, interestingAxiomOntology, axiom, ontologyPathStr, iterations,
+                instance_index, iteration_index, runtime
                 );
             try {
                 System.out.println("Benchmarking example: "+exampleName);
-                List<Long> runtime = bench.run();
-                benchmarkMap.get("Example").add(exampleName);
+                runtime = bench.run();
                 for(int i=1; i <= iterations; i++){
                     
                     String key = "Iteration "+i;
-                    benchmarkMap.put(key, benchmarkMap.getOrDefault(key, new ArrayList<>()));
                     Long iter_runtime = runtime.get(i-1);
                     if (iter_runtime > 120000){
-                        benchmarkMap.get(key).add("Timeout");
+                        example.put(key, "Timeout");
                         continue;
                     }
                     String val = String.valueOf(runtime.get(i-1));                    
-                    benchmarkMap.get(key).add(val);
+                    example.put(key, val);
                 }
-                
+
+                //Calc mean and std dev
                 Mean mean = new Mean();
                 double avg = mean.evaluate(runtime.stream().mapToDouble(Long::doubleValue).toArray());
-                benchmarkMap.get("Average Runtime").add(String.valueOf((long) avg));
+                example.put("Average Runtime", String.valueOf((long) avg));
 
                 StandardDeviation sd = new StandardDeviation();
                 double std_dev = sd.evaluate(runtime.stream().mapToDouble(Long::doubleValue).toArray());
 
-                benchmarkMap.get("Standard Deviation").add(String.format("%.2f", std_dev));
+                example.put("Standard Deviation", String.format("%.2f", std_dev));
                 double std_dev_percent = (std_dev/avg)*100;
-                benchmarkMap.get("Std Dev %").add(String.format("%.2f", std_dev_percent));
-                System.out.println("Mean: "+avg);
-                System.out.println("Std deviation: "+std_dev);
-                System.out.println("Std deviation %: "+(std_dev/avg)*100);
-
-            } catch (Exception e) {
+                example.put("Std Dev %", String.format("%.2f", std_dev_percent));
+                
+                iteration_index = 0;
+                runtime = new ArrayList<Long>();
+                instance_index++;
+            } catch (Exception e){
                 System.out.println("Error in benchmarkontologies main");
                 e.printStackTrace();
                 Thread.currentThread().interrupt();
                 return;
-            } 
+            }
         }
 
-        
-
         try {
-            String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new java.util.Date());
-            String fileName = "benchResult_"+timestamp;
-            writeToBenchFile(outDirString + File.separator + fileName +".csv", benchmarkMap);
+            writeToBenchFile(outDirString, exampleList);
+            writeBenchLog();
         } catch (IOException e) {
             e.printStackTrace();
         }
+            
     }
         
 }
