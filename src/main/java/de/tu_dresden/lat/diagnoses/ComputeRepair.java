@@ -65,6 +65,8 @@ public class ComputeRepair {
 
 	public static final String programFileName = "pi.txt";
 
+	private static Thread axiomWeightThread = null;
+
 	private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
 		true);
 
@@ -259,6 +261,9 @@ public class ComputeRepair {
 		catch (Exception e){
 			computeJustificationsThread.interrupt();
 			sortJustificationsThread.interrupt();
+			if (!axiomWeightThread.equals(null)){
+				axiomWeightThread.interrupt();
+			}
 			Thread.currentThread().interrupt();
 			ecode = ExitCode.executionInterrupted;
 		} 
@@ -369,7 +374,7 @@ public class ComputeRepair {
  */
 	private static void getAxiomWeight(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr, String ontologyPath, Set<OWLAxiom> interestingAxiomsSet, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
-		Thread axiomWeightThread = null;
+		axiomWeightThread = null;
 		try{
 			ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, "repair", ontologyPath, "repairOntology", allOptimalDiagnoses, interestingAxiomsSet, reasonerName);
 			axiomWeightThread = new Thread(runnable2); 
@@ -444,6 +449,9 @@ public class ComputeRepair {
 				tempFiles.add(outputFile.toString());
 			} catch (Exception e){
 				System.out.println("Error saving temporary repair ontology file!");
+			}
+			if(Thread.currentThread().isInterrupted()){
+				return 0;
 			}
 		}
 		return counter;

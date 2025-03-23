@@ -93,7 +93,7 @@ public class BenchmarkImpactComputation {
             } finally {
                 executor.shutdownNow();
                 try {
-                    executor.awaitTermination(timeout, TimeUnit.MINUTES);
+                    executor.awaitTermination(2, TimeUnit.MINUTES);
                 } catch (InterruptedException e) {
                     System.out.println("Executor shutdown interrupted");
                 }

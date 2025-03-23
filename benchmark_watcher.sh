@@ -26,7 +26,7 @@ JAR_PATH="target/ELExplicator.jar"
 
 CLASS_NAME="de.tu_dresden.benchmarking.BenchmarkOntologies"
 
-status_value = "Failure";
+status_value="Failure";
 
 while [ $more -eq 0 ];
 do
