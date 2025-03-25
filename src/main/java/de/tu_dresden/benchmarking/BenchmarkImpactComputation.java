@@ -61,7 +61,7 @@ public class BenchmarkImpactComputation {
             @Override
             public void write(int b) { }
         });
-        System.setOut(devNull);      
+        // System.setOut(devNull);      
 
         long timeout = 120; //2min timeout
 
@@ -78,9 +78,11 @@ public class BenchmarkImpactComputation {
 
             Future<Long> future = executor.submit(impactTask);
             try{
+                //runtime in  milliseconds
                 runtime.add(future.get(timeout, TimeUnit.SECONDS)/1000000);                
             } catch(TimeoutException e){
-                runtime.add(timeout*60000+1);
+                //timeout in second, runtime in ms
+                runtime.add(timeout*1000+1);
                 future.cancel(true);   
                 // writeLog(instance_index, i, runtime);  
                 // throw e;        

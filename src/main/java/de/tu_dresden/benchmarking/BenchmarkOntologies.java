@@ -173,16 +173,17 @@ public class BenchmarkOntologies {
 
         List<OWLSubClassOfAxiom> axiomList = new ArrayList<>(); 
         for (OWLClass owlClass : classes){
-            Set<OWLClass> inferredSubClasses = null;
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            executor.shutdown();
-            try{
-                inferredSubClasses = future.get(10, TimeUnit.SECONDS);
-            } catch(Exception e){
-                future.cancel(true);
-            }
+            // Set<OWLClass> inferredSubClasses = new HashSet<>();
+            // ExecutorService executor = Executors.newSingleThreadExecutor();
+            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
+            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
+            // executor.shutdown();
+            // try{
+            //     inferredSubClasses = future.get(10, TimeUnit.SECONDS);
+            // } catch(Exception e){
+            //     future.cancel(true);
+            // }
+            Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
             if(!inferredSubClasses.isEmpty()){
                 for (OWLClass inferredSubClass : inferredSubClasses){
                     OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -193,6 +194,8 @@ public class BenchmarkOntologies {
             }
         }
         reasoner.dispose();
+        manager.removeOntology(ontology);
+        System.gc();
         if(axiomList.isEmpty()){
             axiomList = new ArrayList<>(ontology.getAxioms(AxiomType.SUBCLASS_OF));
         }
@@ -202,6 +205,7 @@ public class BenchmarkOntologies {
     }
 
     private static OWLOntology generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom) throws OWLOntologyCreationException{
+        System.out.println("Updated File!");
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
@@ -216,16 +220,17 @@ public class BenchmarkOntologies {
         Set<OWLSubClassOfAxiom> axiomSet2 = new HashSet<>();
 
         for (OWLClass owlClass : classes) {
-            Set<OWLClass> inferredSubClasses = null;
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            executor.shutdown();
-            try{
-                inferredSubClasses = future.get(10, TimeUnit.SECONDS);
-            } catch(Exception e){
-                future.cancel(true);
-            }
+            // Set<OWLClass> inferredSubClasses = new HashSet<>();
+            // ExecutorService executor = Executors.newSingleThreadExecutor();
+            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
+            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
+            // executor.shutdown();
+            // try{
+            //     inferredSubClasses = future.get(10, TimeUnit.SECONDS);
+            // } catch(Exception e){
+            //     future.cancel(true);
+            // }
+            Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
             if (!inferredSubClasses.isEmpty()) {                
                 for (OWLClass inferredSubClass: inferredSubClasses){
                     OWLSubClassOfAxiom subclassAxiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -242,6 +247,9 @@ public class BenchmarkOntologies {
         }
 
         reasoner.dispose();
+        manager.removeOntology(ontology);
+        System.gc();
+
         OWLOntology interestingAxiomOntology = manager.createOntology();
 
         List<OWLSubClassOfAxiom> axiomList;
@@ -254,6 +262,8 @@ public class BenchmarkOntologies {
         Random random = new Random();
         
         manager.addAxiom(interestingAxiomOntology, axiomList.get(random.nextInt(axiomList.size())));
+        manager.removeOntology(interestingAxiomOntology);
+        System.gc();
 
         return interestingAxiomOntology;
     }
@@ -270,11 +280,13 @@ public class BenchmarkOntologies {
         
         Map<String, Integer> infoMap = new HashMap<>();
 
-        int totalJustifications = justifications.size();
+        int totalJustifications = 0;
         int maxJustificationSize = 0;
         int maxCommonAxioms = 0;
 
         for (Set<? extends OWLAxiom> justification : justifications){
+            // System.out.println(justification);
+            if (!justifications.isEmpty()){totalJustifications++;}
             maxJustificationSize = Math.max(maxJustificationSize, justification.size());
         }
 
@@ -292,19 +304,26 @@ public class BenchmarkOntologies {
             .max()
             .orElse(0);
 
+        int totalAxioms = ontology.getAxiomCount();
+
         infoMap.put("totalJustifications", totalJustifications);
         infoMap.put("maxJustificationSize", maxJustificationSize);
         infoMap.put("maxCommonAxioms", maxCommonAxioms);
+        infoMap.put("axiomCount", totalAxioms);
 
         return infoMap;
     }
 
     private static void writeToBenchFile(String filePath, Map<String, Object> benchMap) throws IOException{
+        File resultfile = new File(filePath+File.separator+"result.csv");
+        
+        
         FileWriter writer = new FileWriter(filePath+File.separator+"result.csv", true);
         List<String> headers = new ArrayList<>(benchMap.keySet());
         headers.removeAll(Arrays.asList("ontology", "interestingAxiomOntology", "ontologyPathStr"));
-        writer.append(String.join(",", headers)).append("\n");
-
+        if (resultfile.exists() && resultfile.length() == 0){
+            writer.append(String.join(",", headers)).append("\n");
+        }
         List<String> values = new ArrayList<>();
         for (String header : headers){
             values.add(benchMap.get(header).toString());
@@ -352,7 +371,7 @@ public class BenchmarkOntologies {
                 e.printStackTrace();
             }
             // exampleList = generateExampleInstances(outDirString);
-            File exampleDir = new File("/home/service/Desktop/Example2");
+            File exampleDir = new File("/home/service/Desktop/Examples");
             exampleFiles = exampleDir.listFiles();
 
             try {
@@ -399,6 +418,11 @@ public class BenchmarkOntologies {
         while (instance_index < exampleFiles.length){
             if (firstRun){
                 example = loadExampleInstances(exampleFiles[instance_index]);
+                // System.out.println(example);
+                if (example == null){
+                    instance_index++;
+                    continue;
+                }
                 OWLOntology ontology = (OWLOntology) example.get("ontology");
                 OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
 
@@ -406,7 +430,7 @@ public class BenchmarkOntologies {
                 example.put("Num of Justifications", String.valueOf(justificationInfo.get("totalJustifications")));
                 example.put("Max Justification Size", String.valueOf(justificationInfo.get("maxJustificationSize")));
                 example.put("Max Common Axioms", String.valueOf(justificationInfo.get("maxCommonAxioms")));
-            
+                example.put("Axiom Count:", String.valueOf(justificationInfo.get("axiomCount")));
                 try {
                     FileOutputStream exampleOut = new FileOutputStream("examples.ser");
                     ObjectOutputStream out = new ObjectOutputStream(exampleOut);
@@ -436,6 +460,7 @@ public class BenchmarkOntologies {
                     
                     String key = "Iteration "+i;
                     Long iter_runtime = runtime.get(i-1);
+                    //set timeout is 2min i.e. 120000ms
                     if (iter_runtime > 120000){
                         example.put(key, "Timeout");
                         continue;
