@@ -165,7 +165,6 @@ public class BenchmarkOntologies {
         OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
         ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-
         List<OWLClass> signClasses = new ArrayList<>(ontology.getClassesInSignature());
         Collections.shuffle(signClasses);
         Set<OWLClass> classes = new HashSet<>(signClasses.subList(0, Math.min(20, signClasses.size())));
@@ -173,17 +172,17 @@ public class BenchmarkOntologies {
 
         List<OWLSubClassOfAxiom> axiomList = new ArrayList<>(); 
         for (OWLClass owlClass : classes){
-            // Set<OWLClass> inferredSubClasses = new HashSet<>();
-            // ExecutorService executor = Executors.newSingleThreadExecutor();
-            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            // executor.shutdown();
-            // try{
-            //     inferredSubClasses = future.get(10, TimeUnit.SECONDS);
-            // } catch(Exception e){
-            //     future.cancel(true);
-            // }
-            Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            Set<OWLClass> inferredSubClasses = new HashSet<>();
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
+            Future<Set<OWLClass>> future = executor.submit(subclassTask);
+            executor.shutdown();
+            try{
+                inferredSubClasses = future.get(30, TimeUnit.SECONDS);
+            } catch(Exception e){
+                future.cancel(true);
+            }
+            // Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
             if(!inferredSubClasses.isEmpty()){
                 for (OWLClass inferredSubClass : inferredSubClasses){
                     OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -220,17 +219,17 @@ public class BenchmarkOntologies {
         Set<OWLSubClassOfAxiom> axiomSet2 = new HashSet<>();
 
         for (OWLClass owlClass : classes) {
-            // Set<OWLClass> inferredSubClasses = new HashSet<>();
-            // ExecutorService executor = Executors.newSingleThreadExecutor();
-            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            // executor.shutdown();
-            // try{
-            //     inferredSubClasses = future.get(10, TimeUnit.SECONDS);
-            // } catch(Exception e){
-            //     future.cancel(true);
-            // }
-            Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            Set<OWLClass> inferredSubClasses = new HashSet<>();
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
+            Future<Set<OWLClass>> future = executor.submit(subclassTask);
+            executor.shutdown();
+            try{
+                inferredSubClasses = future.get(10, TimeUnit.SECONDS);
+            } catch(Exception e){
+                future.cancel(true);
+            }
+            // Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
             if (!inferredSubClasses.isEmpty()) {                
                 for (OWLClass inferredSubClass: inferredSubClasses){
                     OWLSubClassOfAxiom subclassAxiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -292,17 +291,31 @@ public class BenchmarkOntologies {
 
         List<Set<? extends OWLAxiom>> setList = justifications.stream().collect(Collectors.toList());
 
-        maxCommonAxioms = IntStream.range(0, setList.size())
-            .parallel()
-            .flatMap(i -> IntStream.range(i+1, setList.size())
-            .map(j -> {
-                Set<? extends OWLAxiom> intersection = new HashSet<>(setList.get(i));
-                intersection.retainAll(setList.get(j));
-                return intersection.size();
-                })
-            )
-            .max()
-            .orElse(0);
+        // maxCommonAxioms = IntStream.range(0, setList.size())
+        //     .parallel()
+        //     .flatMap(i -> IntStream.range(i+1, setList.size())
+        //     .map(j -> {
+        //         Set<? extends OWLAxiom> intersection = new HashSet<>(setList.get(i));
+        //         intersection.retainAll(setList.get(j));
+        //         return intersection.size();
+        //         })
+        //     )
+        //     .max()
+        //     .orElse(0);
+
+        for (int i=0; i < setList.size(); i++){
+            Set<OWLAxiom> set1 = new HashSet<>(setList.get(i));
+            for (int j=i + 1; j < setList.size(); j++){
+                Set<OWLAxiom> set2 = new HashSet<>(setList.get(j));
+            
+                //get the intersection
+                set1.retainAll(set2);
+                maxCommonAxioms = Math.max(maxCommonAxioms, set1.size());
+                
+                //reinitialize set1 to compare with next inner set.
+                set1 = new HashSet<>(setList.get(i));
+            } 
+        }
 
         int totalAxioms = ontology.getAxiomCount();
 
@@ -371,7 +384,7 @@ public class BenchmarkOntologies {
                 e.printStackTrace();
             }
             // exampleList = generateExampleInstances(outDirString);
-            File exampleDir = new File("/home/service/Desktop/Examples");
+            File exampleDir = new File("/home/service/Desktop/Example_R2");
             exampleFiles = exampleDir.listFiles();
 
             try {
@@ -416,6 +429,7 @@ public class BenchmarkOntologies {
         }
 
         while (instance_index < exampleFiles.length){
+            System.gc();
             if (firstRun){
                 example = loadExampleInstances(exampleFiles[instance_index]);
                 // System.out.println(example);

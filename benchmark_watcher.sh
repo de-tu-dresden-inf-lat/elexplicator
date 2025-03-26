@@ -48,9 +48,9 @@ do
             fi
             if [ $reRuns -eq 0 ];
             then
-                java -cp "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "True" -XX:+ExitOnOutOfMemoryError
+                java -Xms2G -Xmx8G -cp  "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "True" -XX:+ExitOnOutOfMemoryError
             else    
-                java -cp "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "False" -XX:+ExitOnOutOfMemoryError
+                java -Xms2G -Xmx8G -cp -Xms2G -Xmx8G "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "False" -XX:+ExitOnOutOfMemoryError
             fi
             let reRuns=$reRuns+1;
             sleep 5;

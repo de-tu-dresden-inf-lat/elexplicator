@@ -95,6 +95,7 @@ public class JustificationsGenerator {
 			proof = ElkOwlProof.create(reasoner, axiom);
 		} catch (Exception e){
 			logger.error("Justification asynchronous computation interrupted");
+			reasoner.dispose();
 			Thread.currentThread().interrupt();
 			return null;
 		} finally {

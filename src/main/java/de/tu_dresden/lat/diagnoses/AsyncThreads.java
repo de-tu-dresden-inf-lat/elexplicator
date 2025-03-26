@@ -111,6 +111,7 @@ class SortJustificationsThread implements Runnable{
 					ComputeRepair.isSnapshotActive = true;
 				} 
 			}
+			ComputeRepair.isSnapshotActive = false;
 		} catch (Exception e) {
 			logger.warn("Thread exception: " + e.getMessage());
             // Thread.currentThread().interrupt();

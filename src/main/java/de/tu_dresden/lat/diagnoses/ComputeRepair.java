@@ -121,6 +121,10 @@ public class ComputeRepair {
 					
 					while (axiomMap.isEmpty()){
 						LoadingScreen.main(null);
+						if (!isSnapshotActive){
+							// inputFlag = false;
+							break;
+						}
 					}
 
 					Map<OWLAxiom, Integer> freqMapUnsorted = new HashMap<>(axiomMap);
