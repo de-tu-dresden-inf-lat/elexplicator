@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -18,15 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation;
 import org.apache.log4j.Logger;
@@ -34,14 +27,20 @@ import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
+import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
+import org.semanticweb.owlapi.model.OWLDocumentFormat;
+import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.semanticweb.owlapi.util.ShortFormProvider;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -56,9 +55,46 @@ import de.tu_dresden.lat.ontologyGenerator.NameGenerator;
 public class BenchmarkOntologies {
 
     private static Logger logger = Logger.getLogger(BenchmarkOntologies.class);
-    public static List<Map<String, Object>> generateExampleInstances(String outDirString){
-        int[] totalJustificationsList = {2, 5, 8, 12};
-        int[] justificationMaxSizeList = {3, 5, 8};
+    
+    public static Map<String, Object> loadGenExamples(File exampleFile, String outDirStr){
+        OWLOntology ontology = null;
+        String interestingAxiomOntology = null;
+
+        Map<String, Object> map = new HashMap<>();
+
+        String lhsStr= "A", rhsStr="C";
+
+        OWLClass lhs = NameGenerator.getInstance().getAsNameGeneratorConceptName(lhsStr);
+        OWLClass rhs = NameGenerator.getInstance().getAsNameGeneratorConceptName(rhsStr);
+
+        OWLSubClassOfAxiom axiom = ToOWLTools.getInstance().getOWLSubClassOfAxiom(lhs,rhs);
+        
+        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+        try {
+            ontology = manager.loadOntologyFromOntologyDocument(exampleFile);
+        } catch (OWLOntologyCreationException e) {
+            e.printStackTrace();
+            return null;
+        } 
+        try {
+            interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirStr);
+        } catch (OWLOntologyCreationException | IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        
+        map.put("example", exampleFile.getName());
+        map.put("ontology", ontology);
+        map.put("defectAxiom", axiom);
+        map.put("interestingAxiomOntology", interestingAxiomOntology);
+        map.put("ontologyPathStr", exampleFile.getPath());       
+        
+        return map;
+    }
+    
+    public static List<File> generateExampleInstances(String outDirString){
+        int[] totalJustificationsList = {12};
+        int[] justificationMaxSizeList = {8};
         int[] maxCommonAxiomsList = {0, 3, 5};
         String ontologyPathStr = null;
 
@@ -70,10 +106,7 @@ public class BenchmarkOntologies {
         OWLSubClassOfAxiom axiom = ToOWLTools.getInstance().getOWLSubClassOfAxiom(lhs,rhs);
         ELOntologyGenerator generator = new ELOntologyGenerator(axiom);
 
-        OWLOntology ontology = null;
-        OWLOntology interestingAxiomOntology = null;
-
-        List<Map<String, Object>> returnList = new ArrayList<>();
+        List<File> exampleFiles = new ArrayList<>();
 
         for (int totalJustification : totalJustificationsList){
             for (int justificationMaxSize : justificationMaxSizeList){
@@ -81,44 +114,22 @@ public class BenchmarkOntologies {
                     if (maxCommonAxioms >= totalJustification){
                         continue;
                     }
-                    Map<String, Object> map = new HashMap<>();
                     String exampleName = "BenchmarkOntology"+totalJustification+"-"+justificationMaxSize+"-"+maxCommonAxioms;
                     ontologyPathStr = outDirString+ File.separator +exampleName+".owl";
                     generator.generateOntology(totalJustification, justificationMaxSize,
                                                maxCommonAxioms, ontologyPathStr);
-                    OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-                    try {
-                        ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPathStr));
-                    } catch (OWLOntologyCreationException e) {
-                        e.printStackTrace();
-                        return null;
-                    } 
-                    try {
-                        interestingAxiomOntology = generateInterestingAxiom(ontologyPathStr, axiom);
-                    } catch (OWLOntologyCreationException e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                    map.put("example", exampleName);
-                    map.put("ontology", ontology);
-                    map.put("defectAxiom", axiom);
-                    map.put("interestingAxiomOntology", interestingAxiomOntology);
-                    map.put("ontologyPathStr", ontologyPathStr);
-
-                    returnList.add(map);
+                    exampleFiles.add(new File(ontologyPathStr));
+                    
                 }
             }
         }     
-        
-
-        return returnList;
+        return exampleFiles;
     }
 
-    public static Map<String, Object> loadExampleInstances(File exampleFile){
-        // Map<String, Object>returnList = new HashMap<>();
+    public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){
 
         OWLOntology ontology = null;
-        OWLOntology interestingAxiomOntology = null;
+        String interestingAxiomOntology = null;
 
         Map<String, Object> map = new HashMap<>();
         System.out.println("loading file: "+exampleFile.getName());
@@ -141,7 +152,7 @@ public class BenchmarkOntologies {
             return null;
         }
         try{
-            interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom);
+            interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirStr);
         }
         catch(Exception e){
             System.out.println("Error generating interesting axiom "+exampleFile.getName());
@@ -151,9 +162,7 @@ public class BenchmarkOntologies {
         map.put("ontology", ontology);
         map.put("defectAxiom", axiom);
         map.put("interestingAxiomOntology", interestingAxiomOntology);
-        map.put("ontologyPathStr", exampleFile.getPath());
-        // returnList.add(map);
-        
+        map.put("ontologyPathStr", exampleFile.getPath());       
         
         return map;
 
@@ -173,16 +182,18 @@ public class BenchmarkOntologies {
         List<OWLSubClassOfAxiom> axiomList = new ArrayList<>(); 
         for (OWLClass owlClass : classes){
             Set<OWLClass> inferredSubClasses = new HashSet<>();
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            executor.shutdown();
-            try{
-                inferredSubClasses = future.get(30, TimeUnit.SECONDS);
-            } catch(Exception e){
-                future.cancel(true);
-            }
-            // Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            // ExecutorService executor = Executors.newSingleThreadExecutor();
+            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
+            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
+            // executor.shutdown();
+            // try{
+            //     inferredSubClasses = future.get(30, TimeUnit.SECONDS);
+            // } catch(Exception e){
+            //     future.cancel(true);
+            //     reasoner.interrupt();
+            //     reasoner.dispose();
+            // }
             if(!inferredSubClasses.isEmpty()){
                 for (OWLClass inferredSubClass : inferredSubClasses){
                     OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -193,18 +204,18 @@ public class BenchmarkOntologies {
             }
         }
         reasoner.dispose();
+        reasoner = null;
         manager.removeOntology(ontology);
         System.gc();
         if(axiomList.isEmpty()){
             axiomList = new ArrayList<>(ontology.getAxioms(AxiomType.SUBCLASS_OF));
         }
-        // Collections.shuffle(axiomList);
         Random random = new Random();
         return axiomList.get(random.nextInt(axiomList.size()));
     }
 
-    private static OWLOntology generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom) throws OWLOntologyCreationException{
-        System.out.println("Updated File!");
+    private static String generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom, String outDirStr) throws OWLOntologyCreationException, IOException{
+        System.out.println("Generating Interesting Axiom");
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
@@ -220,16 +231,16 @@ public class BenchmarkOntologies {
 
         for (OWLClass owlClass : classes) {
             Set<OWLClass> inferredSubClasses = new HashSet<>();
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            executor.shutdown();
-            try{
-                inferredSubClasses = future.get(10, TimeUnit.SECONDS);
-            } catch(Exception e){
-                future.cancel(true);
-            }
-            // Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            // ExecutorService executor = Executors.newSingleThreadExecutor();
+            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
+            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
+            // executor.shutdown();
+            // try{
+            //     inferredSubClasses = future.get(10, TimeUnit.SECONDS);
+            // } catch(Exception e){
+            //     future.cancel(true);
+            // }
             if (!inferredSubClasses.isEmpty()) {                
                 for (OWLClass inferredSubClass: inferredSubClasses){
                     OWLSubClassOfAxiom subclassAxiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -246,8 +257,15 @@ public class BenchmarkOntologies {
         }
 
         reasoner.dispose();
+        reasoner = null;
         manager.removeOntology(ontology);
         System.gc();
+
+        String IApath = outDirStr+File.separator+"IA_ontology.owl";
+        OutputStream outputstream = Files.newOutputStream(new File(IApath).toPath());
+
+        OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
+
 
         OWLOntology interestingAxiomOntology = manager.createOntology();
 
@@ -257,14 +275,22 @@ public class BenchmarkOntologies {
         } else {
             axiomList = new ArrayList<>(axiomSet2);
         }
-        // Collections.shuffle(axiomList);
+        if(axiomList.isEmpty()){
+            axiomList = new ArrayList<>(ontology.getAxioms(AxiomType.SUBCLASS_OF));
+        }
         Random random = new Random();
         
-        manager.addAxiom(interestingAxiomOntology, axiomList.get(random.nextInt(axiomList.size())));
+        try {
+            manager.addAxiom(interestingAxiomOntology, axiomList.get(random.nextInt(axiomList.size())));
+            manager.saveOntology(interestingAxiomOntology, ontologyFormat, outputstream);
+        } catch (OWLOntologyStorageException e) {
+            e.printStackTrace();
+            return null;
+        }
         manager.removeOntology(interestingAxiomOntology);
         System.gc();
 
-        return interestingAxiomOntology;
+        return IApath;
     }
 
     private static Map<String, Integer> getJustificationInfo(OWLOntology ontology, OWLAxiom axiom){
@@ -275,6 +301,8 @@ public class BenchmarkOntologies {
         } catch (Exception e){
             e.printStackTrace();
             Thread.currentThread().interrupt();
+        } finally{
+            System.gc();
         }
         
         Map<String, Integer> infoMap = new HashMap<>();
@@ -291,28 +319,13 @@ public class BenchmarkOntologies {
 
         List<Set<? extends OWLAxiom>> setList = justifications.stream().collect(Collectors.toList());
 
-        // maxCommonAxioms = IntStream.range(0, setList.size())
-        //     .parallel()
-        //     .flatMap(i -> IntStream.range(i+1, setList.size())
-        //     .map(j -> {
-        //         Set<? extends OWLAxiom> intersection = new HashSet<>(setList.get(i));
-        //         intersection.retainAll(setList.get(j));
-        //         return intersection.size();
-        //         })
-        //     )
-        //     .max()
-        //     .orElse(0);
-
         for (int i=0; i < setList.size(); i++){
             Set<OWLAxiom> set1 = new HashSet<>(setList.get(i));
             for (int j=i + 1; j < setList.size(); j++){
                 Set<OWLAxiom> set2 = new HashSet<>(setList.get(j));
             
-                //get the intersection
                 set1.retainAll(set2);
                 maxCommonAxioms = Math.max(maxCommonAxioms, set1.size());
-                
-                //reinitialize set1 to compare with next inner set.
                 set1 = new HashSet<>(setList.get(i));
             } 
         }
@@ -358,8 +371,10 @@ public class BenchmarkOntologies {
 
     public static void main(String[] args) {
         Boolean firstRun = Boolean.parseBoolean(args[0]);
-
-        int iterations = 3;
+        Boolean genExample = Boolean.parseBoolean(args[1]);
+        int iterations = Integer.parseInt(args[2]);
+        Long timeout = Long.parseLong(args[3]);
+        
 
         String outDirString = "Benchmark";
         if(!(new File(outDirString)).exists()){
@@ -377,6 +392,7 @@ public class BenchmarkOntologies {
         List<Long> runtime = new ArrayList<>();
         File[] exampleFiles = null;
         if (firstRun){
+            
             File resultFile = new File(outDirString + File.separator + "result.csv");
             try {
                 Files.deleteIfExists(resultFile.toPath());
@@ -384,8 +400,12 @@ public class BenchmarkOntologies {
                 e.printStackTrace();
             }
             // exampleList = generateExampleInstances(outDirString);
-            File exampleDir = new File("/home/service/Desktop/Example_R2");
-            exampleFiles = exampleDir.listFiles();
+            if(genExample){
+                exampleFiles = generateExampleInstances(outDirString).toArray(new File[0]);
+            } else {
+                File exampleDir = new File("/home/service/Desktop/Examples");
+                exampleFiles = exampleDir.listFiles();
+            }
 
             try {
                 FileOutputStream exampleListOut = new FileOutputStream("exampleNames.ser");
@@ -431,11 +451,15 @@ public class BenchmarkOntologies {
         while (instance_index < exampleFiles.length){
             System.gc();
             if (firstRun){
-                example = loadExampleInstances(exampleFiles[instance_index]);
-                // System.out.println(example);
-                if (example == null){
-                    instance_index++;
-                    continue;
+                if (genExample){
+                    example = loadGenExamples(exampleFiles[instance_index], outDirString);
+                } else {
+                    example = loadExampleInstances(exampleFiles[instance_index], outDirString);
+                    // System.out.println(example);
+                    if (example == null){
+                        instance_index++;
+                        continue;
+                    }
                 }
                 OWLOntology ontology = (OWLOntology) example.get("ontology");
                 OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
@@ -460,11 +484,23 @@ public class BenchmarkOntologies {
             String exampleName = (String) example.get("example");
             OWLOntology ontology = (OWLOntology) example.get("ontology");
             OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
-            OWLOntology interestingAxiomOntology = (OWLOntology) example.get("interestingAxiomOntology");
+            String interestingAxiomOntology = (String) example.get("interestingAxiomOntology");
             String ontologyPathStr = (String) example.get("ontologyPathStr");
+            
+            ManchesterOWLSyntaxOWLObjectRendererImpl renderer = new ManchesterOWLSyntaxOWLObjectRendererImpl();
+            // renderer.setShortFormProvider(new SimpleShortFormProvider());;
+            renderer.setShortFormProvider(new ShortFormProvider() {
+                @Override
+                public String getShortForm(OWLEntity entity){
+                    return "<"+entity.getIRI().toString()+">";
+                }
 
+                @Override
+                public void dispose(){}
+            });
+            String defectAxiomStr = renderer.render(axiom);
             BenchmarkImpactComputation bench = new BenchmarkImpactComputation(
-                ontology, interestingAxiomOntology, axiom, ontologyPathStr, iterations,
+                ontology, interestingAxiomOntology, defectAxiomStr, ontologyPathStr, iterations, timeout,
                 instance_index, iteration_index, runtime
                 );
             try {
@@ -475,7 +511,7 @@ public class BenchmarkOntologies {
                     String key = "Iteration "+i;
                     Long iter_runtime = runtime.get(i-1);
                     //set timeout is 2min i.e. 120000ms
-                    if (iter_runtime > 120000){
+                    if (iter_runtime > timeout*1000){
                         example.put(key, "Timeout");
                         continue;
                     }

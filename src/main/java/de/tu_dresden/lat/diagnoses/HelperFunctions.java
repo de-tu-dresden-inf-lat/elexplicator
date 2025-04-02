@@ -124,15 +124,19 @@ public class HelperFunctions {
 			try{
 				entailment = reasoner.isEntailed(axiom);
 				return entailment;
-			} catch (ReasonerInternalException e){
-				logger.warn("Failed to check entailment");
-				throw e;
 			} catch (Exception e){
 				logger.error("Failed to check entailment");
+				reasoner.interrupt();
+				reasoner.dispose();
+				reasoner = null;
 				throw e;
 			} 
 			finally {
-				reasoner.dispose();
+				if (reasoner != null){
+					reasoner.dispose();
+					reasoner = null;
+				}
+				
 			}
 		} else {
 			OWLReasonerFactory reasonerFactory = new ReasonerFactory();
@@ -143,7 +147,9 @@ public class HelperFunctions {
 				logger.error("Failed to check entailment");
 				throw e;
 			} finally {
+				reasoner.interrupt();
 				reasoner.dispose();
+				reasoner = null;
 			}
 		}		
 	}

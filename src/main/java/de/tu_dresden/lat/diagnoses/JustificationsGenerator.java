@@ -34,7 +34,6 @@ import com.clarkparsia.owlapi.explanation.util.SilentExplanationProgressMonitor;
 public class JustificationsGenerator {
 
 	private static final Logger logger = Logger.getLogger(JustificationsGenerator.class);
-
 	/**
 	 * Return a set of all justifications using ELK
 	 * 
@@ -51,11 +50,14 @@ public class JustificationsGenerator {
 		try{
 			proof = ElkOwlProof.create(reasoner, axiom);
 		} catch (Exception e){
+			System.out.println(e);
 			logger.error("Justification computation interrupted");
-			return null;
-		} finally {
+			reasoner.interrupt();
 			reasoner.dispose();
-		}		
+			reasoner = null;
+			Thread.currentThread().interrupt();
+			return null;
+		}	
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
 
@@ -66,12 +68,19 @@ public class JustificationsGenerator {
 			if (logger.isDebugEnabled())
 				allJustifications.forEach(logger::debug);
 		} catch (Exception e){
+			System.out.println(e);
 			logger.error("Justification computation interrupted");
+			if (reasoner != null){
+				reasoner.interrupt();
+				reasoner.dispose();
+				reasoner = null;
+			}
 			Thread.currentThread().interrupt();
 			return null;
-		} finally {
-			reasoner.dispose();
-		}
+		} 
+		
+		reasoner.dispose();
+		reasoner = null;
 		return allJustifications;
 	}
 
@@ -95,12 +104,12 @@ public class JustificationsGenerator {
 			proof = ElkOwlProof.create(reasoner, axiom);
 		} catch (Exception e){
 			logger.error("Justification asynchronous computation interrupted");
+			reasoner.interrupt();
 			reasoner.dispose();
+			reasoner = null;
 			Thread.currentThread().interrupt();
 			return null;
-		} finally {
-			reasoner.dispose();
-		}		
+		} 	
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
 
@@ -112,10 +121,19 @@ public class JustificationsGenerator {
 				allJustifications.forEach(logger::debug);
 		} catch (Exception e){
 			logger.error("Justification computation interrupted");
+			if (reasoner != null){
+				reasoner.interrupt();
+				reasoner.dispose();
+				reasoner = null;
+			}
+			Thread.currentThread().interrupt();
 			return null;
-		} finally {
-			reasoner.dispose();
-		}
+		} 
+		// finally {
+		// 	
+		// }
+		reasoner.dispose();
+		reasoner = null;
 		return allJustifications;
 	}
 

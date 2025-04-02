@@ -50,9 +50,9 @@ class ComputeAxiomWeightThread implements Runnable{
 	String ontologyPath;
 	String outputFileName;
 	Set<Set<? extends OWLAxiom>> allOptimalDiagnoses;
-	Set<OWLAxiom> interestingAxioms;
+	Set<? extends OWLAxiom> interestingAxioms;
 	ReasonerName reasonerName;
-	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<OWLAxiom> interestingAxioms, ReasonerName reasonerName){
+	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxioms, ReasonerName reasonerName){
 		this.outDirStr = outDirStr;
 		this.mDsID = mDsID;
 		this.ontologyPath = ontologyPath;
