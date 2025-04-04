@@ -53,9 +53,9 @@ do
             if [ $reRuns -eq 0 ];
             then
                 # program arguments : first run?, generated examples?, iterations, timeout in sec
-                java -Xms2G -Xmx8G -cp  "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "True" "$gen_examples" "$iterations" "$timeout" -XX:+ExitOnOutOfMemoryError
+                java -Xms2G -Xmx8G -cp "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "True" "$gen_examples" "$iterations" "$timeout" -XX:+ExitOnOutOfMemoryError
             else    
-                java -Xms2G -Xmx8G -cp -Xms2G -Xmx8G "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "False" "$gen_examples" "$iterations" "$timeout" -XX:+ExitOnOutOfMemoryError
+                java -Xms2G -Xmx8G -cp "$CLASS_PATH:$JAR_PATH" "$CLASS_NAME" "False" "$gen_examples" "$iterations" "$timeout" -XX:+ExitOnOutOfMemoryError
             fi
             let reRuns=$reRuns+1;
             sleep 5;

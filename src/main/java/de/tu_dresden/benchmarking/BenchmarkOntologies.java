@@ -56,18 +56,11 @@ public class BenchmarkOntologies {
 
     private static Logger logger = Logger.getLogger(BenchmarkOntologies.class);
     
-    public static Map<String, Object> loadGenExamples(File exampleFile, String outDirStr){
+    public static Map<String, Object> loadGenExamples(File exampleFile, String outDirStr, OWLSubClassOfAxiom axiom){
         OWLOntology ontology = null;
         String interestingAxiomOntology = null;
 
         Map<String, Object> map = new HashMap<>();
-
-        String lhsStr= "A", rhsStr="C";
-
-        OWLClass lhs = NameGenerator.getInstance().getAsNameGeneratorConceptName(lhsStr);
-        OWLClass rhs = NameGenerator.getInstance().getAsNameGeneratorConceptName(rhsStr);
-
-        OWLSubClassOfAxiom axiom = ToOWLTools.getInstance().getOWLSubClassOfAxiom(lhs,rhs);
         
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         try {
@@ -92,8 +85,9 @@ public class BenchmarkOntologies {
         return map;
     }
     
-    public static List<File> generateExampleInstances(String outDirString){
-        int[] totalJustificationsList = {12};
+    public static Map<String, Object> generateExampleInstances(String outDirString){
+        Map<String, Object> exampleInst = new HashMap<>();
+        int[] totalJustificationsList = {8};
         int[] justificationMaxSizeList = {8};
         int[] maxCommonAxiomsList = {0, 3, 5};
         String ontologyPathStr = null;
@@ -122,8 +116,10 @@ public class BenchmarkOntologies {
                     
                 }
             }
-        }     
-        return exampleFiles;
+        } 
+        exampleInst.put("files", exampleFiles);
+        exampleInst.put("defect", axiom);    
+        return exampleInst;
     }
 
     public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){
@@ -183,17 +179,6 @@ public class BenchmarkOntologies {
         for (OWLClass owlClass : classes){
             Set<OWLClass> inferredSubClasses = new HashSet<>();
             inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
-            // ExecutorService executor = Executors.newSingleThreadExecutor();
-            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            // executor.shutdown();
-            // try{
-            //     inferredSubClasses = future.get(30, TimeUnit.SECONDS);
-            // } catch(Exception e){
-            //     future.cancel(true);
-            //     reasoner.interrupt();
-            //     reasoner.dispose();
-            // }
             if(!inferredSubClasses.isEmpty()){
                 for (OWLClass inferredSubClass : inferredSubClasses){
                     OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -232,15 +217,6 @@ public class BenchmarkOntologies {
         for (OWLClass owlClass : classes) {
             Set<OWLClass> inferredSubClasses = new HashSet<>();
             inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
-            // ExecutorService executor = Executors.newSingleThreadExecutor();
-            // Callable<Set<OWLClass>> subclassTask = () -> {return(reasoner.getSubClasses(owlClass, false).getFlattened());};
-            // Future<Set<OWLClass>> future = executor.submit(subclassTask);
-            // executor.shutdown();
-            // try{
-            //     inferredSubClasses = future.get(10, TimeUnit.SECONDS);
-            // } catch(Exception e){
-            //     future.cancel(true);
-            // }
             if (!inferredSubClasses.isEmpty()) {                
                 for (OWLClass inferredSubClass: inferredSubClasses){
                     OWLSubClassOfAxiom subclassAxiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -375,8 +351,9 @@ public class BenchmarkOntologies {
         int iterations = Integer.parseInt(args[2]);
         Long timeout = Long.parseLong(args[3]);
         
-
         String outDirString = "Benchmark";
+
+        OWLSubClassOfAxiom genDefectAxiom = null;
         if(!(new File(outDirString)).exists()){
             try {
                 Files.createDirectory(Paths.get(outDirString));
@@ -386,7 +363,6 @@ public class BenchmarkOntologies {
             }
         }
         Map<String, Object> example = new HashMap<>();
-        // List<Map<String, Object>> exampleList = new ArrayList<>();
         int iteration_index = 0;
         int instance_index = 0;
         List<Long> runtime = new ArrayList<>();
@@ -399,9 +375,11 @@ public class BenchmarkOntologies {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            // exampleList = generateExampleInstances(outDirString);
             if(genExample){
-                exampleFiles = generateExampleInstances(outDirString).toArray(new File[0]);
+                Map<String, Object> exampleInst = generateExampleInstances(outDirString);
+                exampleFiles = ((List<Files>) exampleInst.get("files")).toArray(new File[0]);
+                System.out.print(exampleFiles);
+                genDefectAxiom = (OWLSubClassOfAxiom) exampleInst.get("defect");
             } else {
                 File exampleDir = new File("/home/service/Desktop/Examples");
                 exampleFiles = exampleDir.listFiles();
@@ -452,7 +430,7 @@ public class BenchmarkOntologies {
             System.gc();
             if (firstRun){
                 if (genExample){
-                    example = loadGenExamples(exampleFiles[instance_index], outDirString);
+                    example = loadGenExamples(exampleFiles[instance_index], outDirString, genDefectAxiom);
                 } else {
                     example = loadExampleInstances(exampleFiles[instance_index], outDirString);
                     // System.out.println(example);
@@ -510,7 +488,6 @@ public class BenchmarkOntologies {
                     
                     String key = "Iteration "+i;
                     Long iter_runtime = runtime.get(i-1);
-                    //set timeout is 2min i.e. 120000ms
                     if (iter_runtime > timeout*1000){
                         example.put(key, "Timeout");
                         continue;
