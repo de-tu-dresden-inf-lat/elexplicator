@@ -32,14 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.apibinding.OWLManager;
-import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
-
+import org.semanticweb.owlapi.model.parameters.Imports;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
@@ -101,8 +100,7 @@ public class ComputeRepair {
 			outDirStr = "defaultRepairFolder";
 
 		sOWLFormatter.setReferenceOntology(ontology);
-		// interestingAxiomOntology.getAxioms(AxiomType.skipDeclarations().iterator().next());
-		Set<? extends OWLAxiom> interestingAxiomsSet = interestingAxiomOntology.getAxioms(AxiomType.SUBCLASS_OF);
+		Set<? extends OWLAxiom> interestingAxiomsSet = interestingAxiomOntology.getTBoxAxioms(Imports.EXCLUDED);
 		allJustifications = new CopyOnWriteArraySet<>();
 		justificationQueue = new LinkedBlockingQueue<>();
 		axiomMap = new ConcurrentHashMap<>();
@@ -659,6 +657,7 @@ public class ComputeRepair {
 	public static void cleanup(){
 		System.gc();  // Force JVM to release file locks
 		System.out.println("Deleting the repair ontology files");
+		if (tempFiles == null){return;}
 		for (String tempFile : tempFiles){
 			File delfile = new File(tempFile);
 			try {

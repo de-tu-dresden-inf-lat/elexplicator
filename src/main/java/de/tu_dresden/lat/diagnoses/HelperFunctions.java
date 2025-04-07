@@ -24,7 +24,6 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
-import org.semanticweb.owlapi.reasoner.ReasonerInternalException;
 
 import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;

@@ -515,7 +515,11 @@ public class BenchmarkOntologies {
                 instance_index++;
 
                 File exampleSer = new File("examples.ser");
-                if(exampleSer.exists()){exampleSer.delete();}          
+                if(exampleSer.exists()){exampleSer.delete();}    
+                if(interestingAxiomOntology != null){
+                    File interestingAxiomOntologyFile = new File(interestingAxiomOntology);
+                    if(interestingAxiomOntologyFile.exists()){interestingAxiomOntologyFile.delete();}
+                }
             } catch (Exception e){
                 System.out.println("Error in benchmarkontologies main");
                 e.printStackTrace();
