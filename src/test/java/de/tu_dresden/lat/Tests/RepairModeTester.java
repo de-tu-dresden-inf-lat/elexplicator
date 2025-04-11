@@ -113,11 +113,11 @@ public class RepairModeTester {
     @Test
     public void testGetAxiomWeight() throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
         Map<OWLAxiom, Integer> expectedAxiomWeight = new HashMap<>();
-        expectedAxiomWeight.put(justificationAxioms.get(0), 83);
+        expectedAxiomWeight.put(justificationAxioms.get(0), 100);
         expectedAxiomWeight.put(justificationAxioms.get(2), 0);
-        expectedAxiomWeight.put(justificationAxioms.get(9), 83);
-        expectedAxiomWeight.put(justificationAxioms.get(13), 50);
-        expectedAxiomWeight.put(justificationAxioms.get(7), 83);
+        expectedAxiomWeight.put(justificationAxioms.get(9), 100);
+        expectedAxiomWeight.put(justificationAxioms.get(13), 66);
+        expectedAxiomWeight.put(justificationAxioms.get(7), 100);
 
         Path tempOutDir = Files.createTempDirectory(tempDir,"tempOutDirStr");
         String tempOutDirStr = tempOutDir.toString();

@@ -52,6 +52,9 @@ class ComputeAxiomWeightThread implements Runnable{
 	Set<Set<? extends OWLAxiom>> allOptimalDiagnoses;
 	Set<? extends OWLAxiom> interestingAxioms;
 	ReasonerName reasonerName;
+
+	Logger logger = Logger.getLogger(ComputeAxiomWeightThread.class);
+
 	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxioms, ReasonerName reasonerName){
 		this.outDirStr = outDirStr;
 		this.mDsID = mDsID;
@@ -70,10 +73,9 @@ class ComputeAxiomWeightThread implements Runnable{
 			int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName, allOptimalDiagnoses);
 			ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
 		} catch (Exception e){
-			e.printStackTrace();
+			logger.warn("Thread exception: " + e.getMessage());
 			Thread.currentThread().interrupt();
 		} finally {
-			// ComputeRepair.cleanup(tempOutDirStr);
 			ComputeRepair.cleanup();
 		}
 		

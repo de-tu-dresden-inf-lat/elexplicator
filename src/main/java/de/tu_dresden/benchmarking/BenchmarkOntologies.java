@@ -30,6 +30,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.AxiomType;
+import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -46,6 +47,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.tu_dresden.inf.lat.counterExample.tools.Segmenter;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.diagnoses.HelperFunctions;
@@ -272,8 +274,17 @@ public class BenchmarkOntologies {
     private static Map<String, Integer> getJustificationInfo(OWLOntology ontology, OWLAxiom axiom){
         // given an OWL ontolgy and defect, get the number of justifications, max justification size and max number of common axioms
         Set<Set<? extends OWLAxiom>> justifications = new HashSet<>();
+        OWLOntology defectModule = null;
         try{
-            justifications = HelperFunctions.getAllJustifications(ReasonerName.Elk , axiom, ontology);
+            defectModule = Segmenter.getStarModule(ontology, axiom.getSignature(),
+            		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
+            				: IRI.create(""));
+        } catch (Exception e){
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        }
+        try{
+            justifications = HelperFunctions.getAllJustifications(ReasonerName.Elk , axiom, defectModule);
         } catch (Exception e){
             e.printStackTrace();
             Thread.currentThread().interrupt();
@@ -307,11 +318,13 @@ public class BenchmarkOntologies {
         }
 
         int totalAxioms = ontology.getAxiomCount();
+        int moduleAxioms = defectModule.getAxiomCount();
 
         infoMap.put("totalJustifications", totalJustifications);
         infoMap.put("maxJustificationSize", maxJustificationSize);
         infoMap.put("maxCommonAxioms", maxCommonAxioms);
         infoMap.put("axiomCount", totalAxioms);
+        infoMap.put("moduleAxiomCount", moduleAxioms);
 
         return infoMap;
     }
@@ -350,6 +363,16 @@ public class BenchmarkOntologies {
         Boolean genExample = Boolean.parseBoolean(args[1]);
         int iterations = Integer.parseInt(args[2]);
         Long timeout = Long.parseLong(args[3]);
+        String examplePath = null;
+
+        if(!genExample){
+            examplePath = args[4];
+            if (! new File(examplePath).isDirectory()){
+                logger.error("Invalid example path: "+examplePath);
+                System.out.println("Invalid example path: "+examplePath);
+                return;
+            }
+        }
         
         String outDirString = "Benchmark";
 
@@ -381,7 +404,7 @@ public class BenchmarkOntologies {
                 System.out.print(exampleFiles);
                 genDefectAxiom = (OWLSubClassOfAxiom) exampleInst.get("defect");
             } else {
-                File exampleDir = new File("/home/service/Desktop/Examples");
+                File exampleDir = new File(examplePath); 
                 exampleFiles = exampleDir.listFiles();
             }
 
@@ -433,7 +456,6 @@ public class BenchmarkOntologies {
                     example = loadGenExamples(exampleFiles[instance_index], outDirString, genDefectAxiom);
                 } else {
                     example = loadExampleInstances(exampleFiles[instance_index], outDirString);
-                    // System.out.println(example);
                     if (example == null){
                         instance_index++;
                         continue;
@@ -446,7 +468,8 @@ public class BenchmarkOntologies {
                 example.put("Num of Justifications", String.valueOf(justificationInfo.get("totalJustifications")));
                 example.put("Max Justification Size", String.valueOf(justificationInfo.get("maxJustificationSize")));
                 example.put("Max Common Axioms", String.valueOf(justificationInfo.get("maxCommonAxioms")));
-                example.put("Axiom Count:", String.valueOf(justificationInfo.get("axiomCount")));
+                example.put("Axiom Count", String.valueOf(justificationInfo.get("axiomCount")));
+                example.put("Module Axiom Count", String.valueOf(justificationInfo.get("moduleAxiomCount")));
                 try {
                     FileOutputStream exampleOut = new FileOutputStream("examples.ser");
                     ObjectOutputStream out = new ObjectOutputStream(exampleOut);
@@ -534,7 +557,8 @@ public class BenchmarkOntologies {
             if(exampleListSer.exists()){exampleListSer.delete();}          
             writeBenchLog();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error writing benchmark log: "+e.getMessage());
+            System.out.println("Error writing benchmark log: "+e.getMessage());
         }
             
     }

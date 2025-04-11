@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -41,6 +42,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.parameters.Imports;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
+import de.tu_dresden.inf.lat.counterExample.tools.Segmenter;
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
@@ -113,8 +115,12 @@ public class ComputeRepair {
 		Thread computeJustificationsThread = null;
 		Thread sortJustificationsThread = null;
 
+		OWLOntology defectModule =  Segmenter.getStarModule(ontology, axiom.getSignature(),
+				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
+						: IRI.create(""));
+
 		try{
-			ComputeJustificationsThread computeJustificationsRunnable = new ComputeJustificationsThread(reasonerName, axiom, ontology);
+			ComputeJustificationsThread computeJustificationsRunnable = new ComputeJustificationsThread(reasonerName, axiom, defectModule);
 			computeJustificationsThread = new Thread(computeJustificationsRunnable); 
 			computeJustificationsThread.start();
 
@@ -269,15 +275,16 @@ public class ComputeRepair {
 		} catch (Exception e){
 			computeJustificationsThread.interrupt();
 			sortJustificationsThread.interrupt();
-			if (!axiomWeightThread.equals(null)){
+			if (axiomWeightThread != null){
 				axiomWeightThread.interrupt();
 			}
 			Thread.currentThread().interrupt();
 			ecode = ExitCode.executionInterrupted;
 			return ecode;
-		} finally {
-			cleanup();
-		}
+		} 
+		// finally {
+		// 	cleanup();
+		// }
 
 		return ecode;
 		
@@ -664,6 +671,7 @@ public class ComputeRepair {
 				Files.deleteIfExists(delfile.toPath());
 				tempFiles.remove(tempFile);
 			} catch (IOException e) {
+				System.out.println(e.getMessage());
 				System.out.println("Couldn't delete file: " + tempFile);
 			}
 		}

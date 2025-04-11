@@ -20,7 +20,6 @@ generatedProofs/
 defaultOutputFolder/
 Diagnosis/
 Repair/
-TestOntology/
 repo/
 **/original_asp_program.txt
 **/what_if.txt
