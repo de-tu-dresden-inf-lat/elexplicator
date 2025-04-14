@@ -90,7 +90,7 @@ public class ComputeRepair {
  */
 	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
-
+		System.out.println("Using module!");
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
 			System.out.println("Shutting down");
 			signal = false;

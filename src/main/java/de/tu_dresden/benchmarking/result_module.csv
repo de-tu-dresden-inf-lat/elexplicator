@@ -1,0 +1,275 @@
+Iteration 1,Iteration 2,Axiom Count,Standard Deviation,Num of Justifications,Std Dev %,defectAxiom,Max Common Axioms,example,Module Axiom Count,Average Runtime,Max Justification Size,Iteration 3
+9239,9259,1732,13.61,1,0.15,SubClassOf(<http://purl.obolibrary.org/obo/PORO_0000583> <http://www.absoluteiri.edu/RELAPPROXC1249>),0,ore_ont_3349.owl,125,9243,6,9233
+7180,7189,14101,30.07,1,0.42,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_SPCC18.15> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-4896_III>)),0,ore_ont_12776.owl,4,7167,1,7133
+6929,6870,727,32.23,1,0.47,SubClassOf(<http://dbpedia.org/ontology/Scientist> ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ekp/owl/Eukaryote.owl#linksToGrape> <http://dbpedia.org/ontology/Grape>)),0,ore_ont_11978.owl,280,6892,1,6877
+13106,13163,193976,114.74,1,0.88,SubClassOf(<http://purl.obolibrary.org/obo/ZFIN_ZDB-GENE-090612-2> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0042162>))),0,ore_ont_5760.owl,178225,13070,1,12942
+9125,9168,1909,22.34,1,0.24,SubClassOf(<http://www.aiai.ed.ac.uk/resources/go/cell.owl#CL.0000139> <http://www.aiai.ed.ac.uk/resources/go/cell.owl#CL.0000151>),0,ore_ont_4400.owl,7,9143,3,9136
+6860,6812,157,26.39,1,0.39,SubClassOf(<http://rs.tdwg.org/ontology/voc/OccurrenceRecord#Identification> owl:Thing),0,ore_ont_8974.owl,1,6829,0,6817
+27235,27590,350614,756.94,1,2.80,SubClassOf(<http://purl.org/obo/owl/GO#GO_0030598> <http://purl.org/obo/owl/GO#GO_0016799>),0,ore_ont_9400.owl,5,26987,2,26138
+9096,9101,1094,33.87,1,0.37,SubClassOf(<http://purl.obolibrary.org/obo/EO_0007379> <http://purl.obolibrary.org/obo/EO_0007233>),0,ore_ont_13234.owl,5,9118,2,9157
+8252,8647,177005,201.77,1,2.39,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSMUSG00000022479> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/MP_0000133>)),0,ore_ont_7343.owl,300,8425,1,8378
+11671,9522,21582,1216.93,1,11.85,SubClassOf(<http://purl.obolibrary.org/obo/MP_0009982> <http://purl.obolibrary.org/obo/MP_0000841>),0,ore_ont_12161.owl,11,10266,5,9607
+17832,17840,401194,237.32,1,1.32,SubClassOf(<http://purl.obolibrary.org/obo/RGD_3595> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/GO_0015935>))),0,ore_ont_1306.owl,401194,17973,1,18247
+7161,7135,3800,36.46,1,0.51,SubClassOf(<http://purl.org/obo/owl/DOID#DOID_6491> <http://purl.org/obo/owl/DOID#DOID_476>),0,ore_ont_544.owl,8,7128,1,7089
+9564,9576,25356,28.92,1,0.30,SubClassOf(<http://doe-generated-ontology.com/OntoAD#C0446987> <http://doe-generated-ontology.com/OntoAD#C0230130>),0,ore_ont_9792.owl,7,9553,3,9521
+17704,18384,200696,362.55,1,2.00,SubClassOf(<http://purl.obolibrary.org/obo/FMA_7205> <http://purl.obolibrary.org/obo/FMA_55661>),0,ore_ont_5927.owl,7,18116,3,18262
+9190,9229,3096,29.14,1,0.32,SubClassOf(<http://purl.obolibrary.org/obo/HAO_0000283> <http://purl.obolibrary.org/obo/HAO_0000024>),0,ore_ont_3635.owl,22,9197,3,9172
+12287,10050,151361,1339.47,1,12.47,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB_F1P0E4> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/GO_0005741>))),0,ore_ont_5602.owl,151361,10743,1,9892
+7957,7961,90930,15.14,1,0.19,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_C43C3.8> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-6239_X>)),0,ore_ont_16684.owl,4,7967,1,7985
+9113,9124,527,14.11,1,0.15,SubClassOf(<http://ontology.neuinfo.org/NIF/BiomaterialEntities/NIF-Cell.owl#sao1540081501> <http://ontology.neuinfo.org/NIF/BiomaterialEntities/NIF-Cell.owl#sao197110912>),0,ore_ont_6796.owl,5,9126,2,9141
+7743,7949,67212,131.64,1,1.69,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_AT3G26490> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-3702_3>)),0,ore_ont_15099.owl,4,7798,1,7704
+7226,7291,19156,39.37,1,0.54,SubClassOf(<http://purl.obolibrary.org/obo/WBbt_0002838> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/WBbt_0004967>)),0,ore_ont_13000.owl,98,7245,1,7220
+7761,7723,64637,70.73,1,0.92,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSDARG00000088294> <http://purl.obolibrary.org/obo/SO_0001217>),0,ore_ont_16687.owl,3,7702,1,7624
+8312,8540,183517,260.66,1,3.04,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSMUSG00000027671> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/UBERON_0002107>)),0,ore_ont_8145.owl,90,8561,1,8832
+7409,7459,32270,48.51,1,0.65,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSPMAG00000007635> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-7757_GL487559>)),0,ore_ont_15178.owl,4,7458,1,7506
+9134,9185,1835,34.21,1,0.37,SubClassOf(<http://www.text2onto.org/ontology#g_cell> <http://www.text2onto.org/ontology#endocrine_cell>),0,ore_ont_12831.owl,5,9172,2,9199
+8149,7930,77279,110.20,1,1.37,SubClassOf(<http://purl.obolibrary.org/obo/TTO_1027912> <http://purl.obolibrary.org/obo/TTO_101410>),0,ore_ont_7493.owl,3,8032,1,8018
+9205,9201,2333,8.89,1,0.10,SubClassOf(<http://doe-generated-ontology.com/OntoPneumo#AttributDirectPhysique> <http://doe-generated-ontology.com/OntoPneumo#Attribut>),0,ore_ont_12009.owl,7,9208,3,9218
+10163,12461,165547,1314.51,1,11.25,SubClassOf(<http://purl.obolibrary.org/obo/FB_FBgn0069936> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002162> <http://purl.obolibrary.org/obo/NCBITaxon_7227>)),0,ore_ont_14216.owl,165547,11680,1,12418
+9198,9269,1780,37.80,1,0.41,SubClassOf(<http://purl.obolibrary.org/obo/MPATH_754> <http://purl.obolibrary.org/obo/MPATH_41>),0,ore_ont_14901.owl,5,9241,2,9256
+16379,14727,213790,914.06,1,5.79,SubClassOf(<http://purl.obolibrary.org/obo/VTO_0055095> <http://purl.obolibrary.org/obo/VTO_0055064>),0,ore_ont_15696.owl,5,15779,2,16231
+9139,9169,687,15.04,1,0.16,SubClassOf(<http://purl.obolibrary.org/obo/UO_0000118> <http://purl.obolibrary.org/obo/UO_0000157>),0,ore_ont_4767.owl,5,9153,2,9152
+7027,7083,161,29.87,1,0.42,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC44> <http://www.absoluteiri.edu/RELAPPROXC33>),0,ore_ont_8937.owl,3,7049,1,7037
+9084,9153,535,36.47,1,0.40,SubClassOf(<http://purl.obolibrary.org/obo/APO_0000195> <http://purl.obolibrary.org/obo/APO_0000084>),0,ore_ont_15576.owl,5,9125,2,9139
+9494,9460,19525,39.11,1,0.41,SubClassOf(<http://purl.obolibrary.org/obo/MP_0004925> <http://purl.obolibrary.org/obo/MP_0001963>),0,ore_ont_10389.owl,5,9456,2,9416
+11986,11590,19225,230.38,1,1.97,SubClassOf(<http://purl.obolibrary.org/obo/FBbt_02000004> <http://purl.obolibrary.org/obo/FBbt_00007367>),0,ore_ont_14280.owl,470,11720,8,11584
+28047,27544,1928386,339.69,1,1.23,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSMUSG00000068614> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/UBERON_0002137>)),0,ore_ont_3836.owl,304,27663,1,27400
+15271,15207,160026,173.87,1,1.15,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_63526> <http://purl.obolibrary.org/obo/CHEBI_23906>),0,ore_ont_15929.owl,7,15140,3,14943
+7155,7098,2272,29.14,1,0.41,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC690> <http://www.absoluteiri.edu/RELAPPROXC557>),0,ore_ont_1481.owl,1600,7130,1,7137
+10599,10789,459568,134.13,1,1.26,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSG00000124783> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_00022060> <http://purl.obolibrary.org/obo/UBERON_0001004>)),0,ore_ont_10445.owl,120,10639,1,10530
+10275,10233,74843,1155.47,1,10.58,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_38058> <http://purl.obolibrary.org/obo/CHEBI_50893>),0,ore_ont_15388.owl,5,10921,2,12255
+7593,7402,42908,96.81,1,1.29,SubClassOf(<http://purl.obolibrary.org/obo/FMA_15789> <http://purl.obolibrary.org/obo/FMA_3717>),0,ore_ont_7716.owl,3,7488,1,7470
+9216,9273,4599,28.57,1,0.31,SubClassOf(<http://purl.obolibrary.org/obo/TGMA_0000640> <http://purl.obolibrary.org/obo/TGMA_0001846>),0,ore_ont_2440.owl,7,9245,3,9248
+10028,10043,146260,1213.90,1,11.31,SubClassOf(<http://purl.obolibrary.org/obo/FB_FBgn0024887> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0003676>))),0,ore_ont_4557.owl,146260,10736,1,12138
+7440,7536,48845,52.78,1,0.71,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB#_Q9SSF8> <http://purl.obolibrary.org/obo/PR_000000001>),0,ore_ont_4235.owl,3,7475,1,7450
+7088,7169,1525,42.04,1,0.59,SubClassOf(<http://purl.obolibrary.org/obo/GO_0030317> <http://purl.obolibrary.org/obo/GO_0006928>),0,ore_ont_457.owl,5,7135,1,7148
+9285,9275,4284,22.50,1,0.24,SubClassOf(<http://purl.obolibrary.org/obo/AAO_0010567> <http://purl.obolibrary.org/obo/AAO_0010015>),0,ore_ont_9598.owl,5,9292,2,9318
+7676,7693,44839,21.13,1,0.28,SubClassOf(<http://purl.obolibrary.org/obo/MGI_MGI%3A102952> <http://purl.obolibrary.org/obo/PANTHER_PTHR11255>),0,ore_ont_9513.owl,3,7673,1,7651
+8027,7987,102336,34.18,1,0.43,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSDARG00000058287> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_00022060> <http://purl.obolibrary.org/obo/UBERON_0002050>)),0,ore_ont_8557.owl,16,8023,1,8055
+9432,9483,15081,28.62,1,0.30,SubClassOf(<http://purl.obolibrary.org/obo/VT_0002648> <http://purl.obolibrary.org/obo/VT_0000452>),0,ore_ont_6198.owl,42,9450,4,9435
+7184,7078,14372,55.94,1,0.78,SubClassOf(<http://www.xspan.org/obo.owl#EMAPA.16752> <http://www.xspan.org/obo.owl#XUO.0000004>),0,ore_ont_1555.owl,3,7141,1,7162
+7428,7349,35517,50.50,1,0.69,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB_Q9R0Z9> <http://purl.obolibrary.org/obo/PR_000006505>),0,ore_ont_9590.owl,3,7370,1,7334
+15220,15017,128846,162.36,2,1.08,SubClassOf(<http://purl.obolibrary.org/obo/GO_0033482> <http://purl.obolibrary.org/obo/GO_0019586>),0,ore_ont_10175.owl,8,15045,2,14899
+11419,11400,11677,37.87,2,0.33,SubClassOf(<http://sweet.jpl.nasa.gov/2.1/phenPlanetOscillation.owl#ENSO> <http://sweet.jpl.nasa.gov/2.1/phenSystem.owl#SystemStateChange>),3,ore_ont_13621.owl,1454,11430,5,11473
+21824,21711,433558,573.50,1,2.68,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSG00000128272> <http://purl.obolibrary.org/obo/ENSEMBL_ENSFM00500000271462>),0,ore_ont_12387.owl,9,21438,2,20779
+7170,7137,2271,35.53,1,0.50,SubClassOf(<http://purl.org/obo/owl/GO#GO_0060989> <http://purl.org/obo/owl/GO#GO_0060988>),0,ore_ont_9857.owl,5,7135,1,7099
+9588,9602,23649,1165.11,2,11.35,SubClassOf(<http://purl.obolibrary.org/obo/MP_0009417> <http://purl.obolibrary.org/obo/MP_0004817>),1,ore_ont_4732.owl,10,10267,3,11613
+9081,9100,700,31.76,1,0.35,SubClassOf(<http://www.cidoc-crm.org/cidoc-crm/E47_Spatial_Coordinates> <http://www.cidoc-crm.org/cidoc-crm/E28_Conceptual_Object>),0,ore_ont_2228.owl,9,9108,4,9143
+9316,9283,8720,22.50,1,0.24,SubClassOf(<http://purl.obolibrary.org/obo/RS_0001754> <http://purl.obolibrary.org/obo/RS_0001743>),0,ore_ont_11619.owl,5,9290,2,9273
+9134,9146,1254,7.23,1,0.08,SubClassOf(<http://lod.taxonconcept.org/ontology/2010_04_21/phylobase.owl#Eunotiales> <http://lod.taxonconcept.org/ontology/2010_04_21/phylobase.owl#Bacillariophyta>),0,ore_ont_13887.owl,5,9137,2,9133
+7399,7357,30754,35.23,1,0.48,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSCING00000014427> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-7719_14q>)),0,ore_ont_12802.owl,4,7361,1,7329
+7029,7002,203,37.45,1,0.53,SubClassOf(<http://www.owl-ontologies.com/Ontology1324330201.owl#Properties> <http://www.absoluteiri.edu/RELAPPROXC64>),0,ore_ont_2036.owl,4,7035,1,7076
+7309,7438,35876,69.01,1,0.94,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSGALG00000005629> <http://purl.obolibrary.org/obo/SO_0001217>),0,ore_ont_964.owl,3,7359,1,7331
+11498,11629,21702,69.55,2,0.60,SubClassOf(<http://purl.obolibrary.org/obo/MP_0009280> <http://purl.obolibrary.org/obo/MP_0001919>),3,ore_ont_11452.owl,14,11577,5,11604
+22238,22609,1169399,263.65,1,1.17,SubClassOf(<http://purl.obolibrary.org/obo/GAZ_00316393> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/57dc1631-dc30-4405-8c59-c6af4b1e4221_gaz.obo#partial_overlaps> <http://purl.obolibrary.org/obo/GAZ_00316323>)),0,ore_ont_11395.owl,20,22531,1,22748
+7605,7651,45314,133.06,1,1.76,SubClassOf(<http://purl.obolibrary.org/obo/NCBI_Gene_114548> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> <http://purl.obolibrary.org/obo/HP_0000408>)),0,ore_ont_16559.owl,42,7552,1,7401
+7110,7136,1524,15.01,1,0.21,SubClassOf(<http://purl.obolibrary.org/obo/GO_0060233> <http://purl.obolibrary.org/obo/GO_0060232>),0,ore_ont_11009.owl,5,7127,1,7136
+13804,13520,282524,158.00,1,1.15,SubClassOf(<http://purl.obolibrary.org/obo/SO_0001230> <http://purl.obolibrary.org/obo/SO_0000250>),0,ore_ont_1579.owl,111957,13702,1,13782
+9015,9442,276566,214.01,1,2.32,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_FBgn0040600> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/UBERON_0000994>)),0,ore_ont_14607.owl,64,9220,1,9203
+9098,9086,427,34.02,1,0.37,SubClassOf(<http://purl.obolibrary.org/obo/sep_00049> <http://purl.obolibrary.org/obo/sep_00047>),0,ore_ont_6735.owl,5,9111,2,9150
+22024,21964,28658,78.16,11,0.36,SubClassOf(<http://purl.obolibrary.org/obo/FYPO_0000343> <http://www.absoluteiri.edu/RELAPPROXC6214>),11,ore_ont_935.owl,240,21952,13,21869
+9155,9065,174,46.18,1,0.51,SubClassOf(<http://www.lexinfo.net/lmf#Lemma> <http://www.lexinfo.net/lmf#LMFClass>),0,ore_ont_9509.owl,5,9116,2,9128
+12711,12668,172388,1102.66,1,9.15,SubClassOf(<http://purl.obolibrary.org/obo/WB_WBGene00002056> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0040011>))),0,ore_ont_2253.owl,155394,12053,1,10780
+9387,9360,11046,14.80,1,0.16,SubClassOf(<http://purl.org/obo/owl/IEV#IEV_0002087> <http://purl.org/obo/owl/IEV#IEV_0000025>),0,ore_ont_8641.owl,5,9377,2,9384
+9191,9245,3706,27.39,2,0.30,SubClassOf(<http://purl.obolibrary.org/obo/PO_0006018> <http://purl.obolibrary.org/obo/PO_0025157>),1,ore_ont_5485.owl,74,9215,4,9210
+7749,7977,75518,138.42,1,1.75,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSMUSG00000088854> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-10090_11>)),0,ore_ont_7256.owl,4,7908,1,7999
+6946,6908,307,26.91,1,0.39,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC195> owl:Thing),0,ore_ont_10536.owl,1,6916,0,6894
+6935,6935,898,26.56,1,0.38,SubClassOf(<http://purl.obolibrary.org/obo/PRIDE_0000013> <http://purl.obolibrary.org/obo/PRIDE_0000008>),0,ore_ont_10056.owl,3,6919,1,6889
+9164,9112,2344,28.69,1,0.31,SubClassOf(<http://www.ebi.ac.uk/efo/swo/SWO_0000396> <http://purl.obolibrary.org/obo/snap#_MaterialEntity>),0,ore_ont_8135.owl,5,9145,2,9159
+9136,9109,170,15.31,1,0.17,SubClassOf(<http://www.owl-ontologies.com/unnamed.owl#Relevancia_Desconfirmada> <http://www.owl-ontologies.com/unnamed.owl#Satisfeito_Insatisfeito>),0,ore_ont_9854.owl,7,9126,3,9135
+9121,9159,630,29.02,2,0.32,SubClassOf(<http://purl.obolibrary.org/obo/AEO_0000211> <http://purl.obolibrary.org/obo/CARO_0000000>),2,ore_ont_11010.owl,14,9152,5,9178
+9306,9367,7286,31.34,1,0.34,SubClassOf(<http://purl.obolibrary.org/obo/MA_0000639> <http://purl.obolibrary.org/obo/MA_0000001>),0,ore_ont_9646.owl,35,9332,6,9324
+9864,9855,277208,58.20,1,0.59,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB#_P01374> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/GO_0002925>)),0,ore_ont_11389.owl,44,9893,1,9960
+9289,9208,4912,41.48,1,0.45,SubClassOf(<http://purl.obolibrary.org/obo/CL_0000678> <http://purl.obolibrary.org/obo/CL_0000076>),0,ore_ont_14031.owl,9,9243,4,9233
+9333,9316,4099,33.15,1,0.36,SubClassOf(<http://purl.obolibrary.org/obo/FYPO_0000312> <http://purl.obolibrary.org/obo/PATO_0000169>),0,ore_ont_2377.owl,20,9306,5,9269
+13101,13055,177165,23.58,1,0.18,SubClassOf(<http://purl.obolibrary.org/obo/ZFIN_ZDB-GENE-030131-1346> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/GO_0016020>))),0,ore_ont_7993.owl,177165,13075,1,13069
+7312,7160,3204,92.07,1,1.28,SubClassOf(<http://purl.org/obo/owl/HP#HP_0006739> <http://purl.org/obo/owl/HP#HP_0002860>),0,ore_ont_4383.owl,5,7206,1,7146
+7514,7417,32342,65.21,1,0.88,SubClassOf(<http://www.ontologydesignpatterns.org/ont/fao/agrovoc.owl#Anastrepha> <http://www.ontologydesignpatterns.org/ont/fao/agrovoc.owl#Tephritidae>),0,ore_ont_6433.owl,3,7440,1,7390
+9192,9081,418,58.40,1,0.64,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/F35_Nomen_Use_Statement> <file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/E73_Information_Object>),0,ore_ont_338.owl,5,9126,2,9105
+9106,9076,186,17.93,2,0.20,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/75a65645-51c9-4fe9-9f71-443fde726c1a__v5.0.1__.rdfs#E82_> <file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/75a65645-51c9-4fe9-9f71-443fde726c1a__v5.0.1__.rdfs#E70_>),2,ore_ont_15145.owl,14,9096,5,9108
+30774,32484,207028,1104.84,1,3.45,SubClassOf(<http://purl.obolibrary.org/obo/FMA_54259> <http://purl.obolibrary.org/obo/FMA_67538>),0,ore_ont_11519.owl,15,32033,7,32841
+9121,9107,733,20.84,1,0.23,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/87d0a399-d147-45f0-8680-92eb7f975195_ka.owl#PSMevaluation> <http://www.absoluteiri.edu/RELAPPROXC258>),0,ore_ont_2713.owl,9,9125,4,9148
+Timeout,Timeout,153762,0.00,2650,0.00,SubClassOf(<http://purl.obolibrary.org/obo/GO_1900460> <http://purl.obolibrary.org/obo/GO_0060258>),19,ore_ont_795.owl,454,90001,21,Timeout
+10510,10424,550,138.48,1,1.33,SubClassOf(<http://purl.obolibrary.org/obo/ID_0000035> <http://purl.obolibrary.org/obo/ID_0000003>),0,ore_ont_6207.owl,5,10391,2,10239
+10794,9358,3091,809.09,1,8.21,SubClassOf(<http://purl.obolibrary.org/obo/DIS_1673> <http://purl.obolibrary.org/obo/DIS_0215>),0,ore_ont_1473.owl,5,9860,2,9430
+9286,9376,3621,45.30,1,0.49,SubClassOf(<http://rhizomik.net/ontologies/2006/01/NewsCodes-SubjectsOnto.owl#15056012> <http://rhizomik.net/ontologies/2006/01/NewsCodes-SubjectsOnto.owl#15000000>),0,ore_ont_380.owl,5,9328,2,9322
+9257,9214,822,21.93,1,0.24,SubClassOf(<http://purl.org/net/miCLIP#AdequacyOfIncome> <http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl#Financial>),0,ore_ont_2066.owl,10,9233,2,9228
+9550,9169,195230,241.29,1,2.60,SubClassOf(<http://purl.obolibrary.org/obo/RGD_1588686> <http://purl.obolibrary.org/obo/ENSEMBL#_ENSFM00500000270954>),0,ore_ont_1357.owl,3,9274,1,9103
+7096,7074,1296,27.68,1,0.39,SubClassOf(<http://grapson.com/term#Definition> <http://www.absoluteiri.edu/RELAPPROXC387>),0,ore_ont_13035.owl,315,7099,1,7129
+Timeout,Timeout,1962292,0.00,1,0.00,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_662867> <http://purl.obolibrary.org/obo/NCBITaxon_48283>),0,ore_ont_10689.owl,7,90001,3,Timeout
+7453,7320,27462,69.42,1,0.94,SubClassOf(<http://purl.obolibrary.org/obo/EMAP_10557> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/emap.mouse-gross-anatomy-and-development-ontology.6.orig#part_of> <http://purl.obolibrary.org/obo/EMAP_10555>)),0,ore_ont_2591.owl,20,7375,1,7352
+85044,88494,1962292,2047.35,1,2.34,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_681203> <http://purl.obolibrary.org/obo/NCBITaxon_9149>),0,ore_ont_9674.owl,5,87405,2,88679
+9216,9298,4185,42.16,1,0.46,SubClassOf(<http://purl.obolibrary.org/obo/MOD_00198> <http://purl.obolibrary.org/obo/MOD_00859>),0,ore_ont_725.owl,12,9262,2,9274
+18050,18070,192934,92.34,1,0.51,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_49103> <http://purl.obolibrary.org/obo/CHEBI_75768>),0,ore_ont_13224.owl,7,18113,3,18219
+44877,44194,3280784,343.05,1,0.77,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSG00000177191> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002158> <http://purl.obolibrary.org/obo/WB_WBGene00008478>)),0,ore_ont_15059.owl,3714,44516,1,44479
+29028,28728,372704,254.92,1,0.89,SubClassOf(<http://purl.org/obo/owl/GO#GO_0034281> <http://purl.org/obo/owl/GO#GO_0016838>),0,ore_ont_9499.owl,5,28759,2,28521
+8275,7864,99121,207.90,1,2.58,SubClassOf(<http://purl.obolibrary.org/obo/ZFIN_ZDB-GENE-030131-102> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/GO_0030903>)),0,ore_ont_13902.owl,12,8051,1,8015
+9180,9220,823,48.22,1,0.53,SubClassOf(<http://www.semanticweb.org/associatedmedicine/lavima/2011/10/Ontology1.owl#Donnée_non_scientifique> <http://www.semanticweb.org/associatedmedicine/lavima/2011/10/Ontology1.owl#Le_mal>),0,ore_ont_1325.owl,7,9174,3,9124
+9666,9503,23056,88.67,1,0.93,SubClassOf(<http://purl.obolibrary.org/obo/HP_0011016> <http://purl.obolibrary.org/obo/HP_0011277>),0,ore_ont_3712.owl,5,9564,2,9524
+22896,23356,1169399,234.48,1,1.01,SubClassOf(<http://purl.obolibrary.org/obo/GAZ_00053699> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/gaz.gazetteer.13.orig#located_in> <http://purl.obolibrary.org/obo/GAZ_00053685>)),0,ore_ont_14042.owl,40,23152,1,23205
+76675,77130,1807230,243.53,1,0.32,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_54897> <http://purl.obolibrary.org/obo/NCBITaxon_34404>),0,ore_ont_8486.owl,5,76952,2,77053
+9203,9096,696,53.91,2,0.59,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/5829d1da-f6bd-4115-9aab-c35afec13c32_rm_v5.0.1.rdfs#E29> <file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/5829d1da-f6bd-4115-9aab-c35afec13c32_rm_v5.0.1.rdfs#E71>),2,ore_ont_6024.owl,12,9153,4,9161
+19272,19231,399651,20.84,1,0.11,SubClassOf(<http://purl.obolibrary.org/obo/RGD_1593188> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0003273>))),0,ore_ont_6233.owl,382060,19249,1,19245
+9345,9245,4369,71.70,1,0.77,SubClassOf(<http://purl.obolibrary.org/obo/PO_0007629> <http://purl.obolibrary.org/obo/PO_0007606>),0,ore_ont_12281.owl,95,9265,3,9206
+9271,9265,4369,29.60,1,0.32,SubClassOf(<http://purl.obolibrary.org/obo/PO_0025290> <http://purl.obolibrary.org/obo/PO_0020142>),0,ore_ont_2496.owl,5,9251,2,9217
+9090,9092,376,7.00,1,0.08,SubClassOf(<http://semanticscience.org/PyrimidineNucleoside> <http://semanticscience.org/Object>),0,ore_ont_16076.owl,11,9095,5,9103
+14520,14163,533141,191.79,1,1.34,SubClassOf(<http://purl.org/obo/owl/GAZ#GAZ_00136463> ObjectSomeValuesFrom(<http://purl.org/obo/owl/obo#located_in> <http://purl.org/obo/owl/GAZ#GAZ_00012375>)),0,ore_ont_3560.owl,13,14301,1,14220
+9196,9110,794,48.27,1,0.53,SubClassOf(<http://purl.obolibrary.org/obo/VariO_0188> <http://purl.obolibrary.org/obo/VariO_0183>),0,ore_ont_13053.owl,5,9165,2,9191
+9286,9301,4485,17.56,1,0.19,SubClassOf(<http://purl.obolibrary.org/obo/PO_0006437> <http://purl.obolibrary.org/obo/PO_0009039>),0,ore_ont_5080.owl,129,9284,3,9266
+82662,79742,1962297,1473.37,1,1.81,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_1091225> <http://purl.obolibrary.org/obo/NCBITaxon_98462>),0,ore_ont_868.owl,5,81316,2,81545
+9615,9471,22757,74.33,1,0.78,SubClassOf(<http://purl.obolibrary.org/obo/HP_0100354> <http://purl.obolibrary.org/obo/HP_0005750>),0,ore_ont_6869.owl,9,9532,4,9511
+6989,6925,3522,35.85,1,0.52,SubClassOf(<http://4m.cs.hut.fi/ns/onto/lexicon/0.1#Optical> <http://4m.cs.hut.fi/ns/onto/lexicon/0.1#_Condition>),0,ore_ont_6226.owl,124,6947,1,6929
+29747,27432,677823,1183.16,1,4.16,SubClassOf(<http://sadi-ontology.semanticscience.org#C050102> <http://sadi-ontology.semanticscience.org#D20.215.894.899.779.500>),0,ore_ont_13355.owl,5,28448,2,28165
+9202,9302,146156,190.28,1,2.03,SubClassOf(<http://purl.org/obo/owl/IMR#IMR_0200610> ObjectSomeValuesFrom(<http://purl.org/obo/owl/obo#sequence_of> <http://purl.org/obo/owl/IMR#IMR_0010053>)),0,ore_ont_5781.owl,4,9358,1,9570
+9219,9228,5326,18.73,1,0.20,SubClassOf(<http://purl.obolibrary.org/obo/MOD_00386> <http://purl.obolibrary.org/obo/MOD_00691>),0,ore_ont_15292.owl,5,9234,2,9255
+9140,9127,1079,49.22,1,0.54,SubClassOf(<http://purl.obolibrary.org/obo/MMO_0000157> <http://purl.obolibrary.org/obo/MMO_0000004>),0,ore_ont_16730.owl,7,9161,3,9218
+9256,9239,646,15.04,1,0.16,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/ea19299c-ae9f-4f9a-a2de-3a52ee71e696_oldonto.rdf#NonRedMeat> <http://www.absoluteiri.edu/RELAPPROXC29>),0,ore_ont_5966.owl,5,9240,2,9226
+9200,9155,186,60.09,1,0.65,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/c6907ef3-a626-4b34-a474-15a4563b7f29_ish_label.rdfs#E85.Joining> <file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/c6907ef3-a626-4b34-a474-15a4563b7f29_ish_label.rdfs#E2.Temporal_Entity>),0,ore_ont_5742.owl,9,9209,4,9274
+7387,7494,7441,78.92,1,1.07,SubClassOf(<http://purl.org/obo/owl/GO#GO_0019264> <http://purl.org/obo/owl/GO#GO_0006545>),0,ore_ont_5462.owl,9,7407,1,7340
+9367,9418,6818,33.45,1,0.36,SubClassOf(<http://purl.obolibrary.org/obo/HP_0007289> <http://purl.obolibrary.org/obo/PATO_0001861>),0,ore_ont_15152.owl,8,9405,2,9430
+7509,7657,32322,77.52,1,1.02,SubClassOf(<http://purl.obolibrary.org/obo/NCBIGene_426935> <http://purl.obolibrary.org/obo/PANTHER_PTHR23220>),0,ore_ont_16114.owl,3,7569,1,7543
+9340,9398,2884,376.97,1,3.93,SubClassOf(<http://purl.obolibrary.org/obo/VHOG_0001753> <http://purl.obolibrary.org/obo/VHOG_0001758>),0,ore_ont_13578.owl,5,9586,2,10020
+9167,9135,873,16.17,1,0.18,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_186625> <http://purl.obolibrary.org/obo/NCBITaxon_32443>),0,ore_ont_13301.owl,5,9149,2,9147
+6864,6847,451,8.62,1,0.13,SubClassOf(<http://purl.obolibrary.org/obo/GO_0005576> <http://purl.obolibrary.org/obo/GO_0005575>),0,ore_ont_8806.owl,3,6854,1,6853
+9154,9115,472,30.01,1,0.33,SubClassOf(<http://www.opentox.org/api/1.1#StringFeature> <http://www.absoluteiri.edu/RELAPPROXC41>),0,ore_ont_11522.owl,5,9147,2,9174
+9435,9423,12963,7.23,1,0.08,SubClassOf(<http://purl.obolibrary.org/obo/DOID_10175> <http://purl.obolibrary.org/obo/DOID_1891>),0,ore_ont_9790.owl,5,9426,2,9422
+9190,9239,3263,30.51,1,0.33,SubClassOf(<http://purl.obolibrary.org/obo/MS_1001346> <http://purl.obolibrary.org/obo/MS_1001354>),0,ore_ont_11014.owl,5,9204,2,9183
+12965,13368,164759,214.53,1,1.63,SubClassOf(<http://purl.obolibrary.org/obo/NCBIGene_100486624> <http://purl.obolibrary.org/obo/ENSEMBL_ENSFM00250000006723>),0,ore_ont_6722.owl,34,13124,2,13039
+9185,9184,1445,15.31,1,0.17,SubClassOf(<http://purl.obolibrary.org/obo/SPD_0000015> <http://purl.obolibrary.org/obo/SPD_0000622>),0,ore_ont_4671.owl,5,9175,2,9158
+7650,7720,55705,73.02,1,0.95,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_Y37E11AL.6> <http://purl.obolibrary.org/obo/ENSEMBL_ENSFM00540000719650>),0,ore_ont_2661.owl,3,7648,1,7574
+7094,7091,6759,40.73,1,0.57,SubClassOf(<http://purl.obolibrary.org/obo/MA_0002076> <http://purl.obolibrary.org/obo/MA_0000064>),0,ore_ont_9435.owl,3,7116,1,7163
+9230,9211,2001,25.24,1,0.27,SubClassOf(<http://ccdb.ucsd.edu/NIF/NIF-Subcellular2.owl#sao1279474730> <http://www.absoluteiri.edu/RELAPPROXC19>),0,ore_ont_15397.owl,5,9234,2,9261
+9275,9268,983,3.79,2,0.04,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC229> <http://www.w3.org/2001/di/Group/Ontologies/DeliveryContext.owl#DeliveryContext_Entity>),2,ore_ont_2453.owl,814,9272,4,9274
+7444,7574,9017,83.22,1,1.10,SubClassOf(<http://purl.obolibrary.org/obo/GO_0047330> <http://purl.obolibrary.org/obo/GO_0004340>),0,ore_ont_2129.owl,12,7539,1,7599
+7868,7746,59055,67.24,1,0.86,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSRNOG00000041132> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-10116_15>)),0,ore_ont_14508.owl,4,7790,1,7758
+6929,6859,265,37.64,1,0.55,SubClassOf(<http://ontology.dumontierlab.com/BoronAtom> <http://ontology.dumontierlab.com/Atom>),0,ore_ont_13392.owl,3,6902,1,6918
+13710,13584,162917,237.71,1,1.76,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_18743> <http://purl.obolibrary.org/obo/CHEBI_62431>),0,ore_ont_5612.owl,41,13514,2,13250
+7332,7254,19138,65.90,1,0.90,SubClassOf(<http://purl.obolibrary.org/obo/WBbt_0003443> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/44716794-d43a-4e55-97bb-ca6c0d2d8a01_wbbt.obo#DESCINHERM> <http://purl.obolibrary.org/obo/WBbt_0003440>)),0,ore_ont_4226.owl,8,7323,1,7385
+9529,9526,11673,48.81,1,0.51,SubClassOf(<http://sweet.jpl.nasa.gov/2.1/propEnergy.owl#EnergyDensity> <http://sweet.jpl.nasa.gov/2.1/reprMath.owl#MathematicalProcess>),0,ore_ont_10242.owl,1466,9555,5,9612
+9190,9159,179,45.72,1,0.50,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/15142ae8-c9b2-4e1a-ac58-284d3db0504a_CIDOC1.rdf#E9.Move> <file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/15142ae8-c9b2-4e1a-ac58-284d3db0504a_CIDOC1.rdf#E1.CRM_Entity>),0,ore_ont_2876.owl,11,9149,5,9100
+15762,15263,160027,368.41,1,2.40,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_25371> <http://purl.obolibrary.org/obo/CHEBI_25370>),0,ore_ont_2803.owl,19,15356,3,15043
+9140,9188,807,24.34,1,0.27,SubClassOf(<http://www.semanticweb.org/vanessa/ontologies/2012/7/untitled-ontology-33#Sister> <http://www.semanticweb.org/vanessa/ontologies/2012/7/untitled-ontology-33#Family>),0,ore_ont_11504.owl,5,9166,2,9171
+9122,9098,812,46.05,1,0.50,SubClassOf(<http://purl.obolibrary.org/obo/SP_0000379> <http://purl.obolibrary.org/obo/SP_0000205>),0,ore_ont_7576.owl,7,9135,3,9187
+9676,9664,24412,26.10,1,0.27,SubClassOf(<http://www.ontologydesignpatterns.org/ont/fao/asfa/asfanttbox.owl#Dissolved_organic_nitrogen> <http://www.ontologydesignpatterns.org/ont/fao/asfa/asfanttbox.owl#Nitrogen>),0,ore_ont_13752.owl,15266,9655,2,9626
+25615,27277,630365,1038.58,1,3.87,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB_Q8NHB8> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0050896>))),0,ore_ont_15280.owl,630365,26805,1,27525
+12220,12626,154347,1216.79,1,10.37,SubClassOf(<http://purl.obolibrary.org/obo/WB_WBGene00013196> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0032313>))),0,ore_ont_9768.owl,154347,11730,1,10345
+9465,9515,12722,25.66,1,0.27,SubClassOf(<http://purl.obolibrary.org/obo/ZFA_0005376> <http://purl.obolibrary.org/obo/ZFA_0001647>),0,ore_ont_8329.owl,5,9493,2,9500
+6996,6954,389,25.48,1,0.37,SubClassOf(<http://purl.obolibrary.org/obo/XAO_1000037> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/XAO_1000006>)),0,ore_ont_11497.owl,107,6966,1,6950
+9579,9594,16418,39.69,1,0.41,SubClassOf(<http://purl.obolibrary.org/obo/MP_0008824> <http://purl.obolibrary.org/obo/MP_0000281>),0,ore_ont_5792.owl,5,9609,2,9654
+9759,9829,22177,38.08,1,0.39,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_17689> <http://purl.obolibrary.org/obo/CHEBI_26469>),0,ore_ont_3406.owl,5,9802,2,9820
+9232,9299,470,93.13,1,1.01,SubClassOf(<http://purl.obolibrary.org/obo/GRO_0007042> <http://purl.obolibrary.org/obo/GRO_0007001>),0,ore_ont_13530.owl,5,9215,2,9115
+9579,9778,13169,115.77,1,1.20,SubClassOf(<http://purl.obolibrary.org/obo/FBsp_30000212> <http://purl.obolibrary.org/obo/FBsp_30000045>),0,ore_ont_1493.owl,5,9644,2,9576
+7425,7508,27462,54.99,1,0.74,SubClassOf(<http://purl.org/obo/owl/EMAP#EMAP_12599> ObjectSomeValuesFrom(<http://purl.org/obo/owl/OBO_REL#part_of> <http://purl.org/obo/owl/EMAP#EMAP_11773>)),0,ore_ont_5965.owl,18,7445,1,7404
+9311,9212,3624,62.29,1,0.67,SubClassOf(<http://purl.obolibrary.org/obo/PATO_0001051> <http://purl.obolibrary.org/obo/PATO_0000133>),0,ore_ont_5266.owl,5,9283,2,9327
+9216,9104,357,69.06,1,0.76,SubClassOf(<http://www.bioassayontology.org/bao#BAO_0002299> <http://www.bioassayontology.org/bao#BAO_0002282>),0,ore_ont_13643.owl,7,9136,3,9090
+7374,7344,27467,17.93,1,0.24,SubClassOf(<http://purl.org/obo/owl/EMAP#EMAP_6319> ObjectSomeValuesFrom(<http://purl.org/obo/owl/OBO_REL#part_of> <http://purl.org/obo/owl/EMAP#EMAP_6318>)),0,ore_ont_5974.owl,16,7353,1,7342
+9332,9391,12723,29.57,1,0.32,SubClassOf(<http://purl.obolibrary.org/obo/ZFA_0000078> <http://purl.obolibrary.org/obo/ZFA_0005435>),0,ore_ont_7218.owl,5,9362,2,9365
+7279,7239,7442,26.08,1,0.36,SubClassOf(<http://purl.obolibrary.org/obo/GO_0018267> <http://purl.obolibrary.org/obo/GO_0006506>),0,ore_ont_3784.owl,9,7268,1,7288
+9622,9640,26795,44.79,1,0.47,SubClassOf(<http://purl.obolibrary.org/obo/FBbt_00004793> <http://purl.obolibrary.org/obo/FBbt_00004475>),0,ore_ont_7234.owl,188,9605,2,9555
+7353,7499,28456,83.44,1,1.12,SubClassOf(<http://purl.obolibrary.org/obo/WB_WBGene00003999> <http://purl.obolibrary.org/obo/PANTHER_PTHR24221>),0,ore_ont_14027.owl,3,7449,1,7496
+7390,7621,27462,149.17,1,2.00,SubClassOf(<http://purl.org/obo/owl/EMAP#EMAP_5472> ObjectSomeValuesFrom(<http://purl.org/obo/owl/OBO_REL#part_of> <http://purl.org/obo/owl/EMAP#EMAP_5471>)),0,ore_ont_6453.owl,18,7451,1,7342
+9086,9139,245,26.58,1,0.29,SubClassOf(<https://raw.github.com/ontohub/OOR_Ontohub_API/master/Domain_Fields_Core.owl#Hygiene_and_occupational_health_services> <https://raw.github.com/ontohub/OOR_Ontohub_API/master/Domain_Fields_Core.owl#Domain_Field>),0,ore_ont_3463.owl,5,9113,2,9116
+9391,9492,13562,57.74,1,0.61,SubClassOf(<http://www.ontologydesignpatterns.org/ont/fao/asfa.owl#Iron_silicates> <http://www.ontologydesignpatterns.org/ont/fao/asfa.owl#Silicon_compounds>),0,ore_ont_13141.owl,5,9457,2,9490
+12259,10127,74662,1159.48,1,10.61,SubClassOf(<http://www.mindswap.org/2003/nciOncology.owl#Severe_Transitional_Cell_Atypia> <http://www.mindswap.org/2003/nciOncology.owl#Precancerous_Atypia>),0,ore_ont_14312.owl,5,10929,2,10403
+14924,15206,149569,270.09,1,1.78,SubClassOf(<http://purl.obolibrary.org/obo/PR_000036453> <http://purl.obolibrary.org/obo/PR_000000265>),0,ore_ont_4617.owl,7,15198,3,15464
+6845,6869,200,15.50,1,0.23,SubClassOf(<http://www.cs.kuleuven.be/~davy/ontologies/2008/01/Units.owl#Minute> <http://www.cs.kuleuven.be/~davy/ontologies/2008/01/Units.owl#Float>),0,ore_ont_3842.owl,3,6862,1,6874
+37299,38092,2513931,410.86,1,1.09,SubClassOf(<http://purl.obolibrary.org/obo/UniProt#_Q62418> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000124> <http://purl.obolibrary.org/obo/GO_0001726>)),0,ore_ont_1559.owl,199,37633,1,37509
+9688,9640,26515,27.43,1,0.28,SubClassOf(<http://purl.obolibrary.org/obo/FBbt_00002081> <http://purl.obolibrary.org/obo/FBbt_00005213>),0,ore_ont_15260.owl,160,9656,2,9641
+21756,21040,503023,1773.75,1,7.92,SubClassOf(<http://purl.obolibrary.org/obo/MGI_MGI%3A1919129> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0006631>))),0,ore_ont_10750.owl,503023,22401,1,24407
+9290,9251,3781,48.81,1,0.53,SubClassOf(<http://purl.org/biotop/biotop.owl#CellInVivo> <http://purl.org/biotop/biotop.owl#Cell>),0,ore_ont_412.owl,463,9244,2,9193
+9152,9226,1526,72.01,1,0.78,SubClassOf(<http://cbo.biocomplexity.indiana.edu/svn/cbo/trunk/CBO_1_0.owl#CenterOfMass> <http://www.absoluteiri.edu/RELAPPROXC303>),0,ore_ont_16821.owl,5,9224,2,9296
+9294,9309,6477,80.89,1,0.87,SubClassOf(<http://purl.obolibrary.org/obo/XAO_0004035> <http://purl.obolibrary.org/obo/XAO_0004027>),0,ore_ont_10742.owl,5,9348,2,9441
+11780,11666,19335,57.01,1,0.49,SubClassOf(<http://purl.obolibrary.org/obo/FBbt_00007448> <http://purl.obolibrary.org/obo/FBbt_00007200>),0,ore_ont_2497.owl,448,11722,7,11721
+9266,9276,3631,5.03,1,0.05,SubClassOf(<http://rhizomik.net/ontologies/2006/01/NewsCodes-SubjectsOnto.owl#05005002> <http://rhizomik.net/ontologies/2006/01/NewsCodes-SubjectsOnto.owl#05000000>),0,ore_ont_566.owl,5,9271,2,9272
+7297,7289,20166,5.69,1,0.08,SubClassOf(<http://purl.obolibrary.org/obo/FB_FBgn0052190> <http://purl.obolibrary.org/obo/PANTHER_PTHR19237>),0,ore_ont_10280.owl,3,7295,1,7300
+7535,7759,47097,112.18,1,1.47,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSG00000182771> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002158> <http://purl.obolibrary.org/obo/ENSEMBL_FBgn0046113>)),0,ore_ont_13964.owl,46,7650,1,7658
+16553,15645,219035,454.13,1,2.82,SubClassOf(<http://purl.obolibrary.org/obo/GO_0072110> <http://purl.obolibrary.org/obo/GO_0008283>),0,ore_ont_7868.owl,54,16092,2,16080
+6885,6960,384,39.50,1,0.57,SubClassOf(<http://purl.obolibrary.org/obo/XEO_00027> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/xeo.xeml-environment-ontology.4.orig#has_context> <http://purl.obolibrary.org/obo/XEO_00127>)),0,ore_ont_5090.owl,16,6929,1,6944
+7967,8058,75378,45.65,1,0.57,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSMUSG00000090607> <http://purl.obolibrary.org/obo/SO_0000336>),0,ore_ont_13664.owl,3,8014,1,8019
+7535,7464,27661,43.49,1,0.58,SubClassOf(<http://purl.org/obo/owl/ZFA#ZFA_0000017> <http://purl.org/obo/owl/UBERON#UBERON_0000925>),0,ore_ont_13852.owl,3,7485,1,7456
+9187,9181,419,29.60,1,0.32,SubClassOf(<http://purl.obolibrary.org/obo/MFOEM_000189> <http://purl.obolibrary.org/obo/MFOEM_000152>),0,ore_ont_9031.owl,5,9167,2,9133
+9199,9167,590,51.62,1,0.56,SubClassOf(<http://biomanta.sourceforge.net/2007/10/ncbi_rank.owl#suborder> <http://biomanta.sourceforge.net/2007/10/ncbi_rank.owl#superclass>),0,ore_ont_15068.owl,65,9154,6,9098
+9237,9244,5098,3.61,1,0.04,SubClassOf(<http://purl.obolibrary.org/obo/PATO_0002049> <http://purl.obolibrary.org/obo/PATO_0001591>),0,ore_ont_10146.owl,5,9241,2,9242
+7934,8092,77179,127.35,1,1.58,SubClassOf(<http://purl.obolibrary.org/obo/TTO_110100> <http://purl.obolibrary.org/obo/TTO_10760>),0,ore_ont_12149.owl,3,8070,1,8186
+9221,9204,2563,10.12,1,0.11,SubClassOf(<http://purl.obolibrary.org/obo/TO_0000126> <http://purl.obolibrary.org/obo/TO_0000148>),0,ore_ont_15985.owl,5,9215,2,9222
+9725,9636,24381,86.02,1,0.89,SubClassOf(<http://purl.obolibrary.org/obo/HP_0004365> <http://purl.obolibrary.org/obo/HP_0004354>),0,ore_ont_4460.owl,7,9638,3,9553
+7483,7477,29753,17.01,1,0.23,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_FBgn0000504> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/CHROMOSOME-7227_3R>)),0,ore_ont_8579.owl,4,7470,1,7451
+13071,12678,120625,196.54,1,1.53,SubClassOf(<http://purl.obolibrary.org/obo/GO_0017023> <http://purl.obolibrary.org/obo/GO_1903293>),0,ore_ont_10778.owl,5,12872,2,12868
+9357,9356,3354,37.82,2,0.40,SubClassOf(<http://purl.obolibrary.org/obo/ENVO_00000228> <http://purl.obolibrary.org/obo/ENVO_00000385>),2,ore_ont_10134.owl,24,9378,5,9422
+9194,9244,567,25.42,1,0.28,SubClassOf(<http://cbmi.med.harvard.edu/asdphenotype#Class_136> <http://cbmi.med.harvard.edu/asdphenotype#Class_301>),0,ore_ont_11639.owl,9,9221,4,9227
+9360,9323,4936,24.01,1,0.26,SubClassOf(<http://purl.obolibrary.org/obo/CMO_0001160> <http://purl.obolibrary.org/obo/CMO_0001145>),0,ore_ont_12397.owl,5,9332,2,9315
+9709,12385,131864,1397.54,1,12.92,SubClassOf(<http://purl.obolibrary.org/obo/SGD_S000005910> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/BFO_0000050> <http://purl.obolibrary.org/obo/GO_0031225>))),0,ore_ont_2046.owl,131864,10814,1,10348
+9666,9716,21587,47.52,1,0.49,SubClassOf(<http://purl.obolibrary.org/obo/MP_0004978> <http://purl.obolibrary.org/obo/MP_0005016>),0,ore_ont_6751.owl,7,9667,3,9621
+9473,9472,19009,55.14,1,0.58,SubClassOf(<http://purl.obolibrary.org/obo/GO_0034618> <http://purl.obolibrary.org/obo/GO_0043176>),0,ore_ont_3106.owl,5,9504,2,9568
+7091,7117,8738,13.05,1,0.18,SubClassOf(<http://purl.obolibrary.org/obo/MIRO_40003070> <http://purl.obolibrary.org/obo/MIRO_40002995>),0,ore_ont_15222.owl,3,7103,1,7102
+32143,31683,1695515,585.72,1,1.82,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_688602> <http://purl.obolibrary.org/obo/NCBITaxon_582143>),0,ore_ont_14459.owl,3,32224,1,32846
+6795,6809,113,47.29,1,0.69,SubClassOf(<http://rs.tdwg.org/ontology/voc/OccurrenceRecord#Identification> owl:Thing),0,ore_ont_10309.owl,1,6829,0,6883
+7066,6992,158,40.61,1,0.58,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC59> <http://www.absoluteiri.edu/RELAPPROXC68>),0,ore_ont_1420.owl,3,7019,1,7000
+9143,9083,609,44.53,1,0.49,SubClassOf(<http://purl.obolibrary.org/obo/PO_0007082> <http://purl.obolibrary.org/obo/PO_0007033>),0,ore_ont_16626.owl,15,9132,5,9170
+7121,7053,8834,51.50,1,0.73,SubClassOf(<http://purl.obolibrary.org/obo/BTO_0002763> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/0f1441b8-1a55-42f7-abd7-e6a214a5627f_brenda.obo#DRV> <http://purl.obolibrary.org/obo/BTO_0002752>)),0,ore_ont_10968.owl,14,7064,1,7020
+9792,9306,213389,247.79,1,2.59,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSRNOG00000030692> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/4c6c4ad6-5558-48f9-ad8e-f4fdc7c53e1a_norvegicus.obo#part_of> <http://purl.obolibrary.org/obo/CHROMOSOME-10116#_1>)),0,ore_ont_2469.owl,32,9577,1,9633
+13856,13980,715846,132.59,1,0.96,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSG00000167333> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_00022060> <http://purl.obolibrary.org/obo/UBERON_0002113>)),0,ore_ont_9794.owl,72,13850,1,13715
+7340,7379,20906,86.24,1,1.18,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSG00000187398> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002158> <http://purl.obolibrary.org/obo/ZFIN_ZDB-GENE-060503-278>)),0,ore_ont_15793.owl,4,7311,1,7214
+7944,7587,65834,185.05,1,2.37,SubClassOf(<http://ncicb.nci.nih.gov/xml/owl/EVS/Hugo.owl#HGNC_656> <http://ncicb.nci.nih.gov/xml/owl/EVS/Hugo.owl#gene_with_protein_product>),0,ore_ont_6310.owl,3,7793,1,7850
+9808,9894,269791,135.19,1,1.36,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSMUSG00000031700> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/GO_0006103>)),0,ore_ont_2243.owl,20,9925,1,10073
+15929,16011,196171,1368.93,1,9.02,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_63081> <http://purl.obolibrary.org/obo/CHEBI_24079>),0,ore_ont_4802.owl,293,15180,2,13600
+6905,6944,215,39.50,1,0.57,SubClassOf(<http://www.owl-ontologies.com/unnamed.owl#BacterialArtificialChromosome> <http://www.owl-ontologies.com/unnamed.owl#ArtificialChromosome>),0,ore_ont_13204.owl,3,6904,1,6865
+9608,9740,14290,75.92,1,0.79,SubClassOf(<http://purl.obolibrary.org/obo/MP_0008054> <http://purl.obolibrary.org/obo/MP_0005068>),0,ore_ont_8864.owl,13,9652,2,9609
+9292,9251,2176,21.08,1,0.23,SubClassOf(<http://purl.obolibrary.org/obo/TO_0000463> <http://purl.obolibrary.org/obo/TO_0000654>),0,ore_ont_7220.owl,9,9268,4,9263
+19098,17324,263723,1377.31,1,7.32,SubClassOf(<http://purl.obolibrary.org/obo/PR_000012583RELAPPROXQ5> <http://purl.obolibrary.org/obo/PR_000012583RELAPPROXQ3>),0,ore_ont_2828.owl,5,18819,2,20036
+14899,15272,107683,196.02,1,1.30,SubClassOf(<http://purl.obolibrary.org/obo/SO_0000794> <http://www.absoluteiri.edu/RELAPPROXC34507>),0,ore_ont_14934.owl,34,15050,3,14981
+9178,9185,206,35.10,1,0.38,SubClassOf(<http://www.lia.deis.unibo.it/research/MIDAS/Ontologies/TFLEOntology.owl#Bed_Breakfast> <http://www.lia.deis.unibo.it/research/MIDAS/Ontologies/MIDAS_Profile.owl#CapabilityItem>),0,ore_ont_7270.owl,9,9161,4,9121
+7008,7015,6077,31.66,1,0.45,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB_Q9W123> <http://purl.obolibrary.org/obo/PR_000000001>),0,ore_ont_7120.owl,3,6993,1,6957
+7184,7247,18729,39.58,1,0.55,SubClassOf(<http://purl.obolibrary.org/obo/IMR_0002633> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/sequence_of> <http://purl.obolibrary.org/obo/IMR_0002620>)),0,ore_ont_9612.owl,5,7229,1,7257
+9809,9834,27786,135.96,1,1.40,SubClassOf(<http://purl.obolibrary.org/obo/GO_0034481> <http://www.absoluteiri.edu/RELAPPROXC7055>),0,ore_ont_2317.owl,22,9743,2,9587
+9216,9129,984,53.02,1,0.58,SubClassOf(<http://purl.obolibrary.org/obo/PI_00270> <http://purl.obolibrary.org/obo/PI_00265>),0,ore_ont_3418.owl,5,9155,2,9120
+9273,9326,3992,49.05,2,0.53,SubClassOf(<http://purl.obolibrary.org/obo/WBPhenotype_0000412> <http://purl.obolibrary.org/obo/WBPhenotype_0001048>),1,ore_ont_15950.owl,10,9275,3,9228
+Timeout,Timeout,978541,0.00,4,0.00,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSMUSG00000042050> <http://purl.obolibrary.org/obo/UBERON_0000915-OMEO-0000001>),3,ore_ont_11739.owl,22,90001,5,Timeout
+7111,7156,8762,41.06,1,0.58,SubClassOf(<http://purl.obolibrary.org/obo/MFO_0032344> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/16bf6a7d-5fa0-4b9c-b279-eef4fa50808c_a_ontology.obo#part_of> <http://purl.obolibrary.org/obo/MFO_0032340>)),0,ore_ont_4655.owl,18,7113,1,7074
+12571,10509,91545,1232.90,1,11.06,SubClassOf(<http://purl.obolibrary.org/obo/SGD_S000006027> <http://purl.obolibrary.org/obo/ENSEMBL_ENSFM00360000109870>),0,ore_ont_7455.owl,49,11149,2,10369
+9127,9159,381,16.01,1,0.18,SubClassOf(<http://www.sensocomune.org/ontologies/SensoComune.owl#SocialGroup> <http://www.sensocomune.org/ontologies/SensoComune.owl#Group>),0,ore_ont_5089.owl,38,9143,2,9144
+9252,9258,4365,37.65,1,0.41,SubClassOf(<http://purl.obolibrary.org/obo/WBPhenotype_0001339> <http://purl.obolibrary.org/obo/WBPhenotype_0000845>),0,ore_ont_670.owl,5,9233,2,9190
+7492,7491,38440,81.12,1,1.09,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSG00000109501> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_00022000> <http://purl.obolibrary.org/obo/DOID_1596>)),0,ore_ont_2105.owl,30,7444,1,7351
+29161,28868,689540,929.89,1,3.15,SubClassOf(<http://purl.obolibrary.org/obo/UniProtKB_Q8TAG9> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002162> <http://purl.obolibrary.org/obo/NCBITaxon_9606>)),0,ore_ont_13482.owl,689540,29544,1,30605
+9191,9208,186,60.36,1,0.66,SubClassOf(<http://www.cidoc-crm.org/cidoc-crm/E36_Visual_Item> <http://www.cidoc-crm.org/cidoc-crm/E90_Symbolic_Object>),0,ore_ont_13429.owl,5,9165,2,9096
+7278,7247,16864,15.63,1,0.22,SubClassOf(<http://purl.obolibrary.org/obo/CL-EMAPA#_0001320> <http://purl.obolibrary.org/obo/MAP6#_0000000>),0,ore_ont_1666.owl,3,7263,1,7266
+9653,9779,24107,75.16,1,0.77,SubClassOf(<http://purl.obolibrary.org/obo/HP_0009788> <http://purl.obolibrary.org/obo/HP_0009127>),0,ore_ont_6358.owl,9,9739,4,9787
+9180,9157,1161,16.92,1,0.18,SubClassOf(<http://purl.org/linguistics/gold/Vowel> <http://purl.org/linguistics/gold/FormUnit>),0,ore_ont_1793.owl,5,9161,2,9147
+6946,6841,205,70.89,1,1.02,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC67> owl:Thing),0,ore_ont_508.owl,1,6921,0,6976
+9232,9262,1045,21.63,2,0.23,SubClassOf(<http://www.loa-cnr.it/ontologies/ExtendedDnS#status> <http://www.loa-cnr.it/ontologies/DOLCE-Lite#non-physical-object>),4,ore_ont_10314.owl,16,9256,6,9274
+7025,6946,2929,41.96,1,0.60,SubClassOf(<http://www.lornet.org/ACM-CSS.owl#D.2.9.8> <http://www.lornet.org/ACM-CSS.owl#D.2.9>),0,ore_ont_10283.owl,3,6993,1,7010
+12517,12237,68904,142.50,2,1.15,SubClassOf(<http://purl.obolibrary.org/obo/UBERON_0010395> <http://purl.obolibrary.org/obo/UBERON_0000444>),0,ore_ont_1082.owl,1669,12361,2,12331
+9138,9094,480,22.19,1,0.24,SubClassOf(<http://purl.obolibrary.org/obo/DDANAT_0000059> <http://purl.obolibrary.org/obo/DDANAT_0010085>),0,ore_ont_14518.owl,53,9117,2,9121
+6906,6967,2302,51.33,1,0.74,SubClassOf(<http://dbpedia.org/ontology/Scientist> ObjectSomeValuesFrom(<http://www.ontologydesignpatterns.org/ekp/owl/Person.owl#linksToAmericanFootballTeam> <http://dbpedia.org/ontology/AmericanFootballTeam>)),0,ore_ont_8730.owl,235,6960,1,7008
+23580,26377,537353,1607.97,1,6.56,SubClassOf(<http://purl.obolibrary.org/obo/MGI_MGI%3A1932915> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002214> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002217> <http://purl.obolibrary.org/obo/GO_0043014>))),0,ore_ont_1012.owl,512204,24520,1,23604
+24155,24309,35972,1078.93,4,4.57,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_16301> <http://purl.obolibrary.org/obo/CHEBI_24870>),4,ore_ont_11081.owl,22,23610,6,22368
+31117,33512,738155,1422.70,1,4.34,SubClassOf(<http://phenomebrowser.net/ontologies/mesh/mesh.owl#C086610> <http://phenomebrowser.net/ontologies/mesh/mesh.owl#D25.339.291.950>),0,ore_ont_9498.owl,5,32758,2,33645
+9311,9346,4219,49.12,1,0.53,SubClassOf(<http://biomanta.sourceforge.net/celltype_instance_edit.owl#glandular_epithelial_cell_CL_0000150> <http://biomanta.sourceforge.net/celltype_instance_edit.owl#cell_by_histology_CL_0000063>),0,ore_ont_3313.owl,1738,9355,3,9408
+25731,26958,1466198,845.82,1,3.25,SubClassOf(<http://purl.obolibrary.org/obo/NCBITaxon_641981> <http://purl.obolibrary.org/obo/NCBITaxon_481849>),0,ore_ont_16008.owl,3,26008,1,25336
+7405,7404,7311,70.73,1,0.96,SubClassOf(<http://purl.org/obo/owl/GO#GO_0034034> <http://purl.org/obo/owl/GO#GO_0033869>),0,ore_ont_12405.owl,8,7363,1,7282
+11649,11770,23796,64.26,2,0.55,SubClassOf(<http://purl.obolibrary.org/obo/GO_1902487> <http://purl.obolibrary.org/obo/GO_0033036>),2,ore_ont_6076.owl,12,11697,4,11672
+9177,9155,617,11.02,1,0.12,SubClassOf(<http://purl.obolibrary.org/obo/AEO_0001009> <http://purl.obolibrary.org/obo/AEO_0000125>),0,ore_ont_2753.owl,7,9165,3,9165
+9147,9151,139,42.77,2,0.47,SubClassOf(<file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/F18_Serial_Work> <file:/media/owl/Seagate%20Expansion%20Drive/mowlcorp_rep/mowlcorp_2014.10.07_orig/files/E89_Propositional_Object>),1,ore_ont_3909.owl,12,9124,4,9075
+9212,9155,791,35.79,1,0.39,SubClassOf(<http://purl.obolibrary.org/obo/phi_0000147> <http://purl.obolibrary.org/obo/phi_0000142>),0,ore_ont_4382.owl,5,9171,2,9146
+9506,9661,23898,77.84,1,0.81,SubClassOf(<http://purl.obolibrary.org/obo/GO_0009201> <http://purl.obolibrary.org/obo/GO_0090407>),0,ore_ont_16619.owl,7,9587,3,9596
+12510,12864,119500,178.58,1,1.41,SubClassOf(<http://purl.obolibrary.org/obo/GO_0003418> <http://purl.obolibrary.org/obo/GO_0002062>),0,ore_ont_13243.owl,5,12673,2,12646
+7204,7178,18775,37.54,1,0.52,SubClassOf(<http://purl.obolibrary.org/obo/WBbt_0004851> <http://purl.obolibrary.org/obo/WBbt_0006918>),0,ore_ont_8492.owl,3,7211,1,7252
+9207,9335,3706,76.95,1,0.83,SubClassOf(<http://purl.obolibrary.org/obo/PO_0006315> <http://purl.obolibrary.org/obo/PO_0009082>),0,ore_ont_10160.owl,139,9246,2,9197
+9142,9234,1275,65.60,1,0.72,SubClassOf(<http://purl.obolibrary.org/obo/GO_0005739> <http://purl.obolibrary.org/obo/GO_0043229>),0,ore_ont_637.owl,5,9161,2,9107
+11881,12094,48702,187.13,2,1.55,SubClassOf(<http://www.absoluteiri.edu/RELAPPROXC11881> <http://purl.obolibrary.org/obo/BFO_0000002>),2,ore_ont_6102.owl,31366,12076,4,12254
+11499,11526,12346,1186.82,1,10.96,SubClassOf(<http://sweet.jpl.nasa.gov/2.3/phenAtmoPressure.owl#TropicalUpperTroposphericTrough> <http://sweet.jpl.nasa.gov/2.3/reprMathOperation.owl#Division>),0,ore_ont_10749.owl,1238,10827,7,9457
+6939,6909,1468,22.48,1,0.33,SubClassOf(<http://lsdis.cs.uga.edu/semdis/antibiotic> <http://lsdis.cs.uga.edu/semdis/umls#pharmacologic_substance>),0,ore_ont_11577.owl,3,6914,1,6895
+23840,23751,2097631,228.67,1,0.96,SubClassOf(<http://purl.obolibrary.org/obo/GO_0007043> <http://purl.obolibrary.org/obo/GO_0034329>),0,ore_ont_3524.owl,5,23925,1,24184
+7427,7437,38518,53.35,1,0.72,SubClassOf(<http://www.loria.fr/~coulet/ontology/sopharm/version2.0/disease_ontology.owl#DOID_10419> <http://www.loria.fr/~coulet/ontology/sopharm/version2.0/disease_ontology.owl#DOID_4910>),0,ore_ont_12194.owl,3,7401,1,7340
+9147,9148,771,36.09,2,0.40,SubClassOf(<http://purl.obolibrary.org/obo/OPL_0000184> <http://purl.obolibrary.org/obo/OPL_0000098>),0,ore_ont_10516.owl,8,9126,2,9085
+7075,7053,667,19.08,1,0.27,SubClassOf(<http://purl.obolibrary.org/obo/WBPhenotype_0000061> <http://purl.obolibrary.org/obo/PATO_0001603>),0,ore_ont_9695.owl,5,7055,1,7037
+7055,7136,8587,58.24,1,0.82,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL#_ENSG00000154415> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/MIM_604367>)),0,ore_ont_15932.owl,4,7071,1,7023
+7313,7366,39776,54.00,1,0.73,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_ENSXETG00000011004> <http://purl.obolibrary.org/obo/SO_0001217>),0,ore_ont_5487.owl,3,7366,1,7421
+7008,6981,4928,16.20,1,0.23,SubClassOf(<http://purl.obolibrary.org/obo/NIF_GrossAnatomy#_birnlex_4110> ObjectSomeValuesFrom(<http://www.obofoundry.org/ro/ro.owl#proper_part_of> <http://purl.obolibrary.org/obo/NIF_GrossAnatomy#_birnlex_1197>)),0,ore_ont_6566.owl,690,6989,1,6979
+7042,7129,8738,52.37,1,0.74,SubClassOf(<http://purl.obolibrary.org/obo/MIRO_40001124> <http://purl.obolibrary.org/obo/MIRO_40000960>),0,ore_ont_4798.owl,3,7068,1,7035
+7803,7820,85089,47.82,1,0.61,SubClassOf(<http://purl.obolibrary.org/obo/ENSEMBL_FBgn0037534> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/RO_0002200> <http://purl.obolibrary.org/obo/GO_0009922>)),0,ore_ont_269.owl,12,7784,1,7730
+9382,9330,5415,47.57,2,0.51,SubClassOf(<http://purl.obolibrary.org/obo/IDOMAL_0002299> <http://purl.obolibrary.org/obo/IDOMAL_0002309>),0,ore_ont_8298.owl,8,9333,2,9287
+9773,9619,23399,106.73,1,1.10,SubClassOf(<http://purl.org/obo/owl/IEV#IEV_0001366> <http://purl.org/obo/owl/IEV#IEV_0000685>),0,ore_ont_11502.owl,7,9738,3,9824
+13399,13647,162912,169.83,1,1.26,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_30068> <http://purl.obolibrary.org/obo/CHEBI_36295>),0,ore_ont_10248.owl,5,13456,2,13322
+13146,12736,159204,300.26,1,2.30,SubClassOf(<http://purl.obolibrary.org/obo/CHEBI_63031> <http://purl.obolibrary.org/obo/CHEBI_63034>),0,ore_ont_11293.owl,5,13067,2,13321
+9205,9103,241,69.20,1,0.76,SubClassOf(<http://ontology.dumontierlab.com/biological-measure-primitive-1.0.owl#SatietyMeasure> <http://ontology.dumontierlab.com/biological-measure-primitive-1.0.owl#BiologicalMeasure>),0,ore_ont_3082.owl,5,9127,2,9073

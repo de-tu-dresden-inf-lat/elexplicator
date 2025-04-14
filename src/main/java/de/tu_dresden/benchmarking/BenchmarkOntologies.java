@@ -41,6 +41,8 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.semanticweb.owlapi.model.parameters.OntologyCopy;
+import org.semanticweb.owlapi.util.OWLOntologyMerger;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -274,17 +276,19 @@ public class BenchmarkOntologies {
     private static Map<String, Integer> getJustificationInfo(OWLOntology ontology, OWLAxiom axiom){
         // given an OWL ontolgy and defect, get the number of justifications, max justification size and max number of common axioms
         Set<Set<? extends OWLAxiom>> justifications = new HashSet<>();
-        OWLOntology defectModule = null;
-        try{
-            defectModule = Segmenter.getStarModule(ontology, axiom.getSignature(),
+        
+        int moduleAxiomCount = 0;
+        try {
+            OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+            OWLOntology detOntolgy = manager.copyOntology(ontology, OntologyCopy.DEEP);
+            OWLOntology defectModule = Segmenter.getStarModule(detOntolgy, axiom.getSignature(),
             		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
             				: IRI.create(""));
-        } catch (Exception e){
-            e.printStackTrace();
-            Thread.currentThread().interrupt();
-        }
-        try{
+            moduleAxiomCount = defectModule.getAxiomCount();
             justifications = HelperFunctions.getAllJustifications(ReasonerName.Elk , axiom, defectModule);
+            defectModule = null;
+            manager.removeOntology(detOntolgy);
+            detOntolgy = null;
         } catch (Exception e){
             e.printStackTrace();
             Thread.currentThread().interrupt();
@@ -318,13 +322,13 @@ public class BenchmarkOntologies {
         }
 
         int totalAxioms = ontology.getAxiomCount();
-        int moduleAxioms = defectModule.getAxiomCount();
 
         infoMap.put("totalJustifications", totalJustifications);
         infoMap.put("maxJustificationSize", maxJustificationSize);
         infoMap.put("maxCommonAxioms", maxCommonAxioms);
         infoMap.put("axiomCount", totalAxioms);
-        infoMap.put("moduleAxiomCount", moduleAxioms);
+        infoMap.put("moduleAxiomCount", moduleAxiomCount);
+        // System.out.println("Module axiom count: "+moduleAxioms);
 
         return infoMap;
     }
@@ -464,7 +468,8 @@ public class BenchmarkOntologies {
                 OWLOntology ontology = (OWLOntology) example.get("ontology");
                 OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
 
-                Map<String, Integer>justificationInfo = getJustificationInfo(ontology, axiom);
+                Map<String, Integer> justificationInfo = getJustificationInfo(ontology, axiom);
+                // System.out.println(justificationInfo instanceof java.io.Serializable);
                 example.put("Num of Justifications", String.valueOf(justificationInfo.get("totalJustifications")));
                 example.put("Max Justification Size", String.valueOf(justificationInfo.get("maxJustificationSize")));
                 example.put("Max Common Axioms", String.valueOf(justificationInfo.get("maxCommonAxioms")));
@@ -478,7 +483,7 @@ public class BenchmarkOntologies {
                     exampleOut.close();
                     System.out.println("Example Serialization done!");
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println(e.getMessage());
                 }
             }
             
@@ -539,10 +544,10 @@ public class BenchmarkOntologies {
 
                 File exampleSer = new File("examples.ser");
                 if(exampleSer.exists()){exampleSer.delete();}    
-                if(interestingAxiomOntology != null){
-                    File interestingAxiomOntologyFile = new File(interestingAxiomOntology);
-                    if(interestingAxiomOntologyFile.exists()){interestingAxiomOntologyFile.delete();}
-                }
+                // if(interestingAxiomOntology != null){
+                //     File interestingAxiomOntologyFile = new File(interestingAxiomOntology);
+                //     if(interestingAxiomOntologyFile.exists()){interestingAxiomOntologyFile.delete();}
+                // }
             } catch (Exception e){
                 System.out.println("Error in benchmarkontologies main");
                 e.printStackTrace();
