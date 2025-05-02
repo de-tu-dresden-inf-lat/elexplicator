@@ -1,6 +1,8 @@
 package de.tu_dresden.lat.diagnoses;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -70,14 +72,18 @@ class ComputeAxiomWeightThread implements Runnable{
 		String tempfolderPath = "tempRepairsFolder"; // Path of the folder to create
 		String tempOutDirStr = outDirStr + "/" + tempfolderPath;
 		try{			
-			int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName, allOptimalDiagnoses);
-			ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
+			// int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName, allOptimalDiagnoses);
+			Map<OWLAxiom, List<OWLOntology>> modulesMap = ComputeRepair.computeRepairsModules(ontologyPath, allOptimalDiagnoses, interestingAxioms);
+			int totalRepairs = allOptimalDiagnoses.size();
+			// ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
+			ComputeRepair.computeAxiomWeight(modulesMap, reasonerName, totalRepairs);
 		} catch (Exception e){
 			logger.warn("Thread exception: " + e.getMessage());
 			Thread.currentThread().interrupt();
-		} finally {
-			ComputeRepair.cleanup();
-		}
+		} 
+		// finally {
+		// 	ComputeRepair.cleanup();
+		// }
 		
 	}
 }

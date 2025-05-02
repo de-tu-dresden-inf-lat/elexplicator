@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -95,7 +96,7 @@ public class ComputeRepair {
 			System.out.println("Shutting down");
 			signal = false;
 			inputFlag = false;
-			cleanup();
+			// cleanup();
 		}));
 
 		if (outDirStr.isEmpty())
@@ -476,6 +477,32 @@ public class ComputeRepair {
 	}
 
 /**
+ * compute the possible repairs, extract and save the modules of important axioms from the repaired ontologies in a map
+ * @return Map<OWLAxiom, Set<OWLOntology>>
+ * @throws OWLOntologyCreationException 
+ */
+	public static Map<OWLAxiom, List<OWLOntology>> computeRepairsModules(String ontologyPath, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxiomsSet) throws OWLOntologyCreationException{
+		Map<OWLAxiom, List<OWLOntology>> repairModules = new HashMap<>();
+		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
+			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
+
+			for (OWLAxiom axiom: axiomSets){
+				manager.removeAxiom(ontology, axiom);
+				
+			}
+			for (OWLAxiom impAxiom : interestingAxiomsSet){
+				OWLOntology impModule = Segmenter.getStarModule(ontology, impAxiom.getSignature(),
+            		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
+            				: IRI.create(""));
+				repairModules.putIfAbsent(impAxiom, new ArrayList<>());
+				repairModules.get(impAxiom).add(impModule);
+			}
+		}
+		return repairModules;
+	}
+
+/**
  * compute the repair ontology for the given diagnosis set	
  * @param selectedMinDiagnosis
  * @param ontologyPath
@@ -683,31 +710,62 @@ public class ComputeRepair {
  * @param outDirStr
  * @throws OWLOntologyCreationException
  */
-	public static Map<OWLAxiom, Integer> computeAxiomWeight(int counter, String outDirStr, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws OWLOntologyCreationException{
+	// public static Map<OWLAxiom, Integer> computeAxiomWeight(int counter, String outDirStr, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws OWLOntologyCreationException{
+
+	// 	axiomWeightMap = new HashMap<>();
+	// 	System.out.println("Reading the repair ontology files");
+		
+	// 	//get the axiom weight of the interesting axioms
+	// 	for (OWLAxiom interestingAxiom : interestingAxiomsSet){
+	// 		axiomWeightMap.putIfAbsent(interestingAxiom, 0);
+	// 		for (String tempFile : tempFiles){
+	// 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+	// 			try{
+	// 				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(tempFile));
+	// 				if (HelperFunctions.checkEntailment(ontology, interestingAxiom, reasonerName)){
+	// 					axiomWeightMap.put(interestingAxiom, axiomWeightMap.get(interestingAxiom)+1);
+	// 				}
+	// 				manager.removeOntology(ontology);
+	// 			} catch (OWLOntologyCreationException e){
+	// 				System.out.println("Error loading ontology file: " + tempFile);
+	// 			}				
+	// 		}
+	// 	}
+
+	// 	System.out.println(axiomWeightMap.toString());
+	// 	//get the axiom weight in percentage
+	// 	for (OWLAxiom axiom : axiomWeightMap.keySet()){
+	// 		axiomWeightMap.put(axiom, (axiomWeightMap.get(axiom)*100)/counter);
+	// 	}
+	// 	return axiomWeightMap;
+	// }
+
+/**
+ * compute axiom weight of interesting axioms based on entailement in the repaired ontologies and update the axiomWeightMap
+ * @param counter
+ * @param outDirStr
+ * @throws OWLOntologyCreationException
+ */
+	public static Map<OWLAxiom, Integer> computeAxiomWeight(Map<OWLAxiom, List<OWLOntology>> impAxiomRepMod, ReasonerName reasonerName, int totalRepairs) throws OWLOntologyCreationException{
 
 		axiomWeightMap = new HashMap<>();
-		System.out.println("Reading the repair ontology files");
 		
 		//get the axiom weight of the interesting axioms
-		for (OWLAxiom interestingAxiom : interestingAxiomsSet){
-			axiomWeightMap.putIfAbsent(interestingAxiom, 0);
-			for (String tempFile : tempFiles){
-				OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-				try{
-					OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(tempFile));
-					if (HelperFunctions.checkEntailment(ontology, interestingAxiom, reasonerName)){
-						axiomWeightMap.put(interestingAxiom, axiomWeightMap.get(interestingAxiom)+1);
-					}
-					manager.removeOntology(ontology);
-				} catch (OWLOntologyCreationException e){
-					System.out.println("Error loading ontology file: " + tempFile);
-				}				
+		for (OWLAxiom impAxiom : impAxiomRepMod.keySet()){
+			axiomWeightMap.putIfAbsent(impAxiom, 0);
+			System.out.println("modules: "+impAxiomRepMod.get(impAxiom).size());
+			List<OWLOntology> impAxiomSet = impAxiomRepMod.get(impAxiom);
+			System.out.println(impAxiomSet);
+			for (OWLOntology repModule : impAxiomSet){
+				if (HelperFunctions.checkEntailment(repModule, impAxiom, reasonerName)){
+					axiomWeightMap.put(impAxiom, axiomWeightMap.get(impAxiom)+1);
+				} 		
 			}
 		}
 
 		//get the axiom weight in percentage
 		for (OWLAxiom axiom : axiomWeightMap.keySet()){
-			axiomWeightMap.put(axiom, (axiomWeightMap.get(axiom)*100)/counter);
+			axiomWeightMap.put(axiom, (axiomWeightMap.get(axiom)*100)/totalRepairs);
 		}
 		return axiomWeightMap;
 	}
