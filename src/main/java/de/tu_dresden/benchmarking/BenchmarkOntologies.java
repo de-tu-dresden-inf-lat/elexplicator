@@ -284,7 +284,7 @@ public class BenchmarkOntologies {
             OWLOntology defectModule = Segmenter.getStarModule(detOntolgy, axiom.getSignature(),
             		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
             				: IRI.create(""));
-            moduleAxiomCount = defectModule.getAxiomCount();
+            moduleAxiomCount = defectModule.getLogicalAxiomCount();
             justifications = HelperFunctions.getAllJustifications(ReasonerName.Elk , axiom, defectModule);
             defectModule = null;
             manager.removeOntology(detOntolgy);
@@ -321,7 +321,7 @@ public class BenchmarkOntologies {
             } 
         }
 
-        int totalAxioms = ontology.getAxiomCount();
+        int totalAxioms = ontology.getLogicalAxiomCount();
 
         infoMap.put("totalJustifications", totalJustifications);
         infoMap.put("maxJustificationSize", maxJustificationSize);
