@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.Set;
@@ -91,7 +90,6 @@ public class ComputeRepair {
  */
 	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
-		System.out.println("Using module!");
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
 			System.out.println("Shutting down");
 			signal = false;
@@ -139,7 +137,6 @@ public class ComputeRepair {
 					while (axiomMap.isEmpty()){
 						LoadingScreen.main(null);
 						if (!isSnapshotActive){
-							// inputFlag = false;
 							break;
 						}
 					}
@@ -434,50 +431,10 @@ public class ComputeRepair {
 		}
 	}
 
-/**
- * computes the repair ontologies for each diagnosis set and invokes the method to compute axiom weight
- * @param outDirStr
- * @param mDsID
- * @param ontologyPath
- * @param outputFileName
- * @throws IOException
- * @throws EntityCheckerException
- * @throws OWLOntologyCreationException
- * @throws OWLOntologyStorageException
- */
-	public static int computeRepairs(String outDirStr, String mDsID, String ontologyPath, String outputFileName, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
-		
-		File repFolder = new File(outDirStr);
-		repFolder.mkdir();
-		int counter = 0;
-		tempFiles = new LinkedBlockingQueue<>();
-		System.out.println("Computing repairs!");
-		//from the produced diagnoses set, compute repair ontology for each diagnosis set and save as ontology
-		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
-			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-
-			for (OWLAxiom axiom: axiomSets){
-				manager.removeAxiom(ontology, axiom);
-			}
-			File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outputFileName+"_"+Integer.toString(counter)));
-			OWLDocumentFormat format = manager.getOntologyFormat(ontology);
-			try{
-				tempFiles.add(outputFile.toString());
-				manager.saveOntology(ontology, format, new FileOutputStream(outputFile));
-				counter += 1;
-			} catch (Exception e){
-				System.out.println("Error saving temporary repair ontology file!");
-			}
-			if(Thread.currentThread().isInterrupted()){
-				return 0;
-			}
-		}
-		return counter;
-	}
 
 /**
  * compute the possible repairs, extract and save the modules of important axioms from the repaired ontologies in a map
+ * replaces the computeRepairs method before the enatilment percentage computation used modules 
  * @return Map<OWLAxiom, Set<OWLOntology>>
  * @throws OWLOntologyCreationException 
  */
@@ -683,62 +640,6 @@ public class ComputeRepair {
 		manager.saveOntology(saveOntology, format, new FileOutputStream(outputFile));
 	}
 
-/**
- * cleanup the temporary repair ontologies folder
- * @param outDirStr
- */
-
-	public static void cleanup(){
-		System.gc();  // Force JVM to release file locks
-		System.out.println("Deleting the repair ontology files");
-		if (tempFiles == null){return;}
-		for (String tempFile : tempFiles){
-			File delfile = new File(tempFile);
-			try {
-				Files.deleteIfExists(delfile.toPath());
-				tempFiles.remove(tempFile);
-			} catch (IOException e) {
-				System.out.println(e.getMessage());
-				System.out.println("Couldn't delete file: " + tempFile);
-			}
-		}
-	}
-
-/**
- * compute axiom weight of interesting axioms based on entailement in the repaired ontologies and update the axiomWeightMap
- * @param counter
- * @param outDirStr
- * @throws OWLOntologyCreationException
- */
-	// public static Map<OWLAxiom, Integer> computeAxiomWeight(int counter, String outDirStr, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws OWLOntologyCreationException{
-
-	// 	axiomWeightMap = new HashMap<>();
-	// 	System.out.println("Reading the repair ontology files");
-		
-	// 	//get the axiom weight of the interesting axioms
-	// 	for (OWLAxiom interestingAxiom : interestingAxiomsSet){
-	// 		axiomWeightMap.putIfAbsent(interestingAxiom, 0);
-	// 		for (String tempFile : tempFiles){
-	// 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-	// 			try{
-	// 				OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(tempFile));
-	// 				if (HelperFunctions.checkEntailment(ontology, interestingAxiom, reasonerName)){
-	// 					axiomWeightMap.put(interestingAxiom, axiomWeightMap.get(interestingAxiom)+1);
-	// 				}
-	// 				manager.removeOntology(ontology);
-	// 			} catch (OWLOntologyCreationException e){
-	// 				System.out.println("Error loading ontology file: " + tempFile);
-	// 			}				
-	// 		}
-	// 	}
-
-	// 	System.out.println(axiomWeightMap.toString());
-	// 	//get the axiom weight in percentage
-	// 	for (OWLAxiom axiom : axiomWeightMap.keySet()){
-	// 		axiomWeightMap.put(axiom, (axiomWeightMap.get(axiom)*100)/counter);
-	// 	}
-	// 	return axiomWeightMap;
-	// }
 
 /**
  * compute axiom weight of interesting axioms based on entailement in the repaired ontologies and update the axiomWeightMap
@@ -753,9 +654,7 @@ public class ComputeRepair {
 		//get the axiom weight of the interesting axioms
 		for (OWLAxiom impAxiom : impAxiomRepMod.keySet()){
 			axiomWeightMap.putIfAbsent(impAxiom, 0);
-			System.out.println("modules: "+impAxiomRepMod.get(impAxiom).size());
 			List<OWLOntology> impAxiomSet = impAxiomRepMod.get(impAxiom);
-			System.out.println(impAxiomSet);
 			for (OWLOntology repModule : impAxiomSet){
 				if (HelperFunctions.checkEntailment(repModule, impAxiom, reasonerName)){
 					axiomWeightMap.put(impAxiom, axiomWeightMap.get(impAxiom)+1);
@@ -843,7 +742,6 @@ public class ComputeRepair {
   * @throws InterruptedException 
   */
 	 private static void overwriteWithBlankLines(String output) throws InterruptedException {
-        // Thread.sleep(5000);
 		int lineCount = output.split("\n").length;
 
         for (int i = 0; i < lineCount+3; i++) {
