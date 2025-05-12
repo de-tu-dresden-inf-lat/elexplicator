@@ -34,12 +34,15 @@ import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.parameters.Imports;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.inf.lat.counterExample.tools.Segmenter;
@@ -178,6 +181,11 @@ public class ComputeRepair {
 									break;
 								}
 								case "not sure":{
+									//class hierarchy difference when retaining and removing the justification axiom
+									ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
+									classHierarchyDifference.getClassHierarchy(ontologyPath);
+									writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, outDirStr);
+									displayClassHierarchyDifference(classHierarchyDifference.hierarchyDifference);
 									computeJustificationsThread.join();
 									keepAxioms.add(justificationAxiom);
 									Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications, keepAxioms);
@@ -186,10 +194,11 @@ public class ComputeRepair {
 										displayNoRepair(selectedJustification);
 										
 									} else {
+										//interesting axioms entailment percentage in repairs when retaining the justification axiom
 										getAxiomWeight(allJustifications, outDirStr, ontologyPath, interestingAxiomsSet, keepAxioms, removeAxioms, reasonerName);
 										displayAxiomWeights(axiomWeightMap);
+										keepAxioms.remove(justificationAxiom);
 									}
-									keepAxioms.remove(justificationAxiom);
 
 									scanner.nextLine();
 
@@ -271,6 +280,7 @@ public class ComputeRepair {
 				} 
 			}
 		} catch (Exception e){
+			e.printStackTrace();
 			computeJustificationsThread.interrupt();
 			sortJustificationsThread.interrupt();
 			if (axiomWeightThread != null){
@@ -278,6 +288,7 @@ public class ComputeRepair {
 			}
 			Thread.currentThread().interrupt();
 			ecode = ExitCode.executionInterrupted;
+			System.out.println(e.getMessage());
 			return ecode;
 		} 
 		// finally {
@@ -735,6 +746,82 @@ public class ComputeRepair {
 		System.out.print(axiomWeightOutputBuffer.toString(StandardCharsets.UTF_8.name()));
 
     }
+
+/**
+ * write the initial, modified class hierarchy and the difference to a json file
+ * @param hierarchies
+ * @param outDirStr
+ */
+	private static void writeClassHierarchyDifferenceToFile(Map<OWLClass, Object> hierarchy1, Map<OWLClass, Object> hierarchy2, Map<String, Object> hierarchyDiff, String outDirStr){
+		ObjectMapper mapper = new ObjectMapper();
+		Map<String, Object> hierarchies = new HashMap<>();
+		hierarchies.put("initialHierarchy", hierarchy1);
+		hierarchies.put("modifiedHierarchy", hierarchy2);
+		hierarchies.put("hierarchyDifference", hierarchyDiff);
+        try {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outDirStr + File.separator + "classHierarchyDifference.json"), hierarchies);
+            System.out.println("Class hierearchy difference written to json file!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+/**
+ * display the class hierarchy difference
+ * @param hierarchyDifferenceMap
+ */
+	private static void displayClassHierarchyDifference(Map<String, Object> hierarchyDifferenceMap) {
+		StringJoiner hierarchyDiff = new StringJoiner("\n");
+		hierarchyDiff.add("Class Hierarchy Difference:");
+		Object removedObjects = hierarchyDifferenceMap.get("removed:");
+		hierarchyDiff.add("Following sub-structures would be removed:");
+		hierarchyDiff.add("==========================");
+		if (removedObjects instanceof Iterable) {
+			for (Map<OWLClass, Object> removedSubTree : (Iterable<Map<OWLClass, Object>>) removedObjects) {
+				hierarchyDiff.add(printHierarchy(removedSubTree, "", new StringJoiner("\n")).toString());
+				hierarchyDiff.add("----------------------");
+			}
+		} 
+		hierarchyDiff.add("==========================");
+		hierarchyDiff.add("Following sub-structures would be added:");
+		hierarchyDiff.add("==========================");
+		Object addedObjects = hierarchyDifferenceMap.get("added:");
+		if (addedObjects instanceof Iterable) {
+			for (Map<OWLClass, Object> addedSubTree : (Iterable<Map<OWLClass, Object>>) addedObjects) {
+				hierarchyDiff.add(printHierarchy(addedSubTree, "", new StringJoiner("\n")).toString());
+				hierarchyDiff.add("----------------------");
+			}
+		} 
+		hierarchyDiff.add("==========================");	
+		System.out.println(hierarchyDiff.toString());	
+	}
+
+	private static StringJoiner printHierarchy(Map<OWLClass, Object> hierarchy, String indent, StringJoiner hierarchyStr) {
+		for (Map.Entry<OWLClass, Object> entry : hierarchy.entrySet()) {
+            OWLClass clazz = entry.getKey();
+            Object value = entry.getValue();
+            
+            // Print the current class with proper indentation
+            hierarchyStr.add(indent + clazz.getIRI().getShortForm());
+            
+            // If the value is a List, recursively print each child
+            if (value instanceof List) {
+                List<Map<OWLClass, Object>> childList = (List<Map<OWLClass, Object>>) value;
+                for (Map<OWLClass, Object> child : childList) {
+                    printHierarchy(child, indent+ "\t", hierarchyStr);  // Increase indentation
+                }
+            } else {
+                // If it's another map (e.g., a nested class), recurse on it
+				if (value instanceof OWLClass){
+					hierarchyStr.add(indent + "\t" + ((OWLClass) value).getIRI().getShortForm());
+				} else {
+					hierarchyStr.add(indent + "\t" + value);
+				}
+                
+            }
+        }
+		return hierarchyStr;
+	}
 
 /**
  * overwrite the given output in console with blank lines 
