@@ -119,7 +119,7 @@ public class ComputeRepair {
 
 		OWLOntology defectModule =  Segmenter.getStarModule(ontology, axiom.getSignature(),
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
-						: IRI.create(""));
+						: IRI.create("http://example.org/temp-ontology"));
 
 		try{
 			ComputeJustificationsThread computeJustificationsRunnable = new ComputeJustificationsThread(reasonerName, axiom, defectModule);
@@ -181,30 +181,36 @@ public class ComputeRepair {
 									break;
 								}
 								case "not sure":{
+									String bufferedString = "";
 									//class hierarchy difference when retaining and removing the justification axiom
 									ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
 									classHierarchyDifference.getClassHierarchy(ontologyPath);
 									writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, outDirStr);
 									displayClassHierarchyDifference(classHierarchyDifference.hierarchyDifference);
+									bufferedString += axiomWeightOutputBuffer.toString();									
+									axiomWeightOutputBuffer.reset();
 									computeJustificationsThread.join();
-									keepAxioms.add(justificationAxiom);
-									Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications, keepAxioms);
-									if (selectedJustification != null){
-										keepAxioms.remove(justificationAxiom);
-										displayNoRepair(selectedJustification);
-										
-									} else {
-										//interesting axioms entailment percentage in repairs when retaining the justification axiom
-										getAxiomWeight(allJustifications, outDirStr, ontologyPath, interestingAxiomsSet, keepAxioms, removeAxioms, reasonerName);
-										displayAxiomWeights(axiomWeightMap);
-										keepAxioms.remove(justificationAxiom);
-									}
+
+									//entailment probability when retaining the justification axiom
+									axiomWeightOutputBuffer.write("Entailment probability when retaining the justification axiom:\n".getBytes());
+									Set<OWLAxiom> updatedKeepAxioms = new HashSet<>(keepAxioms);
+									updatedKeepAxioms.add(justificationAxiom);
+									getEntailmentProbability(allJustifications, updatedKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+									bufferedString += axiomWeightOutputBuffer.toString();									
+									axiomWeightOutputBuffer.reset();
+									
+									//entailment probability when removing the justification axiom
+									axiomWeightOutputBuffer.write("Entailment probability when removing the justification axiom:\n".getBytes());
+									Set<OWLAxiom> updatedRemoveAxioms = new HashSet<>(removeAxioms);
+									updatedRemoveAxioms.add(justificationAxiom);
+									getEntailmentProbability(allJustifications, keepAxioms, updatedRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+									bufferedString += axiomWeightOutputBuffer.toString();									
+									axiomWeightOutputBuffer.reset();
 
 									scanner.nextLine();
 
-									if (axiomWeightOutputBuffer.size() > 0){
-										overwriteWithBlankLines(axiomWeightOutputBuffer.toString());
-										axiomWeightOutputBuffer.reset();
+									if (bufferedString.length() > 0){
+										overwriteWithBlankLines(bufferedString);
 									}
 									continue;
 								}
@@ -389,6 +395,19 @@ public class ComputeRepair {
 		appendTextToFile(removeAxiomsProgram.toString(), outDirStr + File.separator + programFileName);
 	}
 
+	private static void getEntailmentProbability(Set<Set<? extends OWLAxiom>> allJustifications, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
+		
+		Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications, keepAxioms);
+		if (selectedJustification != null){
+			displayNoRepair(selectedJustification);
+			
+		} else {
+			//interesting axioms entailment percentage in repairs when retaining the justification axiom
+			getAxiomWeight(allJustifications, outDirStr, ontologyPath, interestingAxiomsSet, keepAxioms, removeAxioms, reasonerName);
+			displayAxiomWeights(axiomWeightMap);
+		}
+	}
+
 /**
  * create and run logic program based on user selection of justification axioms, compute the diagnoses and invoke the async thread to compute axiom weight
  * @param allJustifications
@@ -462,7 +481,7 @@ public class ComputeRepair {
 			for (OWLAxiom impAxiom : interestingAxiomsSet){
 				OWLOntology impModule = Segmenter.getStarModule(ontology, impAxiom.getSignature(),
             		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
-            				: IRI.create(""));
+            				: IRI.create("http://example.org/temp-repair-ontology"));
 				repairModules.putIfAbsent(impAxiom, new ArrayList<>());
 				repairModules.get(impAxiom).add(impModule);
 			}
@@ -706,7 +725,7 @@ public class ComputeRepair {
  * @throws UnsupportedEncodingException 
  */
 	private static void displayNoRepair(Set<? extends OWLAxiom> justification) throws UnsupportedEncodingException{
-		axiomWeightOutputBuffer = new ByteArrayOutputStream();
+		// axiomWeightOutputBuffer = new ByteArrayOutputStream();
 		PrintStream bufferStream = new PrintStream(axiomWeightOutputBuffer, true, StandardCharsets.UTF_8.name());
 		PrintStream originalOut = System.out;
 
@@ -729,7 +748,6 @@ public class ComputeRepair {
  * @throws UnsupportedEncodingException 
  */
 	private static void displayAxiomWeights(Map<OWLAxiom,Integer> axiomWeightMap) throws UnsupportedEncodingException{
-		axiomWeightOutputBuffer = new ByteArrayOutputStream();
 		PrintStream bufferStream = new PrintStream(axiomWeightOutputBuffer, true, StandardCharsets.UTF_8.name());
 		PrintStream originalOut = System.out;
 
@@ -760,7 +778,6 @@ public class ComputeRepair {
 		hierarchies.put("hierarchyDifference", hierarchyDiff);
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outDirStr + File.separator + "classHierarchyDifference.json"), hierarchies);
-            System.out.println("Class hierearchy difference written to json file!");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -769,31 +786,47 @@ public class ComputeRepair {
 /**
  * display the class hierarchy difference
  * @param hierarchyDifferenceMap
+ * @throws UnsupportedEncodingException 
  */
-	private static void displayClassHierarchyDifference(Map<String, Object> hierarchyDifferenceMap) {
+	private static void displayClassHierarchyDifference(Map<String, Object> hierarchyDifferenceMap) throws UnsupportedEncodingException {
+		PrintStream bufferStream = new PrintStream(axiomWeightOutputBuffer, true, StandardCharsets.UTF_8.name());
+		PrintStream originalOut = System.out;
+
+		// Simulate printing class hierearchy difference
+		System.setOut(bufferStream); // Redirect output
+		
 		StringJoiner hierarchyDiff = new StringJoiner("\n");
 		hierarchyDiff.add("Class Hierarchy Difference:");
 		Object removedObjects = hierarchyDifferenceMap.get("removed:");
-		hierarchyDiff.add("Following sub-structures would be removed:");
-		hierarchyDiff.add("==========================");
-		if (removedObjects instanceof Iterable) {
-			for (Map<OWLClass, Object> removedSubTree : (Iterable<Map<OWLClass, Object>>) removedObjects) {
+		if (removedObjects instanceof Iterable && !((List<Map<OWLClass, Object>>) removedObjects).isEmpty()) {
+			hierarchyDiff.add("Following sub-structures would be removed:");
+			hierarchyDiff.add("==========================");
+			for (Map<OWLClass, Object> removedSubTree : (List<Map<OWLClass, Object>>) removedObjects) {
 				hierarchyDiff.add(printHierarchy(removedSubTree, "", new StringJoiner("\n")).toString());
 				hierarchyDiff.add("----------------------");
 			}
+			hierarchyDiff.add("==========================");
 		} 
-		hierarchyDiff.add("==========================");
-		hierarchyDiff.add("Following sub-structures would be added:");
-		hierarchyDiff.add("==========================");
+		hierarchyDiff.add("");
 		Object addedObjects = hierarchyDifferenceMap.get("added:");
-		if (addedObjects instanceof Iterable) {
-			for (Map<OWLClass, Object> addedSubTree : (Iterable<Map<OWLClass, Object>>) addedObjects) {
+			
+		if (addedObjects instanceof Iterable && !((List<Map<OWLClass, Object>>) addedObjects).isEmpty()) {
+			hierarchyDiff.add("Following sub-structures would be added:");
+			hierarchyDiff.add("==========================");	
+			for (Map<OWLClass, Object> addedSubTree : (List<Map<OWLClass, Object>>) addedObjects) {
 				hierarchyDiff.add(printHierarchy(addedSubTree, "", new StringJoiner("\n")).toString());
 				hierarchyDiff.add("----------------------");
 			}
+			hierarchyDiff.add("==========================");
 		} 
-		hierarchyDiff.add("==========================");	
+			
+		
 		System.out.println(hierarchyDiff.toString());	
+		System.out.flush();
+		System.setOut(originalOut); // Restore original output
+
+		// Print the buffered output to the actual console
+		System.out.print(axiomWeightOutputBuffer.toString(StandardCharsets.UTF_8.name()));
 	}
 
 	private static StringJoiner printHierarchy(Map<OWLClass, Object> hierarchy, String indent, StringJoiner hierarchyStr) {
@@ -828,7 +861,7 @@ public class ComputeRepair {
  * @param output
   * @throws InterruptedException 
   */
-	 private static void overwriteWithBlankLines(String output) throws InterruptedException {
+	private static void overwriteWithBlankLines(String output) throws InterruptedException {
 		int lineCount = output.split("\n").length;
 
         for (int i = 0; i < lineCount+3; i++) {

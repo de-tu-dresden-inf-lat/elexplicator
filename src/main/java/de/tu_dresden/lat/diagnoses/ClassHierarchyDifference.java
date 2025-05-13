@@ -161,27 +161,34 @@ public class ClassHierarchyDifference {
             reasoner = reasonerFactory.createNonBufferingReasoner(ontology);
         }
         Set<OWLClass> visited = new HashSet<>();
-        Map<OWLClass, Object> hierarchyMap = printClassHierarchy(clazz, reasoner, visited);
+        Map<OWLClass, Object> hierarchyMap = printClassHierarchy(clazz, reasoner, visited, new HashSet<>());
         return hierarchyMap;
     }
 
-    public Map<OWLClass, Object> printClassHierarchy(OWLClass clazz, OWLReasoner reasoner, Set<OWLClass> visited) {
+    public Map<OWLClass, Object> printClassHierarchy(OWLClass clazz, OWLReasoner reasoner, Set<OWLClass> visited, Set<OWLClass> visitedLeaf) {
  
-        if (visited.contains(clazz)){ // already visited non-leaf nodes 
-            return Collections.singletonMap(clazz, "ref");
-        }
-        
-        Set<OWLClass> children = reasoner.getSubClasses(clazz, true).getFlattened();
-        children.addAll(reasoner.getEquivalentClasses(clazz).getEntities());
-        List<Map<OWLClass, Object>> childNodes = new ArrayList<>();
-        for (OWLClass child : children) {            
-            if (!child.equals(clazz) && !child.isOWLNothing()) {
-                childNodes.add(printClassHierarchy(child, reasoner, visited));
+        if (visited.contains(clazz)){
+            if (!visitedLeaf.contains(clazz)){ // already visited non-leaf nodes 
+                return Collections.singletonMap(clazz, "ref");
+            } else {
+                return Collections.singletonMap(clazz, null);
             }
         }
-        if (!childNodes.isEmpty()){ // if the class is not a leaf node then add track it as visited
-            visited.add(clazz);
+
+        visited.add(clazz);
+                
+        Set<OWLClass> children = reasoner.getSubClasses(clazz, true).getFlattened();
+        children.addAll(reasoner.getEquivalentClasses(clazz).getEntities());
+        List<Map<OWLClass, Object>> childNodes = new ArrayList<>();        
+        for (OWLClass child : children) {            
+            if (!child.equals(clazz) && !child.isOWLNothing()) {
+                childNodes.add(printClassHierarchy(child, reasoner, visited, visitedLeaf));
+            }
         }
+        if (childNodes.isEmpty()){ // if the class is not a leaf node then add track it as visited
+            visitedLeaf.add(clazz);
+        }
+        
         
         return Collections.singletonMap(clazz,
                 childNodes.isEmpty() ? null : childNodes);
