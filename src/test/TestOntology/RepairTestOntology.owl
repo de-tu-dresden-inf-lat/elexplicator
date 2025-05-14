@@ -149,12 +149,6 @@ Justifications total = 5; Max justification size = 6, Max shared axioms = 4</Lit
         <Class IRI="https://nameGenerator#B9"/>
         <Class IRI="https://nameGenerator#B10"/>
     </SubClassOf>
-
-    <SubClassOf>
-        <Class IRI="https://nameGenerator#B10"/>
-        <Class IRI="https://nameGenerator#B1"/>
-    </SubClassOf>
-
     <SubClassOf>
         <ObjectSomeValuesFrom>
             <ObjectProperty IRI="https://nameGenerator#r"/>
