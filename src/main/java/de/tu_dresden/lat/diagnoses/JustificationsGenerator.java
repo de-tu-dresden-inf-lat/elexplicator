@@ -44,7 +44,7 @@ public class JustificationsGenerator {
 	public static Set<Set<? extends OWLAxiom>> getAllELKJustifications(OWLAxiom axiom, OWLOntology ontology) {
 		ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
 		ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = InferenceJustifiers
+		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = (InferenceJustifier) InferenceJustifiers
 				.justifyAssertedInferences();
 		DynamicProof<ElkOwlInference> proof = null;
 		try{
@@ -96,7 +96,7 @@ public class JustificationsGenerator {
 		ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
 		ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
 
-		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = InferenceJustifiers
+		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = (InferenceJustifier) InferenceJustifiers
 				.justifyAssertedInferences();
 		DynamicProof<ElkOwlInference> proof = null;
 

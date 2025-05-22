@@ -9,7 +9,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,6 +77,10 @@ public class ComputeRepair {
 	private static Boolean signal = true;
 	private static Boolean inputFlag = true;
 
+	private static Boolean repairCheck = true;
+	private static Boolean diagnosisComputed = false;
+	private static Set<Set <? extends OWLAxiom>> minimalDiagnoses = new HashSet<>();
+
 /**
  * interactive method to compute the repair ontology based on user selection of justification axioms
  * @param axiom
@@ -120,6 +123,8 @@ public class ComputeRepair {
 		OWLOntology defectModule =  Segmenter.getStarModule(ontology, axiom.getSignature(),
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
+		System.out.println(HelperFunctions.checkEntailment(ontology, axiom, reasonerName));
+		// System.out.println(ontology.getLogicalAxioms());
 
 		try{
 			ComputeJustificationsThread computeJustificationsRunnable = new ComputeJustificationsThread(reasonerName, axiom, defectModule);
@@ -130,6 +135,7 @@ public class ComputeRepair {
 			sortJustificationsThread = new Thread(sortJustificationsRunnable);
 			sortJustificationsThread.start();
 
+			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
 			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
 			Scanner scanner = new Scanner(System.in);
 			
@@ -181,32 +187,38 @@ public class ComputeRepair {
 									break;
 								}
 								case "not sure":{
-									String bufferedString = "";
-									//class hierarchy difference when retaining and removing the justification axiom
-									ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
-									classHierarchyDifference.getClassHierarchy(ontologyPath);
-									writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, outDirStr);
-									displayClassHierarchyDifference(classHierarchyDifference.hierarchyDifference);
-									bufferedString += axiomWeightOutputBuffer.toString();									
-									axiomWeightOutputBuffer.reset();
-									computeJustificationsThread.join();
-
-									//entailment probability when retaining the justification axiom
-									axiomWeightOutputBuffer.write("Entailment probability when retaining the justification axiom:\n".getBytes());
-									Set<OWLAxiom> updatedKeepAxioms = new HashSet<>(keepAxioms);
-									updatedKeepAxioms.add(justificationAxiom);
-									getEntailmentProbability(allJustifications, updatedKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-									bufferedString += axiomWeightOutputBuffer.toString();									
-									axiomWeightOutputBuffer.reset();
-									
-									//entailment probability when removing the justification axiom
-									axiomWeightOutputBuffer.write("Entailment probability when removing the justification axiom:\n".getBytes());
-									Set<OWLAxiom> updatedRemoveAxioms = new HashSet<>(removeAxioms);
-									updatedRemoveAxioms.add(justificationAxiom);
-									getEntailmentProbability(allJustifications, keepAxioms, updatedRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-									bufferedString += axiomWeightOutputBuffer.toString();									
-									axiomWeightOutputBuffer.reset();
-
+									String bufferedString = "Select an option: \n" + //
+																"1. Compute the entailment probabilities of the interesting axioms\n" + //
+																"2. Compute the class hierarchy difference\n" + //
+																"3. Both";
+									System.out.println(bufferedString);
+									while(true){
+										int impactOpt = Integer.parseInt(scanner.nextLine());
+										switch(impactOpt){
+											case 1: {
+												computeJustificationsThread.join();
+												bufferedString += computeProbabilities(justificationAxiom, keepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+												break;
+											}
+											case 2:{
+												bufferedString += computeHierarchyDiff(keepAxioms, removeAxioms, outDirStr, ontologyPath, justificationAxiom, reasonerName);
+												break;
+											}
+											case 3: {											
+												bufferedString += computeHierarchyDiff(keepAxioms, removeAxioms, outDirStr, ontologyPath, justificationAxiom, reasonerName);
+												computeJustificationsThread.join();
+												bufferedString += computeProbabilities(justificationAxiom, keepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+												break;
+											}
+											default:{
+												String retStr = "invalid option!";
+												System.out.println(retStr);
+												bufferedString += retStr;
+												continue;
+											}
+										}		
+									break;
+									}
 									scanner.nextLine();
 
 									if (bufferedString.length() > 0){
@@ -242,6 +254,14 @@ public class ComputeRepair {
 								}
 							}
 							break;
+							
+						}
+						if(justificationsCompleted && repairCheck){
+							Boolean repairStatus = checkRepair(axiom, ontology, removeAxioms, outDirStr, reasonerName, ontologyPath, scanner);
+							if (repairStatus){
+								inputFlag = false;
+								break;
+							}
 						}
 
 						if (!inputFlag){break;}
@@ -305,6 +325,62 @@ public class ComputeRepair {
 		
 	}
 
+/**
+ * handle option probabilities in not sure case
+ * @param str
+ * @param filePath
+ * @throws IOException
+ * @throws EntityCheckerException 
+ * @throws OWLOntologyStorageException 
+ * @throws OWLOntologyCreationException 
+ */
+	private static String computeProbabilities(OWLAxiom justificationAxiom, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
+		//entailment probability when retaining the justification axiom
+		String bufferedString = "";
+		axiomWeightOutputBuffer.write("Entailment probability when retaining the justification axiom:\n".getBytes());
+		Set<OWLAxiom> updatedKeepAxioms = new HashSet<>(keepAxioms);
+		updatedKeepAxioms.add(justificationAxiom);
+		getEntailmentProbability(allJustifications, updatedKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+		bufferedString += axiomWeightOutputBuffer.toString();									
+		axiomWeightOutputBuffer.reset();
+		
+		//entailment probability when removing the justification axiom
+		axiomWeightOutputBuffer.write("Entailment probability when removing the justification axiom:\n".getBytes());
+		Set<OWLAxiom> updatedRemoveAxioms = new HashSet<>(removeAxioms);
+		updatedRemoveAxioms.add(justificationAxiom);
+		getEntailmentProbability(allJustifications, keepAxioms, updatedRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+		bufferedString += axiomWeightOutputBuffer.toString();									
+		axiomWeightOutputBuffer.reset();
+
+		return bufferedString;
+	}
+
+
+/**
+ * compute the class hierarchy difference when retaining and removing the justification axiom
+ * @param keepAxioms
+ * @param removeAxioms
+ * @param outDirStr
+ * @param ontologyPath
+ * @param justificationAxiom
+ * @param reasonerName
+ * @return
+ * @throws IOException
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ */
+	private static String computeHierarchyDiff(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, OWLAxiom justificationAxiom, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException{
+		String bufferedString = "";
+		//class hierarchy difference when retaining and removing the justification axiom
+		ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
+		classHierarchyDifference.getClassHierarchy(ontologyPath);
+		writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, outDirStr);
+		displayClassHierarchyDifference(classHierarchyDifference.hierarchyDifference);
+		bufferedString += axiomWeightOutputBuffer.toString();									
+		axiomWeightOutputBuffer.reset();
+
+		return bufferedString;
+	}
 /**
  * append constraints in given string to the logic program file
  * @param str
@@ -507,6 +583,40 @@ public class ComputeRepair {
 		return repairOntology;
 	}
 
+	private static Boolean checkRepair(OWLAxiom defectAxiom, OWLOntology defectOntology, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName, String ontologyPath, Scanner scanner) throws IOException, InterruptedException{
+		if (!diagnosisComputed){
+			ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), reasonerName);
+			minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+			diagnosisComputed = true;
+		}
+		
+		Set<Set<? extends OWLAxiom>> satisfiedDiagnoses = new HashSet<>();
+
+		if (minimalDiagnoses.size() > 0){
+			for (Set<? extends OWLAxiom> diagnosisSet : minimalDiagnoses){
+				if (removeAxioms.containsAll(diagnosisSet)){
+					satisfiedDiagnoses.add(diagnosisSet);
+				}
+			}
+		} 
+
+		if (satisfiedDiagnoses.size() > 0){
+			System.out.println("Repair already reached!");
+			System.out.println("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.");
+			String user_in = scanner.nextLine();
+			String fileName = "";
+			if (user_in.toLowerCase().equals("save")){
+				System.out.println("Enter the filename to save as: ");
+				fileName = scanner.nextLine();
+				return saveProcess(defectOntology, defectAxiom, removeAxioms, ontologyPath, outDirStr, fileName, reasonerName, scanner);
+			} else if (user_in.toLowerCase().equals("continue")){
+				repairCheck = false;
+				return false;
+			} 
+		}	
+		return false;	
+	}
+
 	public static Boolean saveProcess(OWLOntology ontology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName, Scanner scanner){
 		OWLOntology repairOntology;
 		try {
@@ -568,8 +678,14 @@ public class ComputeRepair {
  */
 	public static Boolean checkDiagMinimality(OWLOntology defectOntology, OWLAxiom defectAxiom, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName) 
 		throws IOException, InterruptedException{
-		ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), reasonerName);
-		if (ASPMinimalDiagnoses.allOptimalDiagnosesMin.contains(removeAxioms)){
+		//if diagnosis already computed, use that else do the computation
+		if (!diagnosisComputed){
+			ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), reasonerName);
+			minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+			diagnosisComputed = true;
+		}
+		
+		if (minimalDiagnoses.contains(removeAxioms)){
 			return true; //i.e diagnosis is minimal
 		} else {
 			return false;
@@ -589,6 +705,7 @@ public class ComputeRepair {
 		while (!isMinimal.isDone()){
 			LoadingScreen.main(null);
 		}
+		//if diagnosis is already computed, use that as the minimalDiagnoses else do the computation
 		Set<Set<? extends OWLAxiom>> minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
 		if (isMinimal.get().booleanValue()){
 			try{
@@ -847,9 +964,12 @@ public class ComputeRepair {
                 // If it's another map (e.g., a nested class), recurse on it
 				if (value instanceof OWLClass){
 					hierarchyStr.add(indent + "\t" + ((OWLClass) value).getIRI().getShortForm());
+				} else if (value == null){ 
+					hierarchyStr.add(indent + "\t" + "\u22A5");
 				} else {
-					hierarchyStr.add(indent + "\t" + value);
+					hierarchyStr.add(indent + "\t" + value.toString());
 				}
+				
                 
             }
         }
