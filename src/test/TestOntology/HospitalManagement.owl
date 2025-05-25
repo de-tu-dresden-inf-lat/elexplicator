@@ -431,6 +431,220 @@
         <ObjectProperty IRI="#operatesIn"/>
         <Class IRI="#OperatingRoom"/>
     </ObjectPropertyRange>
+
+    <!-- <Declaration>
+        <Class IRI = "#ICU"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#MedicalDevices"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#Ventilator"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#ECG"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#Defibrillator"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#MonitoringUnit"/>    
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#ControlUnit"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI = "#DeviceParts"/>
+    </Declaration>
+    
+    <SubClassOf>
+        <Class IRI="#ICU"/>
+        <Class IRI="#Areas"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Ventilator"/>
+        <Class IRI="#Areas"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ECG"/>
+        <Class IRI="#MedicalDevices"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Defibrillator"/>
+        <Class IRI="#MedicalDevices"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#MonitoringUnit"/>
+        <Class IRI="#DeviceParts"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ControlUnit"/>
+        <Class IRI="#DeviceParts"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#MedicalDevices"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#controlledBy"/>
+            <ObjectUnionOf>
+                <Class IRI="#Nurse"/>
+                <Class IRI="#Doctor"/>
+            </ObjectUnionOf>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectUnionOf>
+            <Class IRI="#Nurse"/>
+            <Class IRI="#Doctor"/>
+        </ObjectUnionOf>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#controls"/>
+            <Class IRI="#MedicalDevices"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#MedicalDevices"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#maintainedBy"/>
+            <Class IRI="#Technician"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Technician"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#maintains"/>
+            <Class IRI="#MedicalDevices"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Ventilator"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#hasPart"/>
+            <Class IRI="#ControlUnit"/>
+        </ObjectSomeValuesFrom>	
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Ventilator"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#hasPart"/>
+            <Class IRI="#MonitoringUnit"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ControlUnit"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#isPartOf"/>
+            <Class IRI="#Ventilator"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#MonitoringUnit"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#isPartOf"/>
+            <Class IRI="#Ventilator"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Defibrillator"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#hasPart"/>
+            <Class IRI="#ControlUnit"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Defibrillator"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#hasPart"/>
+            <Class IRI="#MonitoringUnit"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ControlUnit"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#isPartOf"/>
+            <Class IRI="#Defibrillator"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#MonitoringUnit"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#isPartOf"/>
+            <Class IRI="#Defibrillator"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ECG"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#hasPart"/>
+            <Class IRI="#MonitoringUnit"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="ControlUnit"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#isPartOf"/>
+            <Class IRI="#ECG"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#maintains"/>
+        <ObjectProperty IRI="#maintainedBy"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#controls"/>
+        <ObjectProperty IRI="#controlledBy"/>
+    </InverseObjectProperties>
+    <InverseObjectProperties>
+        <ObjectProperty IRI="#hasPart"/>
+        <ObjectProperty IRI="#isPartOf"/>
+    </InverseObjectProperties> -->
+
+
+    <!-- resident SubClassOf on call, on call subclass of emergency responder, emergency responder subclass of resident -->
+    <Declaration>
+        <Class IRI="#Resident"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OnCall"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ERNurse"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ERDoctor"/>
+    </Declaration>
+    <SubClassOf>
+        <Class IRI="#ERNurse"/>
+        <Class IRI="#Nurse"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERDoctor"/>
+        <Class IRI="#Doctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgeon"/>
+        <Class IRI="#ERDoctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Anasthesiologist"/>
+        <Class IRI="#ERDoctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Resident"/>
+        <Class IRI="#OnCall"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERNurse"/>
+        <Class IRI="#OnCall"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERDoctor"/>
+        <Class IRI="#OnCall"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#OnCall"/>
+        <Class IRI="#Staff"/>
+    </SubClassOf>
 </Ontology>
 
 <!-- Defect could be Anasthesiologist is a Surgeon -->

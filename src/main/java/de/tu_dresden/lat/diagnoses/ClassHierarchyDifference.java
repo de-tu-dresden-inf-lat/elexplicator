@@ -176,7 +176,7 @@ public class ClassHierarchyDifference {
         }
 
         visited.add(clazz);
-                
+        reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
         Set<OWLClass> children = reasoner.getSubClasses(clazz, true).getFlattened();
         children.addAll(reasoner.getEquivalentClasses(clazz).getEntities());
         List<Map<OWLClass, Object>> childNodes = new ArrayList<>();        

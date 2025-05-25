@@ -45,6 +45,44 @@ class ComputeJustificationsThread implements Runnable{
 	}
 }
 
+//another thread to compute and set the diagnosis and status 
+class ComputeDiagnosisThread implements Runnable{
+	private OWLOntology ontology;
+	private OWLAxiom axiom;
+	private String outDirStr;
+	private ReasonerName reasonerName;
+
+	// private static final long CHECK_INTERVAL = 1000; 
+
+	Logger logger = Logger.getLogger(ComputeDiagnosisThread.class);
+
+	public ComputeDiagnosisThread(OWLOntology ontology, OWLAxiom axiom, String outDirStr, ReasonerName reasonerName){
+		this.ontology = ontology;
+		this.axiom = axiom;
+		this.outDirStr = outDirStr;
+		this.reasonerName = reasonerName;
+	}
+
+	@Override
+	public void run(){
+		try{
+			
+			while(true){
+				if (ComputeRepair.justificationsCompleted){
+					ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, "minimal", outDirStr, new HashSet<>(), reasonerName);
+					ComputeRepair.minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+					ComputeRepair.diagnosisComputed = true;
+					break;
+				}
+			}
+		} catch (Exception e){
+			logger.warn("Thread exception: " + e.getMessage());
+			Thread.currentThread().interrupt();
+		}
+		
+	}
+}
+
 //Thread to get the percentage of entailments of interesting axioms in the repaired ontologies obtained from current state
 class ComputeAxiomWeightThread implements Runnable{
 	String outDirStr;

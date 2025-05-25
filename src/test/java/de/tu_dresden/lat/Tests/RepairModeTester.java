@@ -29,6 +29,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
 import de.tu_dresden.lat.data.names.ReasonerName;
+import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
 import de.tu_dresden.lat.diagnoses.ComputeRepair;
 import de.tu_dresden.lat.diagnoses.HelperFunctions;
 import de.tu_dresden.lat.diagnoses.JustificationsGenerator;
@@ -98,6 +99,16 @@ public class RepairModeTester {
         Field fieldCRid2axioms = ComputeRepair.class.getDeclaredField("identifiers2Axioms");
         fieldCRid2axioms.setAccessible(true);
         fieldHFid2axioms.set(null, fieldCRid2axioms.get(null));
+
+        Field minimalDiagnoses = ComputeRepair.class.getDeclaredField("minimalDiagnoses");
+        minimalDiagnoses.setAccessible(true);
+        try {
+            ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, "minimal", outDirStr, new HashSet<>(), reasonerName);
+            minimalDiagnoses.set(null, ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } 
 
     }
 

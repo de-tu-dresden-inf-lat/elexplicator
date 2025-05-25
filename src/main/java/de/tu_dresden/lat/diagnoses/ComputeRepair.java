@@ -56,7 +56,7 @@ import de.tu_dresden.lat.tools.LoadingScreen;
 public class ComputeRepair {
 	private static final Logger logger = Logger.getLogger(ComputeRepair.class);
 
-	public static Boolean isSnapshotActive;
+	public static volatile Boolean isSnapshotActive;
 	public static Map<OWLAxiom, String> axioms2Identifiers;	
 	public static Map<String, OWLAxiom> identifiers2Axioms;
 	public static Set<Set<? extends OWLAxiom>> allJustifications;
@@ -64,12 +64,13 @@ public class ComputeRepair {
 	public static BlockingQueue<String> tempFiles;
 	public static ConcurrentHashMap<OWLAxiom, Integer> axiomMap = new ConcurrentHashMap<>();
 	public static Map<OWLAxiom,Integer> axiomWeightMap;
-	public static Boolean justificationsCompleted;
+	public static volatile Boolean justificationsCompleted;
 	private static ByteArrayOutputStream axiomWeightOutputBuffer = new ByteArrayOutputStream();
 
 	public static final String programFileName = "pi.txt";
 
 	private static Thread axiomWeightThread = null;
+	private static Thread computeDiagnosisThread = null;
 
 	private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
 		true);
@@ -78,8 +79,8 @@ public class ComputeRepair {
 	private static Boolean inputFlag = true;
 
 	private static Boolean repairCheck = true;
-	private static Boolean diagnosisComputed = false;
-	private static Set<Set <? extends OWLAxiom>> minimalDiagnoses = new HashSet<>();
+	public static volatile Boolean diagnosisComputed = false;
+	public static Set<Set <? extends OWLAxiom>> minimalDiagnoses = new HashSet<>();
 
 /**
  * interactive method to compute the repair ontology based on user selection of justification axioms
@@ -134,6 +135,10 @@ public class ComputeRepair {
 			SortJustificationsThread sortJustificationsRunnable = new SortJustificationsThread();
 			sortJustificationsThread = new Thread(sortJustificationsRunnable);
 			sortJustificationsThread.start();
+
+			ComputeDiagnosisThread computeDiagnosisRunnable = new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName);
+			computeDiagnosisThread = new Thread(computeDiagnosisRunnable);
+			computeDiagnosisThread.start();
 
 			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
 			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
@@ -232,6 +237,7 @@ public class ComputeRepair {
 									System.out.println("Enter the filename to save as: ");
 									String save_filename = scanner.nextLine();
 
+									computeDiagnosisThread.join();
 									Boolean savedFlag = saveProcess(ontology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
 
 									if(savedFlag){
@@ -246,6 +252,7 @@ public class ComputeRepair {
 									inputFlag = false;
 									computeJustificationsThread.interrupt();
 									sortJustificationsThread.interrupt();
+									computeDiagnosisThread.interrupt();
 									break;
 								}
 								default:{
@@ -256,7 +263,10 @@ public class ComputeRepair {
 							break;
 							
 						}
-						if(justificationsCompleted && repairCheck){
+						System.out.println("Diagnosis computed?"+ diagnosisComputed);
+						if(diagnosisComputed && repairCheck){
+							System.out.println("checking repair...");
+							computeDiagnosisThread.join();
 							Boolean repairStatus = checkRepair(axiom, ontology, removeAxioms, outDirStr, reasonerName, ontologyPath, scanner);
 							if (repairStatus){
 								inputFlag = false;
@@ -285,6 +295,7 @@ public class ComputeRepair {
 							System.out.println("Enter the filename to save as: ");
 							String save_filename = scanner.nextLine();
 
+							computeJustificationsThread.join();
 							Boolean savedFlag = saveProcess(ontology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
 
 							if(savedFlag){
@@ -584,11 +595,6 @@ public class ComputeRepair {
 	}
 
 	private static Boolean checkRepair(OWLAxiom defectAxiom, OWLOntology defectOntology, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName, String ontologyPath, Scanner scanner) throws IOException, InterruptedException{
-		if (!diagnosisComputed){
-			ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), reasonerName);
-			minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
-			diagnosisComputed = true;
-		}
 		
 		Set<Set<? extends OWLAxiom>> satisfiedDiagnoses = new HashSet<>();
 
@@ -678,12 +684,6 @@ public class ComputeRepair {
  */
 	public static Boolean checkDiagMinimality(OWLOntology defectOntology, OWLAxiom defectAxiom, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName) 
 		throws IOException, InterruptedException{
-		//if diagnosis already computed, use that else do the computation
-		if (!diagnosisComputed){
-			ASPMinimalDiagnoses.getAllMinimalDiagnoses(defectAxiom, defectOntology, "minimal", outDirStr, new HashSet<>(), reasonerName);
-			minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
-			diagnosisComputed = true;
-		}
 		
 		if (minimalDiagnoses.contains(removeAxioms)){
 			return true; //i.e diagnosis is minimal
@@ -706,7 +706,6 @@ public class ComputeRepair {
 			LoadingScreen.main(null);
 		}
 		//if diagnosis is already computed, use that as the minimalDiagnoses else do the computation
-		Set<Set<? extends OWLAxiom>> minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
 		if (isMinimal.get().booleanValue()){
 			try{
 				saveRepairOntology(repairOntology, outDirStr, save_filename);
