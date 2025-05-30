@@ -235,7 +235,7 @@ public class ELExplicator {
 			ReasonerName reasoner = ReasonerName.getReasonerName(reasonerName);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
 			try{
-				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasoner, outDirStr, ontologyPathStr);	
+				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasoner, outDirStr, ontologyPathStr, "entropy", false);	
 			} catch (Exception e){
 				e.printStackTrace();
 			}		

@@ -1,10 +1,12 @@
 package de.tu_dresden.lat.diagnoses;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import org.apache.log4j.Logger;
 
@@ -127,9 +129,9 @@ class ComputeAxiomWeightThread implements Runnable{
 }
 
 //Thread where a snapshot of justifications is taken every 5 seconds and the frequency of each axiom is updated in the map
-class SortJustificationsThread implements Runnable{
+class FrequencySortingThread implements Runnable{
 	private static final long SNAPSHOT_INTERVAL = 5000; 
-	private static final Logger logger = Logger.getLogger(SortJustificationsThread.class);
+	private static final Logger logger = Logger.getLogger(FrequencySortingThread.class);
 	@Override
 	public void run(){
 		try{
@@ -151,7 +153,7 @@ class SortJustificationsThread implements Runnable{
 					for (Set<? extends OWLAxiom> justificationSet : justificationsSnapshot){			
 						for (OWLAxiom justificationAxiom : justificationSet){
 							//if the axiom is already in the map, increment the frequency else add it with frequency 1	
-							ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0) + 1);
+							ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0.0) + 1);
 						}
 					};
 					ComputeRepair.isSnapshotActive = true;
@@ -162,6 +164,56 @@ class SortJustificationsThread implements Runnable{
 			logger.warn("Thread exception: " + e.getMessage());
             // Thread.currentThread().interrupt();
 		}
+	}
+}
+
+class EntropySortingThread implements Runnable{
+
+	@Override
+	public void run() {
+		while (true) {
+			if (!ComputeRepair.diagnosisComputed && !ComputeRepair.justificationQueue.isEmpty()) {
+				try {
+					for (OWLAxiom axiom : ComputeRepair.justificationQueue.take()) {
+						ComputeRepair.axiomMap.putIfAbsent(axiom, 0.0);
+					}
+					ComputeRepair.isSnapshotActive = true;
+					continue;
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else if (ComputeRepair.diagnosisComputed){
+				Set<Set<? extends OWLAxiom>> allJustifications = ComputeRepair.allJustifications;
+				Set<Set<? extends OWLAxiom>> minimalDiagnoses = ComputeRepair.minimalDiagnoses;
+				Map<OWLAxiom, Double> entropyScoreMap = new HashMap<>();
+				for (Set<? extends OWLAxiom> justificationSet : allJustifications){
+					for (OWLAxiom justAxiom : justificationSet){
+						if (entropyScoreMap.containsKey(justAxiom)){
+							continue;
+						}
+						entropyScoreMap.putIfAbsent(justAxiom, 0.0);
+						int Dp = 0;
+						int Dn = 0;
+						for (Set<? extends OWLAxiom> diagSet : minimalDiagnoses){
+							if (diagSet.contains(justAxiom)){
+								Dp++;
+							} else if (!diagSet.contains(justAxiom)){
+								Dn++;
+							} 
+						}
+						double pYProb = (double) Dp / minimalDiagnoses.size();
+						double pNProb = (double) Dn / minimalDiagnoses.size();
+						double entropyScore = (pYProb * Math.log(pYProb) / Math.log(2)) + (pNProb * Math.log(pNProb) / Math.log(2)) + 1;
+						entropyScoreMap.put(justAxiom, entropyScore);
+					}
+				}
+				ComputeRepair.axiomMap = new ConcurrentHashMap<>(entropyScoreMap);
+				ComputeRepair.isSnapshotActive = false;
+				break;
+			}
+		}
+		
 	}
 }
 

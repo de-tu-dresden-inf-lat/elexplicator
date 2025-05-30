@@ -10,7 +10,6 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,7 +62,7 @@ public class ComputeRepair {
 	public static Set<Set<? extends OWLAxiom>> allJustifications;
 	public static BlockingQueue<Set<? extends OWLAxiom>> justificationQueue;
 	public static BlockingQueue<String> tempFiles;
-	public static ConcurrentHashMap<OWLAxiom, Integer> axiomMap = new ConcurrentHashMap<>();
+	public static ConcurrentHashMap<OWLAxiom, Double> axiomMap = new ConcurrentHashMap<>();
 	public static Map<OWLAxiom,Integer> axiomWeightMap;
 	public static volatile Boolean justificationsCompleted;
 	private static ByteArrayOutputStream axiomWeightOutputBuffer = new ByteArrayOutputStream();
@@ -96,7 +95,7 @@ public class ComputeRepair {
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
  */
-	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, String sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
 			System.out.println("Shutting down");
@@ -126,24 +125,37 @@ public class ComputeRepair {
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
 		try{
+			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
+			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
+			
 			ComputeJustificationsThread computeJustificationsRunnable = new ComputeJustificationsThread(reasonerName, axiom, defectModule);
 			computeJustificationsThread = new Thread(computeJustificationsRunnable); 
 			computeJustificationsThread.start();
-
-			SortJustificationsThread sortJustificationsRunnable = new SortJustificationsThread();
-			sortJustificationsThread = new Thread(sortJustificationsRunnable);
-			sortJustificationsThread.start();
 
 			ComputeDiagnosisThread computeDiagnosisRunnable = new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName);
 			computeDiagnosisThread = new Thread(computeDiagnosisRunnable);
 			computeDiagnosisThread.start();
 
-			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
-			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
-			Scanner scanner = new Scanner(System.in);
+			if (sortMethod.equals("frequency")){
+				FrequencySortingThread sortJustificationsRunnable = new FrequencySortingThread();
+				sortJustificationsThread = new Thread(sortJustificationsRunnable);
+			} else {
+				EntropySortingThread sortJustificationsRunnable = new EntropySortingThread();
+				sortJustificationsThread = new Thread(sortJustificationsRunnable);
+			}	
+			if (!liveSort){
+				//loading screen till the justifications are computed
+				while (computeJustificationsThread.isAlive() || computeDiagnosisThread.isAlive()){
+					LoadingScreen.main(null);
+				}
+				computeJustificationsThread.join();
+				computeDiagnosisThread.join();
+			}
+			sortJustificationsThread.start();
 			
+			Scanner scanner = new Scanner(System.in);
 			while(inputFlag){
-				Map<OWLAxiom, Integer> freqMap; 
+				Map<OWLAxiom, Double> freqMap; 
 				while (!axiomMap.isEmpty() || isSnapshotActive){
 					
 					while (axiomMap.isEmpty()){
@@ -153,14 +165,14 @@ public class ComputeRepair {
 						}
 					}
 
-					Map<OWLAxiom, Integer> freqMapUnsorted = new HashMap<>(axiomMap);
+					Map<OWLAxiom, Double> freqMapUnsorted = new HashMap<>(axiomMap);
 					axiomMap.clear();
 					isSnapshotActive = false;
 
 					//sort the map freqMap by frequency value descending
 					freqMap = freqMapUnsorted.entrySet()
 					.stream()
-					.sorted(Map.Entry.<OWLAxiom, Integer>comparingByValue().reversed())  
+					.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue().reversed())  
 					.collect(Collectors.toMap(
 						Map.Entry::getKey,
 						Map.Entry::getValue,
@@ -1133,9 +1145,11 @@ public class ComputeRepair {
 		ReasonerName reasonerName = (ReasonerName) args[3];
 		String outDirStr = (String) args[4];
 		String ontologyPath = (String) args[5];
+		String sortMethod = (String) args[6];
+		Boolean liveSort = (Boolean) args[7];
 
 		try{
-			computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath);
+			computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
 		} catch(Exception e){
 			e.printStackTrace();
 		}
