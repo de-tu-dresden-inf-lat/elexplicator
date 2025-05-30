@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -30,7 +31,6 @@ import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
-import org.semanticweb.HermiT.structural.OWLAxioms;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -190,39 +190,37 @@ public class ComputeRepair {
 									break;
 								}
 								case "not sure":{
-									String bufferedString = "Select an option: \n" + //
+									String bufferedString = "Select from the options: \n" + //
 																"1. Compute the entailment probabilities of the interesting axioms\n" + //
 																"2. Compute the class hierarchy difference\n" + //
-																"3. Hamming distance of current ontology to preferred repair\n";
+																"3. Hamming distance of current ontology to preferred repair";
 									System.out.println(bufferedString);
-									while(true){
-										int impactOpt = Integer.parseInt(scanner.nextLine());
-										switch(impactOpt){
-											case 1: {
+									String userSelections = scanner.nextLine();
+									String[] selections = userSelections.split(",");
+									for (String opt : selections){
+										switch(opt.trim()){
+											case "1":{
 												computeJustificationsThread.join();
 												bufferedString += computeProbabilities(justificationAxiom, keepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
 												break;
 											}
-											case 2:{
+											case "2":{
 												bufferedString += computeHierarchyDiff(keepAxioms, removeAxioms, outDirStr, ontologyPath, justificationAxiom, reasonerName);
 												break;
 											}
-											case 3: {											
-												// bufferedString += computeHierarchyDiff(keepAxioms, removeAxioms, outDirStr, ontologyPath, justificationAxiom, reasonerName);
-												// computeJustificationsThread.join();
-												// bufferedString += computeProbabilities(justificationAxiom, keepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
+											case "3":{
 												computeJustificationsThread.join();
-												hammingDistance(justificationAxiom, removeAxioms, keepAxioms, interestingAxiomsSet, ontologyPath, reasonerName, outDirStr);
+												bufferedString += hammingDistance(justificationAxiom, removeAxioms, keepAxioms, interestingAxiomsSet, ontologyPath, reasonerName, outDirStr);
 												break;
 											}
 											default:{
-												String retStr = "invalid option!";
-												System.out.println(retStr);
-												bufferedString += retStr;
-												continue;
+												String retString = opt+ " is an invalid option!";
+												System.out.println(retString);
+												bufferedString += retString;
+												break;
 											}
-										}		
-									break;
+											
+										}
 									}
 									scanner.nextLine();
 
@@ -374,7 +372,7 @@ public class ComputeRepair {
  * @param ontologyPath
  * @param justificationAxiom
  * @param reasonerName
- * @return
+ * @return String containing the class hierarchy difference
  * @throws IOException
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
@@ -1069,7 +1067,7 @@ public class ComputeRepair {
 		return hammingDistance;
 	}
 
-	public static void hammingDistance(OWLAxiom justAxiom, Set<OWLAxiom> removeAxioms, Set<OWLAxiom> keepAxioms, Set<? extends OWLAxiom> interestingAxiomsSet, String ontologyPath, ReasonerName reasonerName, String outDirStr) throws OWLOntologyCreationException, IOException, EntityCheckerException{
+	public static String hammingDistance(OWLAxiom justAxiom, Set<OWLAxiom> removeAxioms, Set<OWLAxiom> keepAxioms, Set<? extends OWLAxiom> interestingAxiomsSet, String ontologyPath, ReasonerName reasonerName, String outDirStr) throws OWLOntologyCreationException, IOException, EntityCheckerException{
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
 		manager.removeAxioms(ontology, removeAxioms);
@@ -1080,6 +1078,11 @@ public class ComputeRepair {
 		OWLOntology ontology_yes = preferredRepair_yes.keySet().iterator().next();
 		int max_entailed_yes = preferredRepair_yes.get(ontology_yes);
 		
+		PrintStream bufferStream = new PrintStream(axiomWeightOutputBuffer, true, StandardCharsets.UTF_8.name());
+		PrintStream originalOut = System.out;
+
+		// Simulate printing class hierearchy difference
+		System.setOut(bufferStream);
 
 		//hamming distance: 1 - (size of intersection of axiom sets / size of union of axiom sets))
 		
@@ -1097,6 +1100,14 @@ public class ComputeRepair {
 		
 		System.out.println("Hamming distance when answer \"no\" to the query: " + computeHammingDistance(ontology, ontology_no));
 		System.out.println("Maximum number of interesting axioms entailed by the repair when answer \"no\": " + max_entailed_no);
+
+		System.out.flush();
+		System.setOut(originalOut);
+
+		System.out.print(axiomWeightOutputBuffer.toString(StandardCharsets.UTF_8.name()));
+		String bufferString = axiomWeightOutputBuffer.toString();
+		axiomWeightOutputBuffer.reset();
+		return bufferString;
 	}
 
 /**
