@@ -63,7 +63,6 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
             allMups.add(firstMups);
             //also add to the blocking queue which can be accessed asynchronously
             try{
-                Thread.sleep(2000);
                 ComputeRepair.justificationQueue.put(firstMups);
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -269,7 +268,6 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
             progressMonitor.foundExplanation(newMUPS);
             //also add to the blocking queue which can be accessed asynchronously
             try{
-                Thread.sleep(2000); //remove sleep
                 ComputeRepair.justificationQueue.put(newMUPS);
             } catch (InterruptedException e) {
                 e.printStackTrace();

@@ -49,6 +49,7 @@ import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.lat.data.enums.ExitCode;
+import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.tools.LoadingScreen;
 
@@ -95,7 +96,9 @@ public class ComputeRepair {
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
  */
-	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, String sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	
+		System.out.println(reasonerName.toString() + " reasoner selected.");
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
 			System.out.println("Shutting down");
@@ -136,7 +139,7 @@ public class ComputeRepair {
 			computeDiagnosisThread = new Thread(computeDiagnosisRunnable);
 			computeDiagnosisThread.start();
 
-			if (sortMethod.equals("frequency")){
+			if (sortMethod == SortMethod.Frequency){
 				FrequencySortingThread sortJustificationsRunnable = new FrequencySortingThread();
 				sortJustificationsThread = new Thread(sortJustificationsRunnable);
 			} else {
@@ -1145,7 +1148,7 @@ public class ComputeRepair {
 		ReasonerName reasonerName = (ReasonerName) args[3];
 		String outDirStr = (String) args[4];
 		String ontologyPath = (String) args[5];
-		String sortMethod = (String) args[6];
+		SortMethod sortMethod = (SortMethod) args[6];
 		Boolean liveSort = (Boolean) args[7];
 
 		try{

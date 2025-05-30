@@ -123,6 +123,14 @@ public class CLIOptions {
     public final Option interestingAxiomOptionREQUIRED = new Option(CLIOptionsStrings.interestingAxiomOptionShort, CLIOptionsStrings.interestingAxiomOptionLong, 
             true, CLIOptionsDescriptions.interestingAxiomDescription);
     
+    public final Option liveSortOption = new Option(CLIOptionsStrings.liveSortOptionShort, CLIOptionsStrings.liveSortOptionLong, 
+            false, CLIOptionsDescriptions.liveSortOptionDescription);
+
+    public final Option sortMethodOption = new Option(CLIOptionsStrings.sortMethodOptionShort, CLIOptionsStrings.sortMethodOptionLong,
+            true, CLIOptionsDescriptions.sortMethodOptionDescription);
+    public final Option sortMethodOptionREQUIRED = new Option(CLIOptionsStrings.sortMethodOptionShort, CLIOptionsStrings.sortMethodOptionLong,
+            true, CLIOptionsDescriptions.sortMethodOptionDescription);
+
     private CLIOptions() {
         formatter.setWidth(200);
 
@@ -222,8 +230,14 @@ public class CLIOptions {
         interestingAxiomOption.setRequired(false);
         interestingAxiomOption.setArgName(CLIOptionsArgs.pathArg);
         interestingAxiomOptionREQUIRED.setRequired(true);
-        interestingAxiomOption.setArgName(CLIOptionsArgs.pathArg);
+        interestingAxiomOptionREQUIRED.setArgName(CLIOptionsArgs.pathArg);
 
+        liveSortOption.setRequired(false);
+
+        sortMethodOption.setRequired(false);
+        sortMethodOption.setArgName(CLIOptionsArgs.nameArg);
+        sortMethodOptionREQUIRED.setRequired(true);
+        sortMethodOptionREQUIRED.setArgName(CLIOptionsArgs.nameArg);
     }
 
     private static class LazyHolder {

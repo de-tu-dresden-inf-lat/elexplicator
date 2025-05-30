@@ -81,6 +81,12 @@ public class CLIOptionsStrings {
             repairOptionLong = "repair",
 
             interestingAxiomOptionShort = "ia",
-            interestingAxiomOptionLong = "interesting-axiom"
+            interestingAxiomOptionLong = "interesting-axiom",
+
+            liveSortOptionShort = "live",
+            liveSortOptionLong = "live-sort",
+
+            sortMethodOptionShort = "sm",
+            sortMethodOptionLong = "sort-method"
     ;
 }

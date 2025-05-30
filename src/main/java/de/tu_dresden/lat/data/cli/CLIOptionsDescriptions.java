@@ -4,6 +4,7 @@ import de.tu_dresden.inf.lat.counterExample.data.ModelFormat;
 import de.tu_dresden.inf.lat.counterExample.data.ModelType;
 import de.tu_dresden.inf.lat.evee.data.ProofType;
 import de.tu_dresden.lat.data.enums.OutputType;
+import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.data.names.ConcreteDomainName;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
@@ -50,6 +51,10 @@ public class CLIOptionsDescriptions {
             lemmaTitleOptionDescription = "A label that will be used for the lemma in case of a match in the proof\n",
             diagnosisOptionDescription = "Compute all minimal diagnoses for the provided axiom w.r.t. the provided ontology using the selected reasoner\n",
             repairOptionDescription = "Allow user to navigate and guide through justification selections to compute a repair ontology\n",
-            interestingAxiomDescription = "The path of ontology file represting the list of interesting axioms"
+            interestingAxiomDescription = "The path of ontology file represting the list of interesting axioms\n",
+            liveSortOptionDescription = "The axiom displaying and sorting is done as they are being generated\n",
+            sortMethodOptionDescription = "Select one of the following sorting methods for the generated axioms: "
+            + Arrays.asList(SortMethod.values()) + "\n" +
+            "The default is " + CLIOptionsDefaultValues.defaultSortMethodOptionStr + "\n"
     ;
 }

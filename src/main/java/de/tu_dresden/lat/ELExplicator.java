@@ -39,6 +39,7 @@ import de.tu_dresden.inf.lat.evee.data.ProofType;
 import de.tu_dresden.lat.atomicDecomposition.AtomicDecompositionGenerator;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.OutputType;
+import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
 import de.tu_dresden.lat.diagnoses.ComputeRepair;
 import de.tu_dresden.lat.managers.MyELKModelManager;
@@ -110,6 +111,10 @@ public class ELExplicator {
 
 		options.addOption(myOpts.interestingAxiomOption);
 
+		options.addOption(myOpts.liveSortOption);
+
+		options.addOption(myOpts.sortMethodOption);
+
 		CommandLine cmd = null;
 
 		try {
@@ -149,6 +154,9 @@ public class ELExplicator {
 
 		String reasonerNameStr = cmd.getOptionValue(CLIOptionsStrings.reasonerNameOptionLong,
 				CLIOptionsDefaultValues.defaultReasonerStr);
+
+		String sortMethodStr = cmd.getOptionValue(CLIOptionsStrings.sortMethodOptionLong, 
+				CLIOptionsDefaultValues.defaultSortMethodOptionStr);
 
 		if (cmd.hasOption(CLIOptionsStrings.keepGeneratedStuffOptionShort))
 			keep = true;
@@ -228,14 +236,18 @@ public class ELExplicator {
 
 		
 		if (cmd.hasOption(CLIOptionsStrings.repairOptionShort)){
-			String reasonerName = cmd.getOptionValue(CLIOptionsStrings.repairOptionLong);
+			String[] repairArgs = cmd.getOptionValues(CLIOptionsStrings.repairOptionLong);
+			ReasonerName reasonerName = Helper.getReasonerName(repairArgs);
 			String axiomsPath = cmd.getOptionValue(CLIOptionsStrings.interestingAxiomOptionLong);
 			OWLOntology axiomsOntology = OWLManager.createOWLOntologyManager()
 				.loadOntologyFromOntologyDocument(new File(axiomsPath));
-			ReasonerName reasoner = ReasonerName.getReasonerName(reasonerName);
+			SortMethod sortMethod = SortMethod.getSortMethod(sortMethodStr);
+			Boolean liveSort = cmd.hasOption(CLIOptionsStrings.liveSortOptionShort);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
+			System.out.println("liveSort? " + liveSort);
+			System.out.println("Sorting method: " + sortMethod);
 			try{
-				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasoner, outDirStr, ontologyPathStr, "entropy", false);	
+				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);	
 			} catch (Exception e){
 				e.printStackTrace();
 			}		
