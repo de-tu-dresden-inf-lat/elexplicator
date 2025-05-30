@@ -98,7 +98,6 @@ public class ComputeRepair {
  */
 	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 	
-		System.out.println(reasonerName.toString() + " reasoner selected.");
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
 			System.out.println("Shutting down");
@@ -360,15 +359,17 @@ public class ComputeRepair {
 	private static String computeProbabilities(OWLAxiom justificationAxiom, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
 		//entailment probability when retaining the justification axiom
 		String bufferedString = "";
-		axiomWeightOutputBuffer.write("Entailment probability when retaining the justification axiom:\n".getBytes());
+		axiomWeightOutputBuffer.write("\n\t\t1. Entailment probability\n".getBytes());
+		axiomWeightOutputBuffer.write("==========================\n".getBytes());
+		axiomWeightOutputBuffer.write("\tAnswer = yes:\n".getBytes());
 		Set<OWLAxiom> updatedKeepAxioms = new HashSet<>(keepAxioms);
 		updatedKeepAxioms.add(justificationAxiom);
 		getEntailmentProbability(allJustifications, updatedKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-		bufferedString += axiomWeightOutputBuffer.toString();									
+		bufferedString += axiomWeightOutputBuffer.toString();								
 		axiomWeightOutputBuffer.reset();
 		
 		//entailment probability when removing the justification axiom
-		axiomWeightOutputBuffer.write("Entailment probability when removing the justification axiom:\n".getBytes());
+		axiomWeightOutputBuffer.write("\tAnswer = no:\n".getBytes());
 		Set<OWLAxiom> updatedRemoveAxioms = new HashSet<>(removeAxioms);
 		updatedRemoveAxioms.add(justificationAxiom);
 		getEntailmentProbability(allJustifications, keepAxioms, updatedRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
@@ -621,17 +622,22 @@ public class ComputeRepair {
 		if (satisfiedDiagnoses.size() > 0){
 			System.out.println("Repair already reached!");
 			System.out.println("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.");
-			String user_in = scanner.nextLine();
-			String fileName = "";
-			if (user_in.toLowerCase().equals("save")){
-				System.out.println("Enter the filename to save as: ");
-				fileName = scanner.nextLine();
-				return saveProcess(defectOntology, defectAxiom, removeAxioms, ontologyPath, outDirStr, fileName, reasonerName, scanner);
-			} else if (user_in.toLowerCase().equals("continue")){
-				repairCheck = false;
-				return false;
-			} 
-		}	
+			while(true){
+				String user_in = scanner.nextLine();
+				String fileName = "";
+				if (user_in.toLowerCase().equals("save")){
+					System.out.println("Enter the filename to save as: ");
+					fileName = scanner.nextLine();
+					return saveProcess(defectOntology, defectAxiom, removeAxioms, ontologyPath, outDirStr, fileName, reasonerName, scanner);
+				} else if (user_in.toLowerCase().equals("continue")){
+					repairCheck = false;
+					return false;
+				} else{
+					System.out.println("Invalid input!");
+					continue;
+				}
+			}
+		}	 
 		return false;	
 	}
 
@@ -885,6 +891,7 @@ public class ComputeRepair {
 			String axiomWeightStr = sOWLFormatter.format(axiomWeightEntry.getKey()).toString() + " = " + axiomWeightEntry.getValue() + "%";
 			System.out.println(axiomWeightStr);
 		}
+		System.out.println("----------------------");
 		System.out.flush();
 		System.setOut(originalOut); // Restore original output
 
@@ -924,7 +931,8 @@ public class ComputeRepair {
 		System.setOut(bufferStream); // Redirect output
 		
 		StringJoiner hierarchyDiff = new StringJoiner("\n");
-		hierarchyDiff.add("Class Hierarchy Difference:");
+		
+		hierarchyDiff.add("\n\t\t2. Class Hierarchy Difference\n");
 		Object removedObjects = hierarchyDifferenceMap.get("removed:");
 		if (removedObjects instanceof Iterable && !((List<Map<OWLClass, Object>>) removedObjects).isEmpty()) {
 			hierarchyDiff.add("Following sub-structures would be removed:");
@@ -947,6 +955,12 @@ public class ComputeRepair {
 			}
 			hierarchyDiff.add("==========================");
 		} 
+
+		if(((List<Map<OWLClass, Object>>) addedObjects).isEmpty() && ((List<Map<OWLClass, Object>>) removedObjects).isEmpty()){
+			hierarchyDiff.add("===========================");
+			hierarchyDiff.add("No changes in the class hierarchy.");
+			hierarchyDiff.add("===========================");
+		}
 			
 		
 		System.out.println(hierarchyDiff.toString());	
@@ -1098,12 +1112,13 @@ public class ComputeRepair {
 
 		// Simulate printing class hierearchy difference
 		System.setOut(bufferStream);
-
+		System.out.println("\n\t\t3. Hamming Distance");
 		//hamming distance: 1 - (size of intersection of axiom sets / size of union of axiom sets))
-		
-		System.out.println("Hamming distance when answer \"yes\" to the query: " + computeHammingDistance(ontology, ontology_yes));
-		System.out.println("Maximum number of interesting axioms entailed by the repair when answer \"yes\": " + max_entailed_yes);
-
+		System.out.println("============================");
+		System.out.println("\tAnswer = yes:");
+		System.out.println("Hamming distance to preferred repair : " + String.format("%.2f",computeHammingDistance(ontology, ontology_yes)));
+		System.out.println("Maximum number of interesting axioms entailed by repair : " + max_entailed_yes);
+		System.out.println("-----------------------------");
 		Set<OWLAxiom> updRemoveAxioms = new HashSet<>(removeAxioms);
 		updRemoveAxioms.add(justAxiom);
 		Map<OWLOntology, Integer> preferredRepair_no = getPreferredRepair(keepAxioms, updRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
@@ -1112,10 +1127,10 @@ public class ComputeRepair {
 		
 
 		//hamming distance: 1 - (size of intersection of axiom sets / size of union of axiom sets))
-		
-		System.out.println("Hamming distance when answer \"no\" to the query: " + computeHammingDistance(ontology, ontology_no));
-		System.out.println("Maximum number of interesting axioms entailed by the repair when answer \"no\": " + max_entailed_no);
-
+		System.out.println("\tAnswer = no:");
+		System.out.println("Hamming distance to preferred repair : " + String.format("%.2f", computeHammingDistance(ontology, ontology_no)));
+		System.out.println("Maximum number of interesting axioms entailed by repair : " + max_entailed_no);
+		System.out.println("============================");
 		System.out.flush();
 		System.setOut(originalOut);
 

@@ -244,8 +244,6 @@ public class ELExplicator {
 			SortMethod sortMethod = SortMethod.getSortMethod(sortMethodStr);
 			Boolean liveSort = cmd.hasOption(CLIOptionsStrings.liveSortOptionShort);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
-			System.out.println("liveSort? " + liveSort);
-			System.out.println("Sorting method: " + sortMethod);
 			try{
 				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);	
 			} catch (Exception e){
