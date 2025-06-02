@@ -154,6 +154,9 @@ public class ComputeRepair {
 				computeDiagnosisThread.join();
 			}
 			sortJustificationsThread.start();
+			if (!liveSort){
+				sortJustificationsThread.join();
+			}
 			
 			Scanner scanner = new Scanner(System.in);
 			while(inputFlag){
@@ -171,16 +174,28 @@ public class ComputeRepair {
 					axiomMap.clear();
 					isSnapshotActive = false;
 
-					//sort the map freqMap by frequency value descending
-					freqMap = freqMapUnsorted.entrySet()
-					.stream()
-					.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue().reversed())  
-					.collect(Collectors.toMap(
-						Map.Entry::getKey,
-						Map.Entry::getValue,
-						(e1, e2) -> e1, 
-						LinkedHashMap::new 
-					));;
+					if (sortMethod == SortMethod.Entropy){
+						freqMap = freqMapUnsorted.entrySet()
+						.stream()
+						.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue())  
+						.collect(Collectors.toMap(
+							Map.Entry::getKey, 
+							Map.Entry::getValue,
+							(e1, e2) -> e1, 
+							LinkedHashMap::new 
+						));
+					} else {
+						freqMap = freqMapUnsorted.entrySet()
+						.stream()
+						.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue().reversed())  
+						.collect(Collectors.toMap(
+							Map.Entry::getKey,
+							Map.Entry::getValue,
+							(e1, e2) -> e1, 
+							LinkedHashMap::new 
+						));
+					}
+					
 					for (OWLAxiom justificationAxiom : freqMap.keySet()){
 						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom) | justificationAxiom.equals(axiom)){
 							continue;

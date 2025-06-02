@@ -37,6 +37,7 @@ class ComputeJustificationsThread implements Runnable{
 				ComputeRepair.fillMap(ComputeRepair.allJustifications);
 				HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
 			}			
+			ComputeRepair.justificationsCompleted = true;
 		} catch (Exception e) {
 			logger.warn("Thread exception: " + e.getMessage());
 			Thread.currentThread().interrupt(); 
@@ -129,7 +130,7 @@ class ComputeAxiomWeightThread implements Runnable{
 }
 
 //Thread where a snapshot of justifications is taken every 5 seconds and the frequency of each axiom is updated in the map
-class FrequencySortingThread implements Runnable{
+class FrequencySortingThread_interval implements Runnable{
 	private static final long SNAPSHOT_INTERVAL = 5000; 
 	private static final Logger logger = Logger.getLogger(FrequencySortingThread.class);
 	@Override
@@ -167,17 +168,44 @@ class FrequencySortingThread implements Runnable{
 	}
 }
 
+class FrequencySortingThread implements Runnable{
+	private static final Logger logger = Logger.getLogger(FrequencySortingThread.class);
+	@Override
+	public void run(){
+		while(!ComputeRepair.justificationQueue.isEmpty() || !ComputeRepair.justificationsCompleted){
+			ComputeRepair.isSnapshotActive = true;	
+			Set<? extends OWLAxiom> queueElement = null;				
+			try {
+				queueElement = ComputeRepair.justificationQueue.poll(1, TimeUnit.MILLISECONDS);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				logger.error(e);
+			}
+			if (queueElement != null){		
+				for (OWLAxiom justificationAxiom : queueElement){
+					// if the axiom is already in the map, increment the frequency else add it with frequency 1	
+					ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0.0) + 1);
+				}
+			} 
+		} 
+		ComputeRepair.isSnapshotActive = false;		
+	}
+		
+}
+
 class EntropySortingThread implements Runnable{
 
 	@Override
 	public void run() {
 		while (true) {
+			ComputeRepair.isSnapshotActive = true;
 			if (!ComputeRepair.diagnosisComputed && !ComputeRepair.justificationQueue.isEmpty()) {
 				try {
-					for (OWLAxiom axiom : ComputeRepair.justificationQueue.take()) {
+					for (OWLAxiom axiom : ComputeRepair.justificationQueue.poll(1, TimeUnit.MILLISECONDS)) {
 						ComputeRepair.axiomMap.putIfAbsent(axiom, 0.0);
 					}
-					ComputeRepair.isSnapshotActive = true;
+					ComputeRepair.isSnapshotActive = false;
 					continue;
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
