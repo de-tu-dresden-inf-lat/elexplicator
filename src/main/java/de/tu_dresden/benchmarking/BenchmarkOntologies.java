@@ -45,6 +45,7 @@ import org.semanticweb.owlapi.model.parameters.OntologyCopy;
 import org.semanticweb.owlapi.util.OWLOntologyMerger;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -369,6 +370,8 @@ public class BenchmarkOntologies {
         Long timeout = Long.parseLong(args[3]);
         String examplePath = null;
 
+        List<String> options = Arrays.asList("opt1", "opt2", "opt3");
+
         if(!genExample){
             examplePath = args[4];
             if (! new File(examplePath).isDirectory()){
@@ -392,7 +395,10 @@ public class BenchmarkOntologies {
         Map<String, Object> example = new HashMap<>();
         int iteration_index = 0;
         int instance_index = 0;
-        List<Long> runtime = new ArrayList<>();
+        Map<String, List<Long>> runtime = new HashMap<>();
+        for(String option : options){
+            runtime.put(option, new ArrayList<>());
+        }
         File[] exampleFiles = null;
         if (firstRun){
             
@@ -429,7 +435,7 @@ public class BenchmarkOntologies {
 				JsonNode jsonNode = objMapper.readTree(new File("Benchmark/benchmark_log.json"));
                 instance_index = jsonNode.get("Instance").asInt();
                 iteration_index = jsonNode.get("Iteration").asInt();
-                runtime = objMapper.convertValue(jsonNode.get("Runtimes"), List.class);
+                runtime = objMapper.convertValue(jsonNode.get("Runtimes"), new TypeReference<Map<String, List<Long>>>(){});
 			} catch (Exception e) {
 				e.printStackTrace();
 			} 
@@ -512,34 +518,39 @@ public class BenchmarkOntologies {
             try {
                 System.out.println("Benchmarking example: "+exampleName);
                 runtime = bench.run();
-                for(int i=1; i <= iterations; i++){
+                for (String option : options){
+                    for(int i=1; i <= iterations; i++){
                     
-                    String key = "Iteration "+i;
-                    Long iter_runtime = runtime.get(i-1);
-                    if (iter_runtime > timeout*1000){
-                        example.put(key, "Timeout");
-                        continue;
+                        String key = option + "_Iteration_"+i;
+                        Long iter_runtime = runtime.get(option).get(i-1);
+                        if (iter_runtime > timeout*1000){
+                            example.put(key, "Timeout");
+                            continue;
+                        }
+                        String val = String.valueOf(runtime.get(option).get(i-1));                    
+                        example.put(key, val);
                     }
-                    String val = String.valueOf(runtime.get(i-1));                    
-                    example.put(key, val);
+                    //Calc mean and std dev
+                    Mean mean = new Mean();
+                    double avg = mean.evaluate(runtime.get(option).stream().mapToDouble(Long::doubleValue).toArray());
+                    example.put(option + " Average Runtime", String.valueOf((long) avg));
+
+                    StandardDeviation sd = new StandardDeviation();
+                    double std_dev = sd.evaluate(runtime.get(option).stream().mapToDouble(Long::doubleValue).toArray());
+
+                    example.put(option + " Standard Deviation", String.format("%.2f", std_dev));
+                    double std_dev_percent = (std_dev/avg)*100;
+                    example.put(option + " Std Dev %", String.format("%.2f", std_dev_percent));
                 }
-
-                //Calc mean and std dev
-                Mean mean = new Mean();
-                double avg = mean.evaluate(runtime.stream().mapToDouble(Long::doubleValue).toArray());
-                example.put("Average Runtime", String.valueOf((long) avg));
-
-                StandardDeviation sd = new StandardDeviation();
-                double std_dev = sd.evaluate(runtime.stream().mapToDouble(Long::doubleValue).toArray());
-
-                example.put("Standard Deviation", String.format("%.2f", std_dev));
-                double std_dev_percent = (std_dev/avg)*100;
-                example.put("Std Dev %", String.format("%.2f", std_dev_percent));
+                              
                 
                 writeToBenchFile(outDirString, example);
 
                 iteration_index = 0;
-                runtime = new ArrayList<Long>();
+                runtime = new HashMap<>();
+                for(String option : options){
+                    runtime.put(option, new ArrayList<>());
+                }
                 instance_index++;
 
                 File exampleSer = new File("examples.ser");
