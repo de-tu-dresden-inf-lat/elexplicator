@@ -1153,6 +1153,9 @@ public class ComputeRepair {
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
 		manager.removeAxioms(ontology, removeAxioms);
+
+		String bufferString = "";
+
 		Boolean noRepairYes = false;
 		Boolean noRepairNo = false;
 		Set<OWLAxiom> entailedIA_yes = new HashSet<>();
@@ -1202,9 +1205,12 @@ public class ComputeRepair {
 		System.out.println("============================");
 		System.out.println("\tAnswer = yes:");
 		
-		if(noRepairYes){
-			System.out.println("No repair possible!");			
+		if(noRepairYes){		
+			System.setOut(originalOut);	
 			displayNoRepair(unsatJust_yes);
+			bufferString += axiomWeightOutputBuffer.toString();
+			axiomWeightOutputBuffer.reset();
+			System.setOut(bufferStream);
 		} else {
 			System.out.println("Hamming distance to a candidate repair : " + String.format("%.2f", preferredRepair_yes.values().iterator().next()));
 			System.out.println("Maximum number of interesting axioms entailed by the repair : " + (entailedIA_yes.size()));
@@ -1216,17 +1222,17 @@ public class ComputeRepair {
 			}
 		}
 		
-
 		System.out.println("-----------------------------");
-		
-		
 
 		//hamming distance: 1 - (size of intersection of axiom sets / size of union of axiom sets))
 		System.out.println("\tAnswer = no:");
 		
 		if(noRepairNo){
-			System.out.println("No repair possible!");
+			System.setOut(originalOut);
 			displayNoRepair(unsatJust_no);
+			bufferString += axiomWeightOutputBuffer.toString();
+			axiomWeightOutputBuffer.reset();
+			System.setOut(bufferStream);
 		} else {
 			System.out.println("Hamming distance to a candidate repair : " + String.format("%.2f", preferredRepair_no.values().iterator().next()));
 			System.out.println("Maximum number of interesting axioms entailed by the repair : " + entailedIA_no.size());
@@ -1252,7 +1258,7 @@ public class ComputeRepair {
 		System.setOut(originalOut);
 
 		System.out.print(axiomWeightOutputBuffer.toString(StandardCharsets.UTF_8.name()));
-		String bufferString = axiomWeightOutputBuffer.toString();
+		bufferString += axiomWeightOutputBuffer.toString();
 		axiomWeightOutputBuffer.reset();
 		return bufferString;
 	}
