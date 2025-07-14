@@ -36,6 +36,7 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 
 import de.tu_dresden.inf.lat.evee.data.ProofType;
+import de.tu_dresden.lat.api.ElExplicatorApplication;
 import de.tu_dresden.lat.atomicDecomposition.AtomicDecompositionGenerator;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.OutputType;
