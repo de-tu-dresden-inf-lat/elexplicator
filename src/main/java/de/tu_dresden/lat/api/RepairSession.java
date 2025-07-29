@@ -163,13 +163,14 @@ public class RepairSession {
             return null;
         }
         if (node.axiom == null) {
-            return new ImpactResponse(id, "No selections possible. End of justification axioms.", null);
+            return new ImpactResponse(id, "No selections possible. End of justification axioms.", null, null);
         }
         ObjectMapper objMapper = new ObjectMapper();
         if(jsonFile.exists()){
             try {
-				JsonNode jsonNode = objMapper.readTree(jsonFile);
-                hierarchyDiffNode = jsonNode.get("hierarchyDifference");
+				// JsonNode jsonNode = objMapper.readTree(jsonFile);
+                // hierarchyDiffNode = jsonNode.get("hierarchyDifference");
+                hierarchyDiffNode = objMapper.readTree(jsonFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -187,8 +188,8 @@ public class RepairSession {
             try {
                 ComputeRepair.computeHierarchyDiff(new HashSet<OWLAxiom>(keep_list), new HashSet<OWLAxiom>(remove_list), outDirStr, ontologyPath, node.axiom, reasonerName, Optional.of(Long.toString(id)));
                 try {
-                    JsonNode jsonNode = objMapper.readTree(jsonFile);
-                    hierarchyDiffNode = jsonNode.get("hierarchyDifference");
+                    hierarchyDiffNode = objMapper.readTree(jsonFile);
+                    // hierarchyDiffNode = jsonNode.get("hierarchyDifference");
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -196,7 +197,7 @@ public class RepairSession {
                 e.printStackTrace();
             }
         }
-        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), hierarchyDiffNode);
+        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), node.axiomStr, hierarchyDiffNode);
         return impactResponse;
 
     }
@@ -209,7 +210,7 @@ public class RepairSession {
             return null;
         }
         if (node.axiom == null) {
-            return new ImpactResponse(id, "No selections possible. End of justification axioms." + id, null);
+            return new ImpactResponse(id, "No selections possible. End of justification axioms.", null, null);
         }
 
         ObjectMapper objMapper = new ObjectMapper();
@@ -243,7 +244,7 @@ public class RepairSession {
             }
         }
         
-        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), probabilityNode);
+        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), node.axiomStr, probabilityNode);
         return impactResponse;
         
     }
@@ -257,7 +258,7 @@ public class RepairSession {
             return null;
         }
         if (node.axiom == null) {
-            return new ImpactResponse(id, "No selections possible. End of justification axioms.", null);
+            return new ImpactResponse(id, "No selections possible. End of justification axioms.", null, null);
         }
         if (jsonFile.exists()){
             try {
@@ -289,7 +290,7 @@ public class RepairSession {
                 e.printStackTrace();
             }
         }
-        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), hammingNode);
+        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), node.axiomStr, hammingNode);
         return impactResponse;
         
     }

@@ -5,11 +5,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class ImpactResponse {
     private long nodeId;
     private String nodeAxiom;
+    private String nodeAxiomStr;
     private JsonNode impact;
 
-    public ImpactResponse(long nodeId, String nodeAxiom, JsonNode impact){
+    public ImpactResponse(long nodeId, String nodeAxiom, String nodeAxiomStr, JsonNode impact){
         this.nodeId = nodeId;
         this.nodeAxiom = nodeAxiom;
+        this.nodeAxiomStr = nodeAxiomStr;
         this.impact = impact;
     }
 
@@ -19,6 +21,10 @@ public class ImpactResponse {
 
     public String getNodeAxiom(){
         return this.nodeAxiom;
+    }
+
+    public String getNodeAxiomStr(){
+        return this.nodeAxiomStr;
     }
 
     public JsonNode getDecisionImpact(){

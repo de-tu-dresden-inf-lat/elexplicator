@@ -988,13 +988,21 @@ public class ComputeRepair {
 		ObjectMapper mapper = new ObjectMapper();
 		Map<String, Object> probabilitiesMap = new HashMap<>();
 		if (entail_yes){
-			probabilitiesMap.put("yes", probabilities_yes);
+			Map<String, Integer> formattedProbabilitiesYes = new HashMap<>();
+			for (Map.Entry<OWLAxiom, Integer> entry : probabilities_yes.entrySet()) {
+				formattedProbabilitiesYes.put(sOWLFormatter.format(entry.getKey()), entry.getValue());
+			}
+			probabilitiesMap.put("yes", formattedProbabilitiesYes);
 		} else {
 			probabilitiesMap.put("yes", "No Repair!");
 		}
 
 		if (entail_no){
-			probabilitiesMap.put("no", probabilities_no);
+			Map<String, Integer> formattedProbabilitiesNo = new HashMap<>();
+			for (Map.Entry<OWLAxiom, Integer> entry : probabilities_no.entrySet()) {
+				formattedProbabilitiesNo.put(sOWLFormatter.format(entry.getKey()), entry.getValue());
+			}
+			probabilitiesMap.put("no", formattedProbabilitiesNo);
 		} else{
 			probabilitiesMap.put("no", "No Repair!");
 		}
@@ -1056,10 +1064,10 @@ public class ComputeRepair {
 		
 		hierarchyDiff.add("\n\t\t2. Class Hierarchy Difference\n");
 		Object removedObjects = hierarchyDifferenceMap.get("removed:");
-		if (removedObjects instanceof Iterable && !((List<Map<OWLClass, Object>>) removedObjects).isEmpty()) {
+		if (removedObjects instanceof Iterable && !((List<Map<String, Object>>) removedObjects).isEmpty()) {
 			hierarchyDiff.add("Following sub-structures would be removed:");
 			hierarchyDiff.add("==========================");
-			for (Map<OWLClass, Object> removedSubTree : (List<Map<OWLClass, Object>>) removedObjects) {
+			for (Map<String, Object> removedSubTree : (List<Map<String, Object>>) removedObjects) {
 				hierarchyDiff.add(printHierarchy(removedSubTree, "", new StringJoiner("\n")).toString());
 				hierarchyDiff.add("----------------------");
 			}
@@ -1068,17 +1076,17 @@ public class ComputeRepair {
 		hierarchyDiff.add("");
 		Object addedObjects = hierarchyDifferenceMap.get("added:");
 			
-		if (addedObjects instanceof Iterable && !((List<Map<OWLClass, Object>>) addedObjects).isEmpty()) {
+		if (addedObjects instanceof Iterable && !((List<Map<String, Object>>) addedObjects).isEmpty()) {
 			hierarchyDiff.add("Following sub-structures would be added:");
 			hierarchyDiff.add("==========================");	
-			for (Map<OWLClass, Object> addedSubTree : (List<Map<OWLClass, Object>>) addedObjects) {
+			for (Map<String, Object> addedSubTree : (List<Map<String, Object>>) addedObjects) {
 				hierarchyDiff.add(printHierarchy(addedSubTree, "", new StringJoiner("\n")).toString());
 				hierarchyDiff.add("----------------------");
 			}
 			hierarchyDiff.add("==========================");
 		} 
 
-		if(((List<Map<OWLClass, Object>>) addedObjects).isEmpty() && ((List<Map<OWLClass, Object>>) removedObjects).isEmpty()){
+		if(((List<Map<String, Object>>) addedObjects).isEmpty() && ((List<Map<String, Object>>) removedObjects).isEmpty()){
 			hierarchyDiff.add("===========================");
 			hierarchyDiff.add("No changes in the class hierarchy.");
 			hierarchyDiff.add("===========================");
@@ -1093,24 +1101,26 @@ public class ComputeRepair {
 		System.out.print(axiomWeightOutputBuffer.toString(StandardCharsets.UTF_8.name()));
 	}
 
-	private static StringJoiner printHierarchy(Map<OWLClass, Object> hierarchy, String indent, StringJoiner hierarchyStr) {
-		for (Map.Entry<OWLClass, Object> entry : hierarchy.entrySet()) {
-            OWLClass clazz = entry.getKey();
+	private static StringJoiner printHierarchy(Map<String, Object> hierarchy, String indent, StringJoiner hierarchyStr) {
+		for (Map.Entry<String, Object> entry : hierarchy.entrySet()) {
+            String clazz = entry.getKey();
             Object value = entry.getValue();
             
             // Print the current class with proper indentation
-            hierarchyStr.add(indent + clazz.getIRI().getShortForm());
+            // hierarchyStr.add(indent + clazz.getIRI().getShortForm());
+			hierarchyStr.add(indent + clazz);
             
             // If the value is a List, recursively print each child
             if (value instanceof List) {
-                List<Map<OWLClass, Object>> childList = (List<Map<OWLClass, Object>>) value;
-                for (Map<OWLClass, Object> child : childList) {
+                List<Map<String, Object>> childList = (List<Map<String, Object>>) value;
+                for (Map<String, Object> child : childList) {
                     printHierarchy(child, indent+ "\t", hierarchyStr);  // Increase indentation
                 }
             } else {
                 // If it's another map (e.g., a nested class), recurse on it
-				if (value instanceof OWLClass){
-					hierarchyStr.add(indent + "\t" + ((OWLClass) value).getIRI().getShortForm());
+				if (value instanceof String){
+					// hierarchyStr.add(indent + "\t" + ((OWLClass) value).getIRI().getShortForm());
+					hierarchyStr.add(indent + "\t" + value);
 				} else if (value == null){ 
 					hierarchyStr.add(indent + "\t" + "\u22A5");
 				} else {
