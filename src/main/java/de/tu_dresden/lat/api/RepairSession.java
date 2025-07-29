@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,9 +70,8 @@ public class RepairSession {
 
     public AxiomNode buildTree(List<OWLAxiom> justificationAxioms){
         axioms = justificationAxioms;
-        String repairInfo = "Repair info...";
         OWLAxiom rootAxiom = axioms.get(0);
-        root = new AxiomNode(0, new LinkedList<>(), repairInfo, sOWLFormatter.format(rootAxiom), rootAxiom, null, null);
+        root = new AxiomNode(0, new LinkedList<>(), sOWLFormatter.format(rootAxiom), rootAxiom, null, null);
         session.add(root);
 
         Queue<AxiomNode> queue = new LinkedList<>();
@@ -93,9 +93,10 @@ public class RepairSession {
             Map<String,Object> yes_pathInfo = new HashMap<>();
             yes_pathInfo.put("node", currentNode.nodeId);
             yes_pathInfo.put("axiom", currentNode.axiom);
+            yes_pathInfo.put("axiomStr", currentNode.axiomStr);
             yes_pathInfo.put("answer", true);
             yesPath.add(yes_pathInfo);
-            AxiomNode yesChild = new AxiomNode(nextDepth, yesPath, repairInfo, nextAxiomStr, nextAxiom, nextAxiomNext, null);
+            AxiomNode yesChild = new AxiomNode(nextDepth, yesPath, nextAxiomStr, nextAxiom, nextAxiomNext, null);
             currentNode.yeschild = yesChild;
             session.add(yesChild);
             queue.add(yesChild);
@@ -105,9 +106,10 @@ public class RepairSession {
             Map<String,Object> no_pathInfo = new HashMap<>();
             no_pathInfo.put("node", currentNode.nodeId);
             no_pathInfo.put("axiom", currentNode.axiom);
+            no_pathInfo.put("axiomStr", currentNode.axiomStr);
             no_pathInfo.put("answer", false);
             noPath.add(no_pathInfo);
-            AxiomNode noChild = new AxiomNode(nextDepth, noPath, repairInfo, nextAxiomStr, nextAxiom, nextAxiomNext, null);
+            AxiomNode noChild = new AxiomNode(nextDepth, noPath, nextAxiomStr, nextAxiom, nextAxiomNext, null);
             currentNode.nochild = noChild;
             session.add(noChild);
             queue.add(noChild);
@@ -115,10 +117,12 @@ public class RepairSession {
             Map<String, Object> yes_childInfo = new HashMap<>();
             yes_childInfo.put("node", yesChild.nodeId);
             yes_childInfo.put("axiom", yesChild.axiom);
+            yes_childInfo.put("axiomStr", yesChild.axiomStr);
             yes_childInfo.put("answer", true);
             Map<String, Object> no_childInfo = new HashMap<>();
             no_childInfo.put("node", noChild.nodeId);
             no_childInfo.put("axiom", noChild.axiom);
+            no_childInfo.put("axiomStr", noChild.axiomStr);
             no_childInfo.put("answer", false);
             Set<Map<String, Object>> childNodes = new HashSet<>(Arrays.asList(yes_childInfo, no_childInfo));
 
@@ -127,35 +131,19 @@ public class RepairSession {
         return root;
     }
 
-    public String getDecisionTree(AxiomNode root) {
-        StringBuilder sb = new StringBuilder();
-        printTreeHelper(root, sb, "", "ROOT");
-        return sb.toString(); 
-    }
+    public List<Map<String, Object>> getDecisionTree() {
+        List<Map<String, Object>> serializedNodes = new ArrayList<>();
 
-    public String getNodeStrById(long id) {
-        AxiomNode node = getNodeById(id);
-        StringBuilder sb = new StringBuilder();
-        if (node != null) {
-            sb.append("Node ID: ").append(node.nodeId).append(" | ");
-            sb.append("Axiom: ").append(node.axiomStr).append(" | ");
-            sb.append("Path: ");
-
-            for (int i = 0; i < node.path.size(); i++) {
-                Map<String, Object> p = node.path.get(i);
-                sb.append(p.toString())
-;                if (i != node.path.size() - 1) sb.append(",");
-            }
-
-            OWLAxiom nextAxiom = node.nextAxiom;
-            if (nextAxiom != null) {
-                sb.append("Next: ").append(sOWLFormatter.format(node.nextAxiom).toString()).append("\n"); //here too it could be a collection of nodeIDs that are immediate neighbors of the node.
-            }
-            sb.append(" | Next Nodes: "+node.nextNodes);
-            return sb.toString();
+        for (AxiomNode node : session) {
+            Map<String, Object> serialized = new HashMap<>();
+            serialized.put("nodeId", node.nodeId);
+            serialized.put("axiomStr", node.axiomStr);
+            serialized.put("yes", node.yeschild != null ? node.yeschild.nodeId : null);
+            serialized.put("no", node.nochild != null ? node.nochild.nodeId : null);
+            serializedNodes.add(serialized);
         }
-        return "Node not found.";
 
+        return serializedNodes;
     }
 
     public AxiomNode getNodeById(long id) {
@@ -165,27 +153,6 @@ public class RepairSession {
             }
         }
         return null; // Node not found
-    }
-
-
-    private void printTreeHelper(AxiomNode node, StringBuilder sb, String indent, String branchLabel) {
-        if (node == null) return;
-
-        // Label line
-        sb.append(indent)
-        .append("└── ")
-        .append("[ID ").append(node.nodeId).append("] (").append(branchLabel).append(") ");
-
-        if (node.axiom != null)
-            sb.append("Axiom: ").append(node.axiom).append(" | ");
-        sb.append("Repairs: ").append(node.repairInfo).append("\n");
-
-        // Increase indentation for children
-        String newIndent = indent + "    ";
-
-        // Recursive calls
-        printTreeHelper(node.yeschild, sb, newIndent, "Yes");
-        printTreeHelper(node.nochild, sb, newIndent, "No");
     }
 
     public ImpactResponse getHierarchyImpact(long id) {

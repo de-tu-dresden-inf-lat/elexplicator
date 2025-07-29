@@ -961,7 +961,7 @@ public class ComputeRepair {
  * @param hierarchies
  * @param outDirStr
  */
-	private static void writeClassHierarchyDifferenceToFile(Map<OWLClass, Object> hierarchy1, Map<OWLClass, Object> hierarchy2, Map<String, Object> hierarchyDiff, String outDirStr, Optional<String> nodeId){
+	private static void writeClassHierarchyDifferenceToFile(Map<String, Object> hierarchy1, Map<String, Object> hierarchy2, Map<String, Object> hierarchyDiff, String outDirStr, Optional<String> nodeId){
 		ObjectMapper mapper = new ObjectMapper();
 		String filename = "classHierarchyDifference.json";
 		if (nodeId.isPresent()){

@@ -1,5 +1,6 @@
 package de.tu_dresden.lat.api;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -27,9 +28,10 @@ public class ElExplicatorResources {
     }
 
     @GET 
-    @Path("/decisionTree")
+    @Path("/decisiontree")
     public Response getDecisionTree(){
-        return Response.noContent().build();
+        List<Map<String, Object>> decisionTree = repairSession.getDecisionTree();
+        return Response.ok(decisionTree).build();
     }
 
     @GET

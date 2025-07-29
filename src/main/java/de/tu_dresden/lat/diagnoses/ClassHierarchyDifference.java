@@ -24,9 +24,14 @@ import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 
+import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
+import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
+
 public class ClassHierarchyDifference {
+    private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
+		true);
     // Compute the class hierarchy difference between two ontologies and output the result to json file.
     String outputDirStr;
     String ontologyPathStr;
@@ -35,8 +40,10 @@ public class ClassHierarchyDifference {
     OWLAxiom selectedAxiom;
     ReasonerName reasonerName;
 
-    Map<OWLClass, Object> hierarchyMap1; // hierarchy map for the first ontology without removing the selected axiom
-    Map<OWLClass, Object> hierarchyMap2;   // hierarchy map for the second ontology with removing the selected axiom
+    // Map<OWLClass, Object> hierarchyMap1; // hierarchy map for the first ontology without removing the selected axiom
+    // Map<OWLClass, Object> hierarchyMap2;   // hierarchy map for the second ontology with removing the selected axiom
+    Map<String, Object> hierarchyMap1; 
+    Map<String, Object> hierarchyMap2;
     Map<String, Object> hierarchyDifference;
 
     public ClassHierarchyDifference(String outputDirStr, String ontologyPathStr, Set<OWLAxiom> keepAxioms,
@@ -80,15 +87,15 @@ public class ClassHierarchyDifference {
         // return hierarchies;
     }
 
-    private void getHierarchyDifference(Map<OWLClass, Object> ch1, Map<OWLClass, Object> ch2, List<Map<OWLClass, Object>> removed, List<Map<OWLClass, Object>> added, OWLClass parentClass) {
+    private void getHierarchyDifference(Map<String, Object> ch1, Map<String, Object> ch2, List<Map<String, Object>> removed, List<Map<String, Object>> added, String parentClass) {
 
-        Set<OWLClass> classes1 = ch1.keySet();
-        Set<OWLClass> classes2 = ch2.keySet();
+        Set<String> classes1 = ch1.keySet();
+        Set<String> classes2 = ch2.keySet();
 
-        for (OWLClass clazz: classes2){
+        for (String clazz: classes2){
             if (!classes1.contains(clazz)){
                 if (parentClass != null){
-                    List<Map<OWLClass, Object>> addedChild = Collections.singletonList(Collections.singletonMap(clazz, ch2.get(clazz)));
+                    List<Map<String, Object>> addedChild = Collections.singletonList(Collections.singletonMap(clazz, ch2.get(clazz)));
                     added.add(Collections.singletonMap(parentClass, addedChild));
                 } else {
                     added.add(Collections.singletonMap(clazz, ch2.get(clazz)));
@@ -97,7 +104,7 @@ public class ClassHierarchyDifference {
             
         }
 
-        for (OWLClass clazz: classes1){
+        for (String clazz: classes1){
             Object children1Obj = ch1.get(clazz);
             if (!ch2.containsKey(clazz)) {
                 // Entire subtree removed
@@ -111,11 +118,11 @@ public class ClassHierarchyDifference {
                 } else if (children1Obj instanceof List && children2Obj == null) { //only 1 not null
                     removed.add(Collections.singletonMap(clazz, children1Obj));
                 } else if (children1Obj instanceof List && children2Obj instanceof List) { //both lists but not equal
-                    List<Map<OWLClass, Object>> children1 = (List<Map<OWLClass, Object>>) children1Obj;
-                    List<Map<OWLClass, Object>> children2 = (List<Map<OWLClass, Object>>) children2Obj;
+                    List<Map<String, Object>> children1 = (List<Map<String, Object>>) children1Obj;
+                    List<Map<String, Object>> children2 = (List<Map<String, Object>>) children2Obj;
 
-                    Map<OWLClass, Object> map1 = tranformToMap(children1);
-                    Map<OWLClass, Object> map2 = tranformToMap(children2);
+                    Map<String, Object> map1 = tranformToMap(children1);
+                    Map<String, Object> map2 = tranformToMap(children2);
 
                     getHierarchyDifference(map1, map2, removed, added, clazz);
                 } 
@@ -136,20 +143,20 @@ public class ClassHierarchyDifference {
 
     }
 
-    private Map<OWLClass, Object> tranformToMap(List<Map<OWLClass, Object>> childList) {
-        Map<OWLClass, Object> childrenMap = new HashMap<>();
+    private Map<String, Object> tranformToMap(List<Map<String, Object>> childList) {
+        Map<String, Object> childrenMap = new HashMap<>();
         if (childList == null) {
             return Collections.emptyMap();
         }
-        for (Map<OWLClass, Object> child : childList) {
-            for (Map.Entry<OWLClass, Object> entry : child.entrySet()) {
+        for (Map<String, Object> child : childList) {
+            for (Map.Entry<String, Object> entry : child.entrySet()) {
                 childrenMap.put(entry.getKey(), entry.getValue());
             }
         }
         return childrenMap;
     }
 
-    private Map<OWLClass, Object> printClassHierarchy(OWLClass clazz, OWLOntology ontology) {
+    private Map<String, Object> printClassHierarchy(OWLClass clazz, OWLOntology ontology) {
         OWLReasoner reasoner = null;
         if (this.reasonerName == ReasonerName.Elk) {
             // Use ELK reasoner to compute class hierarchy
@@ -161,17 +168,17 @@ public class ClassHierarchyDifference {
             reasoner = reasonerFactory.createNonBufferingReasoner(ontology);
         }
         Set<OWLClass> visited = new HashSet<>();
-        Map<OWLClass, Object> hierarchyMap = printClassHierarchy(clazz, reasoner, visited, new HashSet<>());
+        Map<String, Object> hierarchyMap = printClassHierarchy(clazz, reasoner, visited, new HashSet<>());
         return hierarchyMap;
     }
 
-    public Map<OWLClass, Object> printClassHierarchy(OWLClass clazz, OWLReasoner reasoner, Set<OWLClass> visited, Set<OWLClass> visitedLeaf) {
+    public Map<String, Object> printClassHierarchy(OWLClass clazz, OWLReasoner reasoner, Set<OWLClass> visited, Set<OWLClass> visitedLeaf) {
  
         if (visited.contains(clazz)){
             if (!visitedLeaf.contains(clazz)){ // already visited non-leaf nodes 
-                return Collections.singletonMap(clazz, "ref");
+                return Collections.singletonMap(sOWLFormatter.format(clazz), "ref");
             } else {
-                return Collections.singletonMap(clazz, null);
+                return Collections.singletonMap(sOWLFormatter.format(clazz), null);
             }
         }
 
@@ -179,7 +186,7 @@ public class ClassHierarchyDifference {
         reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
         Set<OWLClass> children = reasoner.getSubClasses(clazz, true).getFlattened();
         children.addAll(reasoner.getEquivalentClasses(clazz).getEntities());
-        List<Map<OWLClass, Object>> childNodes = new ArrayList<>();        
+        List<Map<String, Object>> childNodes = new ArrayList<>();        
         for (OWLClass child : children) {            
             if (!child.equals(clazz) && !child.isOWLNothing()) {
                 childNodes.add(printClassHierarchy(child, reasoner, visited, visitedLeaf));
@@ -190,7 +197,7 @@ public class ClassHierarchyDifference {
         }
         
         
-        return Collections.singletonMap(clazz,
+        return Collections.singletonMap(sOWLFormatter.format(clazz),
                 childNodes.isEmpty() ? null : childNodes);
     }
 
