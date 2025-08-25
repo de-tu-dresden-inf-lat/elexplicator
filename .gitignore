@@ -38,3 +38,5 @@ BenchmarkOWLExamples/
 *.ser
 **/__pycache__
 *.sdkmanrc
+benchmarking/
+benchmark_watcher.sh
