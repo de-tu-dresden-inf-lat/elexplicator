@@ -1,4 +1,0 @@
-example,defectAxiom
-ore_ont_11395.owl,SubClassOf(<http://purl.obolibrary.org/obo/GAZ_00316393> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/57dc1631-dc30-4405-8c59-c6af4b1e4221_gaz.obo#partial_overlaps> <http://purl.obolibrary.org/obo/GAZ_00316323>))
-ore_ont_14042.owl,SubClassOf(<http://purl.obolibrary.org/obo/GAZ_00053699> ObjectSomeValuesFrom(<http://purl.obolibrary.org/obo/gaz.gazetteer.13.orig#located_in> <http://purl.obolibrary.org/obo/GAZ_00053685>))
-ore_ont_3560.owl,SubClassOf(<http://purl.org/obo/owl/GAZ#GAZ_00136463> ObjectSomeValuesFrom(<http://purl.org/obo/owl/obo#located_in> <http://purl.org/obo/owl/GAZ#GAZ_00012375>))
