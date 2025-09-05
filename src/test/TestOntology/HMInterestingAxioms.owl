@@ -52,4 +52,17 @@
         </ObjectIntersectionOf>
         <Class IRI="#Surgeon"/>
     </SubClassOf>
+
+        <SubClassOf>
+        <Class IRI="#Nurse"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#assistsIn"/>
+            <ObjectUnionOf>
+                <Class IRI="#OperatingRoom"/>
+                <Class IRI="#EmergencyRoom"/>
+                <Class IRI="#SurgicalWard"/>
+                <Class IRI="#PsychiatricWard"/>
+            </ObjectUnionOf>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
 </Ontology>
