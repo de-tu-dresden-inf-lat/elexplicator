@@ -43,6 +43,7 @@ import de.tu_dresden.lat.data.enums.OutputType;
 import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
 import de.tu_dresden.lat.diagnoses.ComputeRepair;
+import de.tu_dresden.lat.diagnoses.HelperFunctions;
 import de.tu_dresden.lat.managers.MyELKModelManager;
 import de.tu_dresden.lat.managers.MyELkProofManager;
 
@@ -239,9 +240,21 @@ public class ELExplicator {
 		if (cmd.hasOption(CLIOptionsStrings.repairOptionShort)){
 			String[] repairArgs = cmd.getOptionValues(CLIOptionsStrings.repairOptionLong);
 			ReasonerName reasonerName = Helper.getReasonerName(repairArgs);
+			
+			if (!HelperFunctions.reasonerAxiomTypeCheck(reasonerName, axiom)){
+				System.err.println("The selected reasoner " + reasonerName + " does not support the given axiom type.");
+				System.exit(ExitCode.NotSupportedAxiom.getValue());
+			}
+
 			String axiomsPath = cmd.getOptionValue(CLIOptionsStrings.interestingAxiomOptionLong);
 			OWLOntology axiomsOntology = OWLManager.createOWLOntologyManager()
 				.loadOntologyFromOntologyDocument(new File(axiomsPath));
+			
+			if(!HelperFunctions.reasonerOntologyAxiomTypeCheck(reasonerName, axiomsOntology)){
+				System.err.println("The selected reasoner " + reasonerName + " does not support the axiom types of the given interesting axioms.");
+				System.exit(ExitCode.NotSupportedAxiom.getValue());
+			}
+			
 			SortMethod sortMethod = SortMethod.getSortMethod(sortMethodStr);
 			Boolean liveSort = cmd.hasOption(CLIOptionsStrings.liveSortOptionShort);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;

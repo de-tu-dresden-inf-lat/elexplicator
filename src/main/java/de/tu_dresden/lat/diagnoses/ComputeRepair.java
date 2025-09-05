@@ -49,8 +49,6 @@ import de.tu_dresden.inf.lat.counterExample.tools.Segmenter;
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
-import de.tu_dresden.lat.api.ElExplicatorApplication;
-import de.tu_dresden.lat.api.RepairSession;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.data.names.ReasonerName;
@@ -86,7 +84,6 @@ public class ComputeRepair {
 	public static volatile Boolean diagnosisComputed = false;
 	public static Set<Set <? extends OWLAxiom>> minimalDiagnoses = new HashSet<>();
 
-	private static RepairSession session;
 
 /**
  * interactive method to compute the repair ontology based on user selection of justification axioms
@@ -150,23 +147,12 @@ public class ComputeRepair {
 				EntropySortingThread sortJustificationsRunnable = new EntropySortingThread();
 				sortJustificationsThread = new Thread(sortJustificationsRunnable);
 			}	
-			session = new RepairSession();
 			if (!liveSort){
 				//loading screen till the justifications are computed
 				while (computeJustificationsThread.isAlive() || computeDiagnosisThread.isAlive()){
 					LoadingScreen.main(null);
 				}
 				computeJustificationsThread.join();
-
-				
-				session.startRepair(allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
-				ElExplicatorApplication.setRepairSession(session);
-				try {
-					ElExplicatorApplication.main(new String[] { "server", "config.yml" });
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
 
 				computeDiagnosisThread.join();
 			}
@@ -212,9 +198,6 @@ public class ComputeRepair {
 							LinkedHashMap::new 
 						));
 					}
-					List<OWLAxiom> orderedAxioms = new ArrayList<>(freqMap.keySet());
-					session.buildTree(orderedAxioms);
-					ElExplicatorApplication.setRepairSession(session);
 					for (OWLAxiom justificationAxiom : freqMap.keySet()){
 						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom) | justificationAxiom.equals(axiom)){
 							continue;

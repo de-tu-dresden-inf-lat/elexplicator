@@ -22,6 +22,7 @@ import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.parameters.Imports;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 
@@ -29,6 +30,7 @@ import de.tu_dresden.inf.lat.model.tools.GeneralTools;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
+import de.tu_dresden.lat.tools.AxiomChecker;
 
 public class HelperFunctions {
 	public static Set<Set<OWLAxiom>>currentDiagnoses;
@@ -114,6 +116,27 @@ public class HelperFunctions {
 
         return stringSet;
     }
+	
+	public static boolean reasonerAxiomTypeCheck(ReasonerName reasonerName, OWLAxiom axiom){
+		if (reasonerName.equals(ReasonerName.Elk)){
+			return AxiomChecker.isInEL(axiom);
+		} else {
+			return true;
+		}
+	}
+
+	public static boolean reasonerOntologyAxiomTypeCheck(ReasonerName reasonerName, OWLOntology ontology){
+		if (reasonerName.equals(ReasonerName.Elk)){
+			for (OWLAxiom axiom : ontology.getTBoxAxioms(Imports.EXCLUDED)){
+				if (!AxiomChecker.isInEL(axiom)){
+					return false;
+				}
+			}
+			return true;
+		} else {
+			return true;
+		}
+	}
 
     public static Boolean checkEntailment(OWLOntology ontology, OWLAxiom axiom, ReasonerName reasonerName){
 		if (reasonerName == ReasonerName.Elk){
