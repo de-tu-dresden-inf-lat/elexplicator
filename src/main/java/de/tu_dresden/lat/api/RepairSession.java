@@ -44,9 +44,10 @@ public class RepairSession {
     public ReasonerName reasonerName;
     public OWLOntology ontology;
     public Set<? extends OWLAxiom> interestingAxiomsSet;
+    public OWLAxiom defectAxiom;
     //reasonername
 
-    public void startRepair(Set<Set<? extends OWLAxiom>> just, String outDir, String ontologyPath, ReasonerName reasonerName, OWLOntology ontology, Set<? extends OWLAxiom> interestingAxiomsSet){
+    public void startRepair(OWLAxiom defectAxiom, Set<Set<? extends OWLAxiom>> just, String outDir, String ontologyPath, ReasonerName reasonerName, OWLOntology ontology, Set<? extends OWLAxiom> interestingAxiomsSet){
         justificationSets = just;
         session = new LinkedList<>();
         this.outDirStr = outDir;
@@ -54,6 +55,7 @@ public class RepairSession {
         this.reasonerName = reasonerName;
         this.ontology = ontology;
         this.interestingAxiomsSet = interestingAxiomsSet;
+        this.defectAxiom = defectAxiom;
     }
 
     public String getJustificationsStr() {
@@ -186,7 +188,7 @@ public class RepairSession {
                 }
             }
             try {
-                ComputeRepair.computeHierarchyDiff(new HashSet<OWLAxiom>(keep_list), new HashSet<OWLAxiom>(remove_list), outDirStr, ontologyPath, node.axiom, reasonerName, Optional.of(Long.toString(id)));
+                ComputeRepair.computeHierarchyDiff(defectAxiom, new HashSet<OWLAxiom>(keep_list), new HashSet<OWLAxiom>(remove_list), outDirStr, ontologyPath, node.axiom, reasonerName, Optional.of(Long.toString(id)));
                 try {
                     hierarchyDiffNode = objMapper.readTree(jsonFile);
                     // hierarchyDiffNode = jsonNode.get("hierarchyDifference");

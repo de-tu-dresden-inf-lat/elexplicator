@@ -67,7 +67,7 @@ public class ComputeRepair {
 	public static BlockingQueue<Set<? extends OWLAxiom>> justificationQueue;
 	public static BlockingQueue<String> tempFiles;
 	public static ConcurrentHashMap<OWLAxiom, Double> axiomMap = new ConcurrentHashMap<>();
-	public static Map<OWLAxiom,Integer> axiomWeightMap;
+	public static Map<OWLAxiom,Double> axiomWeightMap;
 	public static volatile Boolean justificationsCompleted;
 	private static ByteArrayOutputStream axiomWeightOutputBuffer = new ByteArrayOutputStream();
 
@@ -159,7 +159,7 @@ public class ComputeRepair {
 				computeJustificationsThread.join();
 
 				
-				session.startRepair(allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
+				session.startRepair(axiom, allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
 				ElExplicatorApplication.setRepairSession(session);
 				try {
 					ElExplicatorApplication.main(new String[] { "server", "config.yml" });
@@ -221,6 +221,8 @@ public class ComputeRepair {
 						}
 						while (signal){
 							System.out.println(sOWLFormatter.format(justificationAxiom).toString());
+							System.out.println("\u0007");
+							System.out.flush();
 							String user_in = scanner.nextLine();
 							if (!user_in.isEmpty()){
 								if (axiomWeightOutputBuffer.size() > 0){
@@ -249,6 +251,8 @@ public class ComputeRepair {
 																"2. Compute the class hierarchy difference\n" + //
 																"3. Hamming distance of current ontology to a candidate repair";
 									System.out.println(bufferedString);
+									System.out.println("\u0007");
+									System.out.flush();
 									String userSelections = scanner.nextLine();
 									String[] selections = userSelections.split(",");
 									for (String opt : selections){
@@ -259,7 +263,7 @@ public class ComputeRepair {
 												break;
 											}
 											case "2":{
-												bufferedString += computeHierarchyDiff(keepAxioms, removeAxioms, outDirStr, ontologyPath, justificationAxiom, reasonerName, Optional.empty());
+												bufferedString += computeHierarchyDiff(axiom, keepAxioms, removeAxioms, outDirStr, ontologyPath, justificationAxiom, reasonerName, Optional.empty());
 												break;
 											}
 											case "3":{
@@ -276,6 +280,8 @@ public class ComputeRepair {
 											
 										}
 									}
+									System.out.println("\u0007");
+									System.out.flush();
 									scanner.nextLine();
 
 									if (bufferedString.length() > 0){
@@ -287,6 +293,8 @@ public class ComputeRepair {
 									computeJustificationsThread.join();
 										
 									System.out.println("Enter the filename to save as: ");
+									System.out.println("\u0007");
+									System.out.flush();
 									String save_filename = scanner.nextLine();
 
 									computeDiagnosisThread.join();
@@ -335,6 +343,8 @@ public class ComputeRepair {
 				
 				while(signal){
 					System.out.println("All justifications have been computed.\nWould you like to exit or save the repair?");
+					System.out.println("\u0007");
+					System.out.flush();
 					String user_in = scanner.nextLine();
 					switch(user_in.toLowerCase()){
 						case "exit":{
@@ -344,6 +354,8 @@ public class ComputeRepair {
 						}
 						case "save":{
 							System.out.println("Enter the filename to save as: ");
+							System.out.println("\u0007");
+							System.out.flush();
 							String save_filename = scanner.nextLine();
 
 							computeJustificationsThread.join();
@@ -405,7 +417,7 @@ public class ComputeRepair {
 		Set<OWLAxiom> updatedKeepAxioms = new HashSet<>(keepAxioms);
 		updatedKeepAxioms.add(justificationAxiom);
 		Boolean entailment_yes = getEntailmentProbability(allJustifications, updatedKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-		Map<OWLAxiom, Integer> axiomWeightYes = new HashMap<>(axiomWeightMap);
+		Map<OWLAxiom, Double> axiomWeightYes = new HashMap<>(axiomWeightMap);
 		bufferedString += axiomWeightOutputBuffer.toString();								
 		axiomWeightOutputBuffer.reset();
 		
@@ -415,7 +427,7 @@ public class ComputeRepair {
 		updatedRemoveAxioms.add(justificationAxiom);
 		Boolean entailment_no = getEntailmentProbability(allJustifications, keepAxioms, updatedRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
 		
-		Map<OWLAxiom, Integer> axiomWeightNo = new HashMap<>(axiomWeightMap);
+		Map<OWLAxiom, Double> axiomWeightNo = new HashMap<>(axiomWeightMap);
 		//write the axiom weight map to the json file as value for key "yes"
 		bufferedString += axiomWeightOutputBuffer.toString();									
 		axiomWeightOutputBuffer.reset();
@@ -443,15 +455,15 @@ public class ComputeRepair {
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
  */
-	public static String computeHierarchyDiff(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, OWLAxiom justificationAxiom, ReasonerName reasonerName, Optional<String> nodeId) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static String computeHierarchyDiff(OWLAxiom defect, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, OWLAxiom justificationAxiom, ReasonerName reasonerName, Optional<String> nodeId) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException{
 		String bufferedString = "";
 		//class hierarchy difference when retaining and removing the justification axiom
-		ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
+		ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(allJustifications, outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
 		classHierarchyDifference.getClassHierarchy(ontologyPath);
 		if (nodeId.isPresent()){
-			writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, outDirStr, Optional.of(nodeId.get()));
+			writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, classHierarchyDifference.repairYes, classHierarchyDifference.repairNo, outDirStr, Optional.of(nodeId.get()));
 		} else {
-			writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, outDirStr, Optional.empty());
+			writeClassHierarchyDifferenceToFile(classHierarchyDifference.hierarchyMap1, classHierarchyDifference.hierarchyMap2, classHierarchyDifference.hierarchyDifference, classHierarchyDifference.repairYes, classHierarchyDifference.repairNo, outDirStr, Optional.empty());
 		}
 		
 		displayClassHierarchyDifference(classHierarchyDifference.hierarchyDifference);
@@ -679,10 +691,14 @@ public class ComputeRepair {
 			System.out.println("Repair already reached!");
 			System.out.println("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.");
 			while(true){
+				System.out.println("\u0007");
+				System.out.flush();
 				String user_in = scanner.nextLine();
 				String fileName = "";
 				if (user_in.toLowerCase().equals("save")){
 					System.out.println("Enter the filename to save as: ");
+					System.out.println("\u0007");
+					System.out.flush();
 					fileName = scanner.nextLine();
 					return saveProcess(defectOntology, defectAxiom, removeAxioms, ontologyPath, outDirStr, fileName, reasonerName, scanner);
 				} else if (user_in.toLowerCase().equals("continue")){
@@ -709,7 +725,8 @@ public class ComputeRepair {
 			return noRepair(repairOntology, outDirStr, save_filename, scanner);											
 		} else {
 			try {
-				return refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
+				return refineRepair2(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName);
+				// return refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
 			} catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException | EntityCheckerException
 					| InterruptedException | ExecutionException e) {
 				e.printStackTrace();
@@ -729,6 +746,8 @@ public class ComputeRepair {
 	private static Boolean noRepair(OWLOntology resultOntology, String outDirStr, String save_filename, Scanner scanner){
 		String user_in;
 		System.out.println("The resulting ontology is not a repair.\nEnter \"continue\" to save the ontology or \"cancel\" to cancel.");
+		System.out.println("\u0007");
+		System.out.flush();
 		user_in = scanner.nextLine();
 		if (user_in.toLowerCase().equals("cancel")){
 			System.out.println("Cancelling save!");
@@ -791,6 +810,8 @@ public class ComputeRepair {
 			return true; 
 		} else {
 			System.out.println("The resulting ontology is not maximal repair.\nEnter \"max\" to compute maximal or \"continue\" to save.");
+			System.out.println("\u0007");
+			System.out.flush();
 			user_in = scanner.nextLine();
 			if (user_in.toLowerCase().equals("continue")){
 				try{
@@ -825,6 +846,8 @@ public class ComputeRepair {
 				
 				Set<? extends OWLAxiom> selectedMinDiagnosis = new HashSet<>();
 				while(true){
+					System.out.println("\u0007");
+					System.out.flush();
 					user_in = scanner.nextLine();
 					try{
 						selectedMinDiagnosis = recommendedDiagnoses.get(Integer.parseInt(user_in)-1);
@@ -853,7 +876,50 @@ public class ComputeRepair {
 									
 	}
 
-	private static void saveRepairOntology(OWLOntology saveOntology, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, FileNotFoundException{
+	//for not sure option evaluation. Save all maximal repairs.
+	private static Boolean refineRepair2(OWLOntology defectOntology, OWLOntology repairOntology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName) 
+		throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, EntityCheckerException, InterruptedException, ExecutionException{
+
+		
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		CheckMinimalityThread minimalityThread = new CheckMinimalityThread(defectOntology, axiom, removeAxioms, outDirStr, reasonerName);
+
+    	Future<Boolean> isMinimal = executor.submit(minimalityThread); 
+		
+
+		while (!isMinimal.isDone()){
+			LoadingScreen.main(null);
+		}
+		//if diagnosis is already computed, use that as the minimalDiagnoses else do the computation
+		if (isMinimal.get().booleanValue()){
+			try{
+				saveRepairOntology(repairOntology, outDirStr, save_filename);
+			} catch (Exception e){
+				e.printStackTrace();
+				return false;
+			}
+			System.out.println("Repair Saved!");
+			return true; 
+		} else {
+			
+			List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(minimalDiagnoses, removeAxioms);
+			for (Set<? extends OWLAxiom> diagnosisSet : recommendedDiagnoses){
+				OWLOntology repairOntologyMax = computeRepair(diagnosisSet, ontologyPath);
+				try{
+					saveRepairOntology(repairOntologyMax, outDirStr, save_filename);														
+				} catch (Exception e){
+					e.printStackTrace();
+					return false;
+				}
+				System.out.println("Repair Saved!");
+				
+			}
+			return true;
+		}	
+									
+	}
+
+	public static void saveRepairOntology(OWLOntology saveOntology, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, FileNotFoundException{
 		OWLOntologyManager manager = saveOntology.getOWLOntologyManager();
 		File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outFileNameStr + ".owl"));
 		OWLDocumentFormat format = manager.getOntologyFormat(saveOntology);
@@ -867,13 +933,13 @@ public class ComputeRepair {
  * @param outDirStr
  * @throws OWLOntologyCreationException
  */
-	public static Map<OWLAxiom, Integer> computeAxiomWeight(Map<OWLAxiom, List<OWLOntology>> impAxiomRepMod, ReasonerName reasonerName, int totalRepairs) throws OWLOntologyCreationException{
+	public static Map<OWLAxiom, Double> computeAxiomWeight(Map<OWLAxiom, List<OWLOntology>> impAxiomRepMod, ReasonerName reasonerName, int totalRepairs) throws OWLOntologyCreationException{
 
 		axiomWeightMap = new HashMap<>();
 		
 		//get the axiom weight of the interesting axioms
 		for (OWLAxiom impAxiom : impAxiomRepMod.keySet()){
-			axiomWeightMap.putIfAbsent(impAxiom, 0);
+			axiomWeightMap.putIfAbsent(impAxiom, 0.0);
 			List<OWLOntology> impAxiomSet = impAxiomRepMod.get(impAxiom);
 			for (OWLOntology repModule : impAxiomSet){
 				if (HelperFunctions.checkEntailment(repModule, impAxiom, reasonerName)){
@@ -937,13 +1003,13 @@ public class ComputeRepair {
  * @param axiomWeightMap
  * @throws UnsupportedEncodingException 
  */
-	private static void displayAxiomWeights(Map<OWLAxiom,Integer> axiomWeightMap) throws UnsupportedEncodingException{
+	private static void displayAxiomWeights(Map<OWLAxiom,Double> axiomWeightMap) throws UnsupportedEncodingException{
 		PrintStream bufferStream = new PrintStream(axiomWeightOutputBuffer, true, StandardCharsets.UTF_8.name());
 		PrintStream originalOut = System.out;
 
 		// Simulate printing axiom weights
 		System.setOut(bufferStream); // Redirect output
-		for (Map.Entry<OWLAxiom,Integer> axiomWeightEntry : axiomWeightMap.entrySet()) {
+		for (Map.Entry<OWLAxiom,Double> axiomWeightEntry : axiomWeightMap.entrySet()) {
 			String axiomWeightStr = sOWLFormatter.format(axiomWeightEntry.getKey()).toString() + " = " + axiomWeightEntry.getValue() + "%";
 			System.out.println(axiomWeightStr);
 		}
@@ -961,7 +1027,7 @@ public class ComputeRepair {
  * @param hierarchies
  * @param outDirStr
  */
-	private static void writeClassHierarchyDifferenceToFile(Map<String, Object> hierarchy1, Map<String, Object> hierarchy2, Map<String, Object> hierarchyDiff, String outDirStr, Optional<String> nodeId){
+	private static void writeClassHierarchyDifferenceToFile(Map<String, Object> hierarchy1, Map<String, Object> hierarchy2, Map<String, Object> hierarchyDiff, Boolean repairYes,Boolean repairNo, String outDirStr, Optional<String> nodeId){
 		ObjectMapper mapper = new ObjectMapper();
 		String filename = "classHierarchyDifference.json";
 		if (nodeId.isPresent()){
@@ -969,7 +1035,9 @@ public class ComputeRepair {
 		}
 		Map<String, Object> hierarchies = new HashMap<>();
 		hierarchies.put("initialHierarchy", hierarchy1);
+		hierarchies.put("repairYes", repairYes);
 		hierarchies.put("modifiedHierarchy", hierarchy2);
+		hierarchies.put("repairNo", repairNo);
 		hierarchies.put("hierarchyDifference", hierarchyDiff);
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outDirStr + File.separator + filename), hierarchies);
@@ -984,12 +1052,12 @@ public class ComputeRepair {
  * @param probabilities_no
  * @param outDirStr
  */
-	private static void writeProbabilitiesToFile(Boolean entail_yes, Boolean entail_no, Map<OWLAxiom, Integer> probabilities_yes, Map<OWLAxiom, Integer> probabilities_no, String outDirStr, Optional<String> nodeId) {
+	private static void writeProbabilitiesToFile(Boolean entail_yes, Boolean entail_no, Map<OWLAxiom, Double> probabilities_yes, Map<OWLAxiom, Double> probabilities_no, String outDirStr, Optional<String> nodeId) {
 		ObjectMapper mapper = new ObjectMapper();
 		Map<String, Object> probabilitiesMap = new HashMap<>();
 		if (entail_yes){
-			Map<String, Integer> formattedProbabilitiesYes = new HashMap<>();
-			for (Map.Entry<OWLAxiom, Integer> entry : probabilities_yes.entrySet()) {
+			Map<String, Double> formattedProbabilitiesYes = new HashMap<>();
+			for (Map.Entry<OWLAxiom, Double> entry : probabilities_yes.entrySet()) {
 				formattedProbabilitiesYes.put(sOWLFormatter.format(entry.getKey()), entry.getValue());
 			}
 			probabilitiesMap.put("yes", formattedProbabilitiesYes);
@@ -998,8 +1066,8 @@ public class ComputeRepair {
 		}
 
 		if (entail_no){
-			Map<String, Integer> formattedProbabilitiesNo = new HashMap<>();
-			for (Map.Entry<OWLAxiom, Integer> entry : probabilities_no.entrySet()) {
+			Map<String, Double> formattedProbabilitiesNo = new HashMap<>();
+			for (Map.Entry<OWLAxiom, Double> entry : probabilities_no.entrySet()) {
 				formattedProbabilitiesNo.put(sOWLFormatter.format(entry.getKey()), entry.getValue());
 			}
 			probabilitiesMap.put("no", formattedProbabilitiesNo);

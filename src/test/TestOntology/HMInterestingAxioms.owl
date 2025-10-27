@@ -53,7 +53,7 @@
         <Class IRI="#Surgeon"/>
     </SubClassOf>
 
-        <SubClassOf>
+        <!-- <SubClassOf>
         <Class IRI="#Nurse"/>
         <ObjectSomeValuesFrom>
             <ObjectProperty IRI="#assistsIn"/>
@@ -64,5 +64,5 @@
                 <Class IRI="#PsychiatricWard"/>
             </ObjectUnionOf>
         </ObjectSomeValuesFrom>
-    </SubClassOf>
+    </SubClassOf> -->
 </Ontology>

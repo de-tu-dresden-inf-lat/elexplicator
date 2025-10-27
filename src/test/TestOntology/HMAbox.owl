@@ -1,0 +1,655 @@
+<?xml version="1.0"?>
+<Ontology xmlns="http://www.w3.org/2002/07/owl#"
+     xml:base="http://hospital"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:xml="http://www.w3.org/XML/1998/namespace"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     ontologyIRI="http://hospital">
+    <Prefix name="" IRI="http://hospital#"/>
+    <Prefix name="owl" IRI="http://www.w3.org/2002/07/owl#"/>
+    <Prefix name="rdf" IRI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <Prefix name="xml" IRI="http://www.w3.org/XML/1998/namespace"/>
+    <Prefix name="xsd" IRI="http://www.w3.org/2001/XMLSchema#"/>
+    <Prefix name="rdfs" IRI="http://www.w3.org/2000/01/rdf-schema#"/>
+    <Declaration>
+        <Class IRI="#Anasthesiologist"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Anasthesiology"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Areas"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Doctor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ERDoctor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#ERNurse"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#EmergencyPatient"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#EmergencyRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#InternalMedicine"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Janitor"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#MedicalFields"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Nurse"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OnCall"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#OperatingRoom"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Patient"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Physician"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#PsychiatricPatient"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#PsychiatricWard"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Psychiatrist"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Psychology"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Receptionist"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Resident"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Staff"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Surgeon"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#Surgery"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#SurgicalPatient"/>
+    </Declaration>
+    <Declaration>
+        <Class IRI="#SurgicalWard"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#admittedTo"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#assistsIn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#attends"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#cleansIn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#consults"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#monitorsIn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#operatesIn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#operatesOn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#specializedIn"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#treats"/>
+    </Declaration>
+    <Declaration>
+        <ObjectProperty IRI="#worksIn"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Betty"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Brian"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#David"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Florian"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Greta"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Jack"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#John"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Karl"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Lauren"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Mark"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Max"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Merina"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Natasha"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Nate"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Peter"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R001"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R002"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R003"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R004"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R005"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R006"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#R008"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Rita"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Sharon"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Stev"/>
+    </Declaration>
+    <Declaration>
+        <NamedIndividual IRI="#Tim"/>
+    </Declaration>
+    <SubClassOf>
+        <Class IRI="#Anasthesiologist"/>
+        <Class IRI="#Doctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Anasthesiologist"/>
+        <Class IRI="#ERDoctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Anasthesiologist"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#attends"/>
+            <ObjectUnionOf>
+                <Class IRI="#EmergencyPatient"/>
+                <Class IRI="#SurgicalPatient"/>
+            </ObjectUnionOf>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Anasthesiologist"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#monitorsIn"/>
+            <Class IRI="#OperatingRoom"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Anasthesiology"/>
+        <Class IRI="#MedicalFields"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Doctor"/>
+        <Class IRI="#Staff"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERDoctor"/>
+        <Class IRI="#Doctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERDoctor"/>
+        <Class IRI="#OnCall"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERNurse"/>
+        <Class IRI="#Nurse"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#ERNurse"/>
+        <Class IRI="#OnCall"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#EmergencyPatient"/>
+        <Class IRI="#Patient"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#EmergencyRoom"/>
+        <Class IRI="#Areas"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#InternalMedicine"/>
+        <Class IRI="#MedicalFields"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Janitor"/>
+        <Class IRI="#Staff"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Janitor"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#cleansIn"/>
+            <Class IRI="#Areas"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Nurse"/>
+        <Class IRI="#Staff"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Nurse"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#assistsIn"/>
+            <ObjectUnionOf>
+                <Class IRI="#EmergencyRoom"/>
+                <Class IRI="#OperatingRoom"/>
+                <Class IRI="#PsychiatricWard"/>
+                <Class IRI="#SurgicalWard"/>
+            </ObjectUnionOf>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#OnCall"/>
+        <Class IRI="#Staff"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#OperatingRoom"/>
+        <Class IRI="#Areas"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Physician"/>
+        <Class IRI="#Doctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#PsychiatricPatient"/>
+        <Class IRI="#Patient"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#PsychiatricWard"/>
+        <Class IRI="#Areas"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Psychiatrist"/>
+        <Class IRI="#Doctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Psychology"/>
+        <Class IRI="#MedicalFields"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Receptionist"/>
+        <Class IRI="#Staff"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Resident"/>
+        <Class IRI="#OnCall"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgeon"/>
+        <Class IRI="#Doctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgeon"/>
+        <Class IRI="#ERDoctor"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgeon"/>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#worksIn"/>
+                <Class IRI="#OperatingRoom"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgeon"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#operatesIn"/>
+            <Class IRI="#OperatingRoom"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgeon"/>
+        <ObjectSomeValuesFrom>
+            <ObjectProperty IRI="#operatesOn"/>
+            <Class IRI="#SurgicalPatient"/>
+        </ObjectSomeValuesFrom>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#Surgery"/>
+        <Class IRI="#MedicalFields"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#SurgicalPatient"/>
+        <Class IRI="#Patient"/>
+    </SubClassOf>
+    <SubClassOf>
+        <Class IRI="#SurgicalWard"/>
+        <Class IRI="#Areas"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#attends"/>
+                <Class IRI="#PsychiatricPatient"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Psychiatrist"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#attends"/>
+                <Class IRI="#SurgicalPatient"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Surgeon"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#specializedIn"/>
+                <Class IRI="#Anasthesiology"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Anasthesiologist"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#specializedIn"/>
+                <Class IRI="#InternalMedicine"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Physician"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#specializedIn"/>
+                <Class IRI="#Psychology"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Psychiatrist"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Doctor"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#specializedIn"/>
+                <Class IRI="#Surgery"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Surgeon"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Patient"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#admittedTo"/>
+                <Class IRI="#EmergencyRoom"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#EmergencyPatient"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Patient"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#admittedTo"/>
+                <Class IRI="#PsychiatricWard"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#PsychiatricPatient"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Patient"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#admittedTo"/>
+                <Class IRI="#SurgicalWard"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#SurgicalPatient"/>
+    </SubClassOf>
+    <SubClassOf>
+        <ObjectIntersectionOf>
+            <Class IRI="#Staff"/>
+            <ObjectSomeValuesFrom>
+                <ObjectProperty IRI="#worksIn"/>
+                <Class IRI="#OperatingRoom"/>
+            </ObjectSomeValuesFrom>
+        </ObjectIntersectionOf>
+        <Class IRI="#Surgeon"/>
+    </SubClassOf>
+    <ClassAssertion>
+        <Class IRI="#Psychiatrist"/>
+        <NamedIndividual IRI="#Betty"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Anasthesiologist"/>
+        <NamedIndividual IRI="#Brian"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#ERNurse"/>
+        <NamedIndividual IRI="#David"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Receptionist"/>
+        <NamedIndividual IRI="#Florian"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#SurgicalPatient"/>
+        <NamedIndividual IRI="#Greta"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Janitor"/>
+        <NamedIndividual IRI="#Jack"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#EmergencyPatient"/>
+        <NamedIndividual IRI="#John"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Surgeon"/>
+        <NamedIndividual IRI="#Karl"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#PsychiatricPatient"/>
+        <NamedIndividual IRI="#Lauren"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#PsychiatricPatient"/>
+        <NamedIndividual IRI="#Mark"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Surgeon"/>
+        <NamedIndividual IRI="#Max"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Nurse"/>
+        <NamedIndividual IRI="#Merina"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Resident"/>
+        <NamedIndividual IRI="#Natasha"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Resident"/>
+        <NamedIndividual IRI="#Nate"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Resident"/>
+        <NamedIndividual IRI="#Peter"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#EmergencyRoom"/>
+        <NamedIndividual IRI="#R001"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#OperatingRoom"/>
+        <NamedIndividual IRI="#R002"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#OperatingRoom"/>
+        <NamedIndividual IRI="#R003"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#PsychiatricWard"/>
+        <NamedIndividual IRI="#R004"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#SurgicalWard"/>
+        <NamedIndividual IRI="#R005"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#SurgicalWard"/>
+        <NamedIndividual IRI="#R006"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#EmergencyRoom"/>
+        <NamedIndividual IRI="#R008"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Anasthesiologist"/>
+        <NamedIndividual IRI="#Rita"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Nurse"/>
+        <NamedIndividual IRI="#Sharon"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#Physician"/>
+        <NamedIndividual IRI="#Stev"/>
+    </ClassAssertion>
+    <ClassAssertion>
+        <Class IRI="#SurgicalPatient"/>
+        <NamedIndividual IRI="#Tim"/>
+    </ClassAssertion>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#assistsIn"/>
+        <ObjectProperty IRI="#worksIn"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#cleansIn"/>
+        <ObjectProperty IRI="#worksIn"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#consults"/>
+        <ObjectProperty IRI="#attends"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#monitorsIn"/>
+        <ObjectProperty IRI="#worksIn"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#operatesIn"/>
+        <ObjectProperty IRI="#worksIn"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#operatesOn"/>
+        <ObjectProperty IRI="#attends"/>
+    </SubObjectPropertyOf>
+    <SubObjectPropertyOf>
+        <ObjectProperty IRI="#treats"/>
+        <ObjectProperty IRI="#attends"/>
+    </SubObjectPropertyOf>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#admittedTo"/>
+        <Class IRI="#Patient"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#attends"/>
+        <ObjectUnionOf>
+            <Class IRI="#Doctor"/>
+            <Class IRI="#Nurse"/>
+        </ObjectUnionOf>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#consults"/>
+        <Class IRI="#Doctor"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#operatesOn"/>
+        <Class IRI="#Surgeon"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyDomain>
+        <ObjectProperty IRI="#worksIn"/>
+        <Class IRI="#Staff"/>
+    </ObjectPropertyDomain>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#admittedTo"/>
+        <Class IRI="#Areas"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#attends"/>
+        <Class IRI="#Patient"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#operatesIn"/>
+        <Class IRI="#OperatingRoom"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#operatesOn"/>
+        <Class IRI="#Patient"/>
+    </ObjectPropertyRange>
+    <ObjectPropertyRange>
+        <ObjectProperty IRI="#worksIn"/>
+        <Class IRI="#Areas"/>
+    </ObjectPropertyRange>
+</Ontology>
+
+
+
+<!-- Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi -->
+

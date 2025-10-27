@@ -1,6 +1,7 @@
 package de.tu_dresden.lat.diagnoses;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,7 @@ import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
@@ -39,15 +41,19 @@ public class ClassHierarchyDifference {
     Set<OWLAxiom> removeAxioms;
     OWLAxiom selectedAxiom;
     ReasonerName reasonerName;
+    Set<Set <? extends OWLAxiom>> allJustifications;
 
     // Map<OWLClass, Object> hierarchyMap1; // hierarchy map for the first ontology without removing the selected axiom
     // Map<OWLClass, Object> hierarchyMap2;   // hierarchy map for the second ontology with removing the selected axiom
     Map<String, Object> hierarchyMap1; 
     Map<String, Object> hierarchyMap2;
     Map<String, Object> hierarchyDifference;
+    Boolean repairYes;
+    Boolean repairNo;
 
-    public ClassHierarchyDifference(String outputDirStr, String ontologyPathStr, Set<OWLAxiom> keepAxioms,
+    public ClassHierarchyDifference(Set<Set<? extends OWLAxiom>> allJustifications, String outputDirStr, String ontologyPathStr, Set<OWLAxiom> keepAxioms,
             Set<OWLAxiom> removeAxioms, OWLAxiom selectedAxiom, ReasonerName reasonerName) {
+        this.allJustifications = allJustifications;
         this.outputDirStr = outputDirStr;
         this.ontologyPathStr = ontologyPathStr;
         this.keepAxioms = keepAxioms;
@@ -63,14 +69,39 @@ public class ClassHierarchyDifference {
     public void getClassHierarchy(String ontologyPath) throws OWLOntologyCreationException {
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-        // Map<String, Object> hierarchies = new HashMap<>();
+
         
         OWLClass clazz = manager.getOWLDataFactory().getOWLThing();     
         manager.removeAxioms(ontology, removeAxioms);  
+        try {
+            ComputeRepair.saveRepairOntology(ontology, outputDirStr, "ontoYes");
+        } catch (OWLOntologyCreationException | OWLOntologyStorageException | FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        keepAxioms.add(selectedAxiom);
+        Set<? extends OWLAxiom> unsatJust_yes  = ComputeRepair.checkAxiomSelection(allJustifications, keepAxioms);
         this.hierarchyMap1 = printClassHierarchy(clazz, ontology);
 
+        if (unsatJust_yes == null || unsatJust_yes.isEmpty()){
+            this.repairYes = true;
+        } else {
+            this.repairYes = false;
+        }
          
-        manager.removeAxioms(ontology, Collections.singleton(selectedAxiom));
+        manager.removeAxiom(ontology, selectedAxiom);
+        try {
+            ComputeRepair.saveRepairOntology(ontology, outputDirStr, "ontoNo");
+        } catch (OWLOntologyCreationException | OWLOntologyStorageException | FileNotFoundException e) {
+            e.printStackTrace();
+        }        
+        keepAxioms.remove(selectedAxiom);
+        Set<? extends OWLAxiom> unsatJust_no  = ComputeRepair.checkAxiomSelection(allJustifications, keepAxioms);
+        if (unsatJust_no == null || unsatJust_no.isEmpty()){
+            this.repairNo = true;
+        } else {
+            this.repairNo = false;
+        }
         this.hierarchyMap2 = printClassHierarchy(clazz, ontology);
         
         getHierarchyDifference(hierarchyMap1, hierarchyMap2, new ArrayList<>(), new ArrayList<>(), null);
@@ -200,7 +231,6 @@ public class ClassHierarchyDifference {
         return Collections.singletonMap(sOWLFormatter.format(clazz),
                 childNodes.isEmpty() ? null : childNodes);
     }
-
     // private Map<OWLClass, Set<Object>> printClassHierarchy(OWLReasoner reasoner, OWLClass clazz, int level, Map<OWLClass, Set<Object>> hierarchyMap) {
     //     if (reasoner.isSatisfiable(clazz)) {
     //         for (int i = 0; i < level * 4; i++) {
