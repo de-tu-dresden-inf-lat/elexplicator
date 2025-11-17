@@ -77,6 +77,7 @@ public class EvaluateOptions {
             }
             double cost = evaluateRepair(outputPathString, aboxOntologyString);
             System.out.println("Total repair cost for option " + option + ": " + cost);
+            //to do: write to csv file.
         }
 
         
@@ -107,27 +108,27 @@ public class EvaluateOptions {
                         
                         case WAITING_FOR_OPTIONS:
                             if (option.equals("mix")){
-                                inputText = "1,2,3\n"; //user option
+                                inputText = "1,2,3"; //user option
                             } else if (option.equals("user")){
-                                inputText = "\n"; //mix option
+                                inputText = ""; //mix option
                             } else {
-                                inputText = option + "\n"; //option 1,2,3
+                                inputText = option; //option 1,2,3
                             }
                             currentState = State.WAITING_FOR_RESULTS;
                             break;
                         case WAITING_FOR_RESULTS:
-                            inputText = "\n";
+                            inputText = "";
                             currentState = State.WAITING_FOR_ANSWER;
                             break;
                         case WAITING_FOR_ANSWER:
                             if (option.equals("1")){
-                                inputText = option1Decision(outputPathString) + "\n"; // call the function to read from the impact file and decide on the result.
+                                inputText = option1Decision(outputPathString); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("2")){
-                                inputText = option2Decision(outputPathString) + "\n"; // call the function to read from the impact file and decide on the result.
+                                inputText = option2Decision(outputPathString); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("3")){
-                                inputText = option3Decision(outputPathString) + "\n"; // call the function to read from the impact file and decide on the result.
+                                inputText = option3Decision(outputPathString); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("mix")){
-                                inputText = optionMixDecision(outputPathString) + "\n"; // call the function to read from the impact file and decide on the result.
+                                inputText = optionMixDecision(outputPathString); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("user")){
                                 double yesProb = Optional.of(yesProbOpt).get().get();
                                 inputText = optionUserDecision(yesProb); // call the function to read from the impact file and decide on the result.
@@ -138,35 +139,35 @@ public class EvaluateOptions {
                         case NORMAL:
                         default:
                             if(outputText.contains("All justifications have been computed.")){
-                                inputText = "save\n";
+                                inputText = "save";
                             }
 
                             else if (outputText.contains("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.")){
-                                inputText = "save\n";
+                                inputText = "save";
                             }
 
                             else if (outputText.contains("Enter the filename to save as:")){
-                                inputText = "repairOntology\n";
+                                inputText = "repairOntology";
                             }
 
                             else if (outputText.contains("The resulting ontology is not a repair")){
-                                inputText = "Cancel\nExit\n";
+                                inputText = "Cancel\nExit";
                                 return "no repair";
                             }
                             else{
                                 // if option is not "not sure", currentState = Waiting for options:
                                 if (!option.equals("user")){
                                     currentState = State.WAITING_FOR_OPTIONS;
-                                    inputText = "not sure\n";
+                                    inputText = "not sure";
                                 } else {
-                                    inputText = "\n";
+                                    inputText = "";
                                     currentState = State.WAITING_FOR_ANSWER;
                                 }
                             }
                             break;
                         
                     }
-                    writer.write(inputText);
+                    writer.write(inputText + "\n");
                     writer.flush();
                     recentOutput.setLength(0);
                     
@@ -250,7 +251,7 @@ public class EvaluateOptions {
     }
 
     private static String optionUserDecision(double yesProb) {
-        String decision = Math.random() < yesProb ? "yes\n" : "no\n";
+        String decision = Math.random() < yesProb ? "yes" : "no";
         return decision;
         
     }
