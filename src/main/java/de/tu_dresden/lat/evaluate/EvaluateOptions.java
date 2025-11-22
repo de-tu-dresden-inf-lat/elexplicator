@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.Thread.State;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,19 +21,36 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EvaluateOptions {
 
+    String ontologyPathString;
+    String defectAxiomString;
+    String interestingAxiomString;
+    String aboxOntologyString;
+    String outputPathString;
+
+    public EvaluateOptions(String ontoPath, String defectStr, String intAxiomsStr, String aboxOnto, String outPath){
+        this.ontologyPathString = ontoPath;
+        this.defectAxiomString =defectStr;
+        this.interestingAxiomString = intAxiomsStr;
+        this.aboxOntologyString = aboxOnto;
+        this.outputPathString = outPath;
+    }
+
     enum State {
                 NORMAL,
                 WAITING_FOR_OPTIONS,
                 WAITING_FOR_RESULTS,
                 WAITING_FOR_ANSWER
             }
-    public static void main(String[] args) {
-        String ontologyPathString = args[0];
-        String defectAxiomString = args[1];
-        String interestingAxiomString = args[2];
-        String aboxOntologyString = args[3];
-        String outputPathString = args[4];
+            
+    public List<RepairEvaluation> evaluateOpt() {
+        // String ontologyPathString = args[0];
+        // String defectAxiomString = args[1];
+        // String interestingAxiomString = args[2];
+        // String aboxOntologyString = args[3];
+        // String outputPathString = args[4];
         double yesProb = 0.75;
+
+        List<RepairEvaluation> evalList = new ArrayList<>();
 
         String jar_path = "target/ELExplicator.jar";
         String[] commands = {"java", "-jar", jar_path, 
@@ -51,8 +69,8 @@ public class EvaluateOptions {
         options.add("mix");
 
         for (String option : options){
+            RepairEvaluation repEval = new RepairEvaluation(option);
             System.out.println("Running repair process for option: " + option);
-            String result = "";
             if (option.equals("option1")){
                 runRepairProcess(outputPathString, commands, "1", Optional.empty());
             } else if (option.equals("option2")){
@@ -63,8 +81,9 @@ public class EvaluateOptions {
                 runRepairProcess(outputPathString, commands, "mix", Optional.empty());
             } else if (option.equals("user")){
                 while (true){
-                    result = runRepairProcess(outputPathString, commands, "user", Optional.of(yesProb));
-                    if (result.equals("complete")){
+                    Map<String, String> answersMap= runRepairProcess(outputPathString, commands, "user", Optional.of(yesProb));
+                    if (answersMap != null){
+                        repEval.setAnswersMap(answersMap);;
                         break;
                     } else {
                         yesProb = Math.max(0.0, yesProb - 0.15);
@@ -76,17 +95,18 @@ public class EvaluateOptions {
                 }
             }
             double cost = evaluateRepair(outputPathString, aboxOntologyString);
+            repEval.setCost(cost);
             System.out.println("Total repair cost for option " + option + ": " + cost);
-            //to do: write to csv file.
+            evalList.add(repEval);
         }
-
+        
+        return evalList;
         
     }
 
-    private static String runRepairProcess(String outputPathString, String[] commands, String option, Optional<Double> yesProbOpt) {
+    private static Map<String, String> runRepairProcess(String outputPathString, String[] commands, String option, Optional<Double> yesProbOpt) {
             
         try {
-            List<String> answers = new ArrayList<>();
             ProcessBuilder pb = new ProcessBuilder(commands);
             pb.redirectErrorStream(true);
             Process process = pb.start();
@@ -98,6 +118,8 @@ public class EvaluateOptions {
             String line;
 
             State currentState = State.NORMAL;
+            Map<String, String> answersMap = new HashMap<>();
+            String question = "";
             while ((line = reader.readLine()) != null) {
                 // System.out.println("JAR output: " + line);
                 recentOutput.append(line).append("\n");
@@ -133,7 +155,7 @@ public class EvaluateOptions {
                                 double yesProb = Optional.of(yesProbOpt).get().get();
                                 inputText = optionUserDecision(yesProb); // call the function to read from the impact file and decide on the result.
                             }
-                            answers.add(inputText);
+                            answersMap.put(question, inputText);
                             currentState = State.NORMAL;
                             break;
                         case NORMAL:
@@ -152,9 +174,11 @@ public class EvaluateOptions {
 
                             else if (outputText.contains("The resulting ontology is not a repair")){
                                 inputText = "Cancel\nExit";
-                                return "no repair";
+                                return null;
                             }
                             else{
+                                //read the axiom in outputText
+                                question = outputText;
                                 // if option is not "not sure", currentState = Waiting for options:
                                 if (!option.equals("user")){
                                     currentState = State.WAITING_FOR_OPTIONS;
@@ -173,11 +197,11 @@ public class EvaluateOptions {
                     
                 }     
             }  
-            System.out.println("Answers given: " + answers.toString()); 
-            return "complete";             
+            System.out.println("Answers given: " + answersMap); 
+            return answersMap;             
         } catch (Exception e) {
             e.printStackTrace();
-            return "error";
+            return null;
         }
             
             

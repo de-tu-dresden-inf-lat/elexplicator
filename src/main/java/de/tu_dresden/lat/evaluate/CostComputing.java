@@ -63,11 +63,11 @@ public class CostComputing {
             e.printStackTrace();
             return -1;
         } 
-        System.out.println("Concept\tDepth\tBreadth\tInstances\tCost");
-        for (Map.Entry<OWLClass, ConceptMetrics> entry : costMap.entrySet())
-        {
-            System.out.println(entry.getKey() + "\t" + entry.getValue().depth + "\t" + entry.getValue().breadth + "\t" + entry.getValue().individualCount + "\t" + entry.getValue().cost);
-        }
+        // System.out.println("Concept\tDepth\tBreadth\tInstances\tCost");
+        // for (Map.Entry<OWLClass, ConceptMetrics> entry : costMap.entrySet())
+        // {
+        //     System.out.println(entry.getKey() + "\t" + entry.getValue().depth + "\t" + entry.getValue().breadth + "\t" + entry.getValue().individualCount + "\t" + entry.getValue().cost);
+        // }
 
        //calculate cost for each concept
         // conceptInfo = computeConceptCost(conceptInfo, tboxReasoner);
@@ -78,7 +78,7 @@ public class CostComputing {
        
        //calculate overall cost for tbox
         double overallCost = overallTBoxCost(costMap);
-        System.out.println("Overall TBox Cost: " + overallCost);
+        System.out.println("TBox Cost: " + overallCost);
         return overallCost;
     }
 
