@@ -69,16 +69,22 @@ public class EvaluateOptions {
         options.add("mix");
 
         for (String option : options){
+            double cost = -1;
+            Boolean noRepair = false;
             RepairEvaluation repEval = new RepairEvaluation(option);
             System.out.println("Running repair process for option: " + option);
             if (option.equals("option1")){
-                runRepairProcess(outputPathString, commands, "1", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "1", Optional.empty());
+                repEval.setAnswersMap(answersMap);
             } else if (option.equals("option2")){
-                runRepairProcess(outputPathString, commands, "2", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "2", Optional.empty());
+                repEval.setAnswersMap(answersMap);
             } else if (option.equals("option3")){
-                runRepairProcess(outputPathString, commands, "3", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "3", Optional.empty());
+                repEval.setAnswersMap(answersMap);
             } else if (option.equals("mix")){
-                runRepairProcess(outputPathString, commands, "mix", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "mix", Optional.empty());
+                repEval.setAnswersMap(answersMap);
             } else if (option.equals("user")){
                 while (true){
                     Map<String, String> answersMap= runRepairProcess(outputPathString, commands, "user", Optional.of(yesProb));
@@ -86,15 +92,23 @@ public class EvaluateOptions {
                         repEval.setAnswersMap(answersMap);;
                         break;
                     } else {
-                        yesProb = Math.max(0.0, yesProb - 0.15);
-                        if (yesProb <= 0.0){
+                        System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
+                        yesProb = yesProb - 0.15;
+                        if (yesProb < 0.0){
                             System.out.println("No repair possible with user option.");
+                            noRepair = true;
                             break;
                         }
                     }
                 }
             }
-            double cost = evaluateRepair(outputPathString, aboxOntologyString);
+            if (!noRepair){
+                if (!repEval.getAnswersMap().isEmpty()){
+                    cost = evaluateRepair(outputPathString, aboxOntologyString);
+                } else {
+                    cost = -1; 
+                }               
+            }              
             repEval.setCost(cost);
             System.out.println("Total repair cost for option " + option + ": " + cost);
             evalList.add(repEval);
@@ -120,6 +134,7 @@ public class EvaluateOptions {
             State currentState = State.NORMAL;
             Map<String, String> answersMap = new HashMap<>();
             String question = "";
+            String prevLine = "";
             while ((line = reader.readLine()) != null) {
                 // System.out.println("JAR output: " + line);
                 recentOutput.append(line).append("\n");
@@ -130,9 +145,9 @@ public class EvaluateOptions {
                         
                         case WAITING_FOR_OPTIONS:
                             if (option.equals("mix")){
-                                inputText = "1,2,3"; //user option
+                                inputText = "1,2,3"; //mix option
                             } else if (option.equals("user")){
-                                inputText = ""; //mix option
+                                inputText = ""; //user option
                             } else {
                                 inputText = option; //option 1,2,3
                             }
@@ -178,8 +193,8 @@ public class EvaluateOptions {
                             }
                             else{
                                 //read the axiom in outputText
-                                question = outputText;
                                 // if option is not "not sure", currentState = Waiting for options:
+                                question = prevLine.trim();
                                 if (!option.equals("user")){
                                     currentState = State.WAITING_FOR_OPTIONS;
                                     inputText = "not sure";
@@ -194,9 +209,9 @@ public class EvaluateOptions {
                     writer.write(inputText + "\n");
                     writer.flush();
                     recentOutput.setLength(0);
-                    
-                }     
-            }  
+                }
+                prevLine = line;
+            }
             System.out.println("Answers given: " + answersMap); 
             return answersMap;             
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package de.tu_dresden.lat.evaluate;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class RepairEvaluation {
@@ -9,14 +10,35 @@ public class RepairEvaluation {
 
     public RepairEvaluation(String optionName){
         this.optionName = optionName;
+        this.answersMap = new HashMap<>();
+    }
+
+    public void setOptionName(String optionName){
+        this.optionName = optionName;
+    }
+
+    public String getOptionName(){
+        return this.optionName;
     }
 
     public void setAnswersMap(Map<String, String> answersMap){
-        this.answersMap = answersMap;
+        if (answersMap != null){
+            this.answersMap = answersMap;
+        }
+        
+    }
+
+    public Map<String, String> getAnswersMap(){
+        return this.answersMap;
     }
 
     public void setCost(Double cost){
         this.cost = cost;
     }
+
+    public Double getCost(){
+        return this.cost;
+    }
+
 }
 

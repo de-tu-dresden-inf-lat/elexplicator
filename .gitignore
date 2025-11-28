@@ -40,3 +40,5 @@ BenchmarkOWLExamples/
 *.sdkmanrc
 benchmarking/
 benchmark_watcher.sh
+OptionsEval/
+evaluate.sh

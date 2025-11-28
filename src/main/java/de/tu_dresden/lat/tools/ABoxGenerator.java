@@ -42,15 +42,18 @@ import de.tu_dresden.lat.data.enums.ExitCode;
 
 public class ABoxGenerator {
     private static final Logger logger = Logger.getLogger(ABoxGenerator.class);  
+    
 
     private String tboxOntologyPath;
     private String defectAxiom;
     private String outputDir;
+    private Map<String, Object> aboxTimeMap;
 
     public ABoxGenerator(String tboxOntologyPath, String defectAxiom, String outputDir) {
         this.tboxOntologyPath = tboxOntologyPath;
         this.defectAxiom = defectAxiom;
         this.outputDir = outputDir;
+        this.aboxTimeMap = new HashMap<>();
     }
 
     public ExitCode generateABox() throws OWLOntologyCreationException, EntityCheckerException, OWLOntologyStorageException, IOException {
@@ -79,7 +82,9 @@ public class ABoxGenerator {
             supClassHierarchy.put(cls, sup);
         }
         long endTime = System.nanoTime();
-        logger.info("Class hierarchy creation time (s): "+ (endTime-startTime)/1000000000);
+        long totalTime = (endTime-startTime)/1000000;
+        logger.info("Class hierarchy creation time (ms): "+ totalTime);
+        aboxTimeMap.put("CH Creation (ms)", totalTime);
 
         //select 80% from the class hierarchy:
         startTime = System.nanoTime();
@@ -90,7 +95,9 @@ public class ABoxGenerator {
         int selectionSize = (int) (leafNodes.size() * 0.8);
         List<OWLClass> selectedClasses = leafNodes.subList(0, selectionSize);
         endTime = System.nanoTime();
-        logger.info("Leaf classes selection time (s): "+ (endTime-startTime)/1000000000);
+        totalTime = (endTime-startTime)/1000000;
+        logger.info("Leaf classes selection time (ms): "+ totalTime);
+        aboxTimeMap.put("Leaf Class Selection (ms)", totalTime);
         System.out.println("Selected 80% of leaf classes for ABox generation.");
 
         //add individuals for the selected classes
@@ -108,7 +115,9 @@ public class ABoxGenerator {
             }
         }
         endTime = System.nanoTime();
-        logger.info("Instance assertion time (s): "+(endTime-startTime)/1000000000);
+        totalTime = (endTime-startTime)/1000000;
+        logger.info("Instance assertion time (ms): " + totalTime);
+        aboxTimeMap.put("Inst Assertion (ms)", totalTime);
 
         aboxReasoner.flush();
         //propagate the class assertions up the hierarchy
@@ -128,7 +137,9 @@ public class ABoxGenerator {
             }
         }
         endTime = System.nanoTime();
-        logger.info("Instance propagation time (s): "+ (endTime - startTime)/1000000000);
+        totalTime = (endTime - startTime)/1000000;
+        logger.info("Instance propagation time (ms): " + totalTime);
+        aboxTimeMap.put("Inst Propagation (ms)", totalTime);
 
         //Add counterexample to the defect axiom
         OWLAxiom defect = ToOWLTools.getInstance().getOWLAxiomFromStr(defectAxiom, tbox);
@@ -140,17 +151,24 @@ public class ABoxGenerator {
         for (OWLClassExpression ce : classExpressionsMap.get("add")){
             OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(ce, defectIndv);
             manager.addAxiom(abox, classAssertion);
-            Set<OWLClass> superClasses = supClassHierarchy.get(ce.asOWLClass());
-            for (OWLClassExpression avoidCE : classExpressionsMap.get("avoid")){
-                superClasses.remove(avoidCE.asOWLClass());
+            try{
+                Set<OWLClass> superClasses = supClassHierarchy.get(ce.asOWLClass());
+                for (OWLClassExpression avoidCE : classExpressionsMap.get("avoid")){
+                    superClasses.remove(avoidCE.asOWLClass());
+                }
+                for (OWLClass sc : superClasses) {
+                    OWLClassAssertionAxiom ax = dataFactory.getOWLClassAssertionAxiom(sc, defectIndv);
+                    manager.addAxiom(abox, ax);
+                }
+            } catch (Exception e){
+                System.out.println(e.getMessage());
             }
-            for (OWLClass sc : superClasses) {
-                OWLClassAssertionAxiom ax = dataFactory.getOWLClassAssertionAxiom(sc, defectIndv);
-                manager.addAxiom(abox, ax);
-            }
+
         } 
         endTime = System.nanoTime();
-        logger.info("Defect entailment breaking time (s): "+(endTime - startTime)/1000000000);
+        totalTime = (endTime - startTime)/1000000;
+        logger.info("Defect entailment breaking time (ms): "+totalTime);
+        aboxTimeMap.put("Entailment breaking (ms)", totalTime);
         
         //get tbox file name from tboxOntologyPath
         String tboxFileName = new File(this.tboxOntologyPath).getName();
@@ -195,6 +213,11 @@ public class ABoxGenerator {
         else {
             return axiomClassExprMap;
         }        
+    }
+
+    public Map<String, Object> getAboxGenTimeMap(){
+        System.out.println(this.aboxTimeMap);
+        return this.aboxTimeMap;
     }
     public static void main(String[] args) {
         

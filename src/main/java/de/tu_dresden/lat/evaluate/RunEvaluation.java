@@ -7,7 +7,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -21,6 +23,7 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.AxiomType;
+import org.semanticweb.owlapi.model.EntityType;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -42,6 +45,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.lat.tools.ABoxGenerator;
+import de.tu_dresden.lat.tools.DefectSelector;
 
 public class RunEvaluation {
     //for example ontologies in Examples dir:
@@ -51,35 +55,6 @@ public class RunEvaluation {
     //Create Abox
     //Run evaluate
     //Save to CSV file
-
-    public static Map<String, Object> loadGenExamples(File exampleFile, String outDirStr, OWLSubClassOfAxiom axiom){
-        OWLOntology ontology = null;
-        String interestingAxiomOntology = null;
-
-        Map<String, Object> map = new HashMap<>();
-        
-        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-        try {
-            ontology = manager.loadOntologyFromOntologyDocument(exampleFile);
-        } catch (OWLOntologyCreationException e) {
-            e.printStackTrace();
-            return null;
-        } 
-        try {
-            interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirStr);
-        } catch (OWLOntologyCreationException | IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        
-        map.put("example", exampleFile.getName());
-        map.put("ontology", ontology);
-        map.put("defectAxiom", axiom);
-        map.put("interestingAxiomOntology", interestingAxiomOntology);
-        map.put("ontologyPathStr", exampleFile.getPath());       
-        
-        return map;
-    }
     
     public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){
 
@@ -98,7 +73,9 @@ public class RunEvaluation {
         }
         OWLAxiom axiom = null;
         try{
-            axiom = selectDefectAxiom(exampleFile.getPath());
+            // axiom = selectDefectAxiom(exampleFile.getPath());
+            axiom = DefectSelector.selectDefect(ontology);
+            System.out.println("defect:"+ axiom.toString());
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -130,6 +107,9 @@ public class RunEvaluation {
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
         ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
         List<OWLClass> signClasses = new ArrayList<>(ontology.getClassesInSignature());
+        signClasses.removeAll(Collections.singleton(reasoner.getRootOntology().getOWLOntologyManager()
+        .getOWLDataFactory().getOWLThing()));
+    
         Collections.shuffle(signClasses);
         Set<OWLClass> classes = new HashSet<>(signClasses.subList(0, Math.min(20, signClasses.size())));
         OWLDataFactory factory = manager.getOWLDataFactory();
@@ -138,12 +118,16 @@ public class RunEvaluation {
         for (OWLClass owlClass : classes){
             Set<OWLClass> inferredSubClasses = new HashSet<>();
             inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+
             if(!inferredSubClasses.isEmpty()){
                 for (OWLClass inferredSubClass : inferredSubClasses){
-                    OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
-                    if (!ontology.containsAxiom(axiom) && !inferredSubClass.isBottomEntity()){
-                        axiomList.add(axiom);
+                    if(ontology.containsClassInSignature(inferredSubClass.getIRI())){
+                        OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
+                        if (!ontology.containsAxiom(axiom) && !inferredSubClass.isBottomEntity()){
+                            axiomList.add(axiom);
+                        }
                     }
+                    
                 }
             }
         }
@@ -155,7 +139,9 @@ public class RunEvaluation {
             axiomList = new ArrayList<>(ontology.getAxioms(AxiomType.SUBCLASS_OF));
         }
         Random random = new Random();
-        return axiomList.get(random.nextInt(axiomList.size()));
+        OWLAxiom selectedDefectAxiom = axiomList.get(random.nextInt(axiomList.size()));
+        System.out.println("Defect axiom selected: "+selectedDefectAxiom.toString());
+        return selectedDefectAxiom;
     }
 
     private static String generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom, String outDirStr) throws OWLOntologyCreationException, IOException{
@@ -256,13 +242,24 @@ public class RunEvaluation {
         writer.close();
     }
 
-    private static void logDecisions(String filePath, List<RepairEvaluation> repairEval, String exampleName) throws StreamWriteException, DatabindException, IOException{
+    private static void logDecisions(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom) throws StreamWriteException, DatabindException, IOException{
         ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode listNode = objectMapper.valueToTree(repairEval);
-        ObjectNode rootNode = objectMapper.createObjectNode();
-        rootNode.set(exampleName, listNode);
-
         File jsonFile = new File(filePath + File.separator + "decisons.json");
+
+        ObjectNode rootNode;
+        if (jsonFile.exists() && jsonFile.length() > 0){
+            rootNode = (ObjectNode) objectMapper.readTree(jsonFile);
+        } else {
+            rootNode = objectMapper.createObjectNode();
+        }
+
+        JsonNode evalListNode = objectMapper.valueToTree(repairEval);
+        ObjectNode exampleDetailsNode = objectMapper.createObjectNode();
+        exampleDetailsNode.put("Defect", axiom.toString());
+        exampleDetailsNode.put("Evaluation", evalListNode);
+
+        rootNode.set(exampleName, exampleDetailsNode);
+        
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, rootNode);
     }
 
@@ -290,8 +287,10 @@ public class RunEvaluation {
         }
         File exampleDir = new File(examplePath); 
         exampleFiles = exampleDir.listFiles();
+        Arrays.sort(exampleFiles, Comparator.comparingLong(File::length));
 
         for (File exampleFile : exampleFiles){
+            long fileSize = exampleFile.length();
             example = loadExampleInstances(exampleFile, outDirString);
             if (example == null){
                 continue;
@@ -317,27 +316,57 @@ public class RunEvaluation {
                 public void dispose(){}
             });
             String defectAxiomStr = renderer.render(axiom);
+            Map<String, Object> exampleTimeTracker = new HashMap<>();
             try{
                 ABoxGenerator aBoxGenerator = new ABoxGenerator(exampleFile.getAbsolutePath(), defectAxiomStr, intermediateOutDir);
                 aBoxGenerator.generateABox();
+                Map<String, Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
+                exampleTimeTracker.put("Example", exampleName);
+                exampleTimeTracker.put("Defect", defectAxiomStr);
+                exampleTimeTracker.put("File Size (kB)", fileSize/1000);
+                exampleTimeTracker.putAll(aboxGenTimeMap);               
                 
             } catch (InconsistentOntologyException e){
                 System.out.println("Inconsistent Onto Error");
                 continue;
             } 
+            try{
+                logAboxGenerationTime(exampleTimeTracker);
+            }catch (IOException e){
+                e.printStackTrace();
+            }
             String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
             try{
                 EvaluateOptions evaluateOptions = new EvaluateOptions(ontologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString);
                 List<RepairEvaluation> repEvalList = evaluateOptions.evaluateOpt();
                 writeToCSV(outDirString, repEvalList, exampleName);
-                logDecisions(outDirString, repEvalList, exampleName);
+                logDecisions(outDirString, repEvalList, exampleName, axiom);
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
         }
             
+    }
+
+    private static void logAboxGenerationTime(Map<String, Object> aboxGenTimeMap) throws IOException{
+        //if csv file already exists and not empty: append
+        //else create the csv file, add headers and add the data from map
+        File timeMapFile = new File("aboxGenerationTime.csv");
+        FileWriter fw = new FileWriter(timeMapFile, true);
+        List<String> headers = new ArrayList<>(aboxGenTimeMap.keySet());
+        if (timeMapFile.length() == 0){
+            fw.append(String.join(",", headers)).append("\n");
+        }
+        List<String> values = new ArrayList<>();
+        for (String key : headers){
+            values.add(aboxGenTimeMap.getOrDefault(key, "").toString());
+        }
+        fw.append(String.join(",", values));
+        fw.append("\n");
+        
+        fw.flush();
+        fw.close();
     }
 }
 
