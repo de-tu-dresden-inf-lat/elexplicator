@@ -23,7 +23,6 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.AxiomType;
-import org.semanticweb.owlapi.model.EntityType;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -46,15 +45,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.lat.tools.ABoxGenerator;
 import de.tu_dresden.lat.tools.DefectSelector;
+import de.tu_dresden.lat.tools.OntologyToDNF;
 
 public class RunEvaluation {
-    //for example ontologies in Examples dir:
-    //Select defect axiom
-    //Create IAAxioms ontology
-
-    //Create Abox
-    //Run evaluate
-    //Save to CSV file
     
     public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){
 
@@ -90,6 +83,15 @@ public class RunEvaluation {
             System.out.println("Error generating interesting axiom "+exampleFile.getName());
             return null;
         }
+
+        try{
+            OntologyToDNF ontToDNF = new OntologyToDNF(ontology);
+            ontology = ontToDNF.normalizeOntology();
+        } catch (Exception e){
+            System.out.println("Error normalizing ontology "+exampleFile.getName());
+            return null;
+        }
+
         map.put("example", exampleFile.getName());
         map.put("ontology", ontology);
         map.put("defectAxiom", axiom);
@@ -263,7 +265,6 @@ public class RunEvaluation {
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, rootNode);
     }
 
-
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException {
         String examplePath = args[0];
         String intermediateOutDir = args[1];
@@ -318,7 +319,7 @@ public class RunEvaluation {
             String defectAxiomStr = renderer.render(axiom);
             Map<String, Object> exampleTimeTracker = new HashMap<>();
             try{
-                ABoxGenerator aBoxGenerator = new ABoxGenerator(exampleFile.getAbsolutePath(), defectAxiomStr, intermediateOutDir);
+                ABoxGenerator aBoxGenerator = new ABoxGenerator(ontology, exampleFile.getName(), defectAxiomStr, intermediateOutDir);
                 aBoxGenerator.generateABox();
                 Map<String, Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
                 exampleTimeTracker.put("Example", exampleName);

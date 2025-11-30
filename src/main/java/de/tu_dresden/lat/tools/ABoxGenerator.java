@@ -44,13 +44,15 @@ public class ABoxGenerator {
     private static final Logger logger = Logger.getLogger(ABoxGenerator.class);  
     
 
-    private String tboxOntologyPath;
+    private OWLOntology tbox;
+    private String tboxOntoName;
     private String defectAxiom;
     private String outputDir;
     private Map<String, Object> aboxTimeMap;
 
-    public ABoxGenerator(String tboxOntologyPath, String defectAxiom, String outputDir) {
-        this.tboxOntologyPath = tboxOntologyPath;
+    public ABoxGenerator(OWLOntology ontology, String ontologyName, String defectAxiom, String outputDir) {
+        this.tbox = ontology;
+        this.tboxOntoName = ontologyName;
         this.defectAxiom = defectAxiom;
         this.outputDir = outputDir;
         this.aboxTimeMap = new HashMap<>();
@@ -58,10 +60,8 @@ public class ABoxGenerator {
 
     public ExitCode generateABox() throws OWLOntologyCreationException, EntityCheckerException, OWLOntologyStorageException, IOException {
         //read the TBox ontology from the given path
-        File tboxOntoFile = new File(tboxOntologyPath);
-        logger.info("Abox generating for "+ tboxOntoFile.getName());
-        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-		OWLOntology tbox = manager.loadOntologyFromOntologyDocument(tboxOntoFile);
+        logger.info("Abox generating for "+ this.tboxOntoName);
+        OWLOntologyManager manager = tbox.getOWLOntologyManager();
         OWLDataFactory dataFactory = manager.getOWLDataFactory();
 
         IRI aboxIRI = IRI.create(tbox.getOntologyID().getOntologyIRI().get() + "_ABox");
@@ -171,8 +171,7 @@ public class ABoxGenerator {
         aboxTimeMap.put("Entailment breaking (ms)", totalTime);
         
         //get tbox file name from tboxOntologyPath
-        String tboxFileName = new File(this.tboxOntologyPath).getName();
-        String aboxPath = outputDir + File.separator + tboxFileName.split(".owl")[0] + "_ABox.owl";
+        String aboxPath = outputDir + File.separator + tboxOntoName.split(".owl")[0] + "_ABox.owl";
         OutputStream outputstream = Files.newOutputStream(new File(aboxPath).toPath());
         OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
         manager.saveOntology(abox, ontologyFormat, outputstream);
@@ -218,28 +217,5 @@ public class ABoxGenerator {
     public Map<String, Object> getAboxGenTimeMap(){
         System.out.println(this.aboxTimeMap);
         return this.aboxTimeMap;
-    }
-    public static void main(String[] args) {
-        
-        String tboxOntologyPath = args[0];
-        String defectAxiom = args[1];
-        String outputDir = args[2];
-        
-        ABoxGenerator generator = new ABoxGenerator(tboxOntologyPath, defectAxiom, outputDir);
-        try {
-            ExitCode result = generator.generateABox();
-            System.out.println("ABox generation completed with exit code: " + result);
-        } catch (OWLOntologyCreationException e) {
-            System.err.println("Error creating ontology: " + e.getMessage());
-        } catch (EntityCheckerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (OWLOntologyStorageException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
     }
 }
