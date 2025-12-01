@@ -13,8 +13,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.log4j.Logger;
-import org.semanticweb.HermiT.ReasonerFactory;
-import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.elk.owlapi.ElkReasoner;
+import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -33,8 +33,6 @@ import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.reasoner.NodeSet;
-import org.semanticweb.owlapi.reasoner.OWLReasoner;
-import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
@@ -67,19 +65,24 @@ public class ABoxGenerator {
         IRI aboxIRI = IRI.create(tbox.getOntologyID().getOntologyIRI().get() + "_ABox");
         OWLOntology abox = manager.createOntology(aboxIRI);
 
-        OWLReasonerFactory reasonerFactory = new ReasonerFactory();
-        OWLReasoner reasoner = reasonerFactory.createReasoner(tbox);
+        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
+        ElkReasoner reasoner = reasonerFactory.createReasoner(tbox);
         reasoner.precomputeInferences();
-        OWLReasoner aboxReasoner = reasonerFactory.createReasoner(abox);
+        ElkReasoner aboxReasoner = reasonerFactory.createReasoner(abox);
         Map<OWLClass, Set<OWLClass>> classHierarchy = new HashMap<>();
         Map<OWLClass, Set<OWLClass>> supClassHierarchy = new HashMap<>();
+        System.out.println("Number of classes in signature:"+tbox.getClassesInSignature().size());
+        Set<OWLClass> classes = tbox.getClassesInSignature();
         long startTime = System.nanoTime();
-        for (OWLClass cls : tbox.getClassesInSignature()) {
+        for (OWLClass cls : classes) {
+            System.out.println("Class:"+cls.getIRI().getShortForm());
+            System.out.println("Satisfiable?: "+reasoner.isSatisfiable(cls));
             Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
             Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
             classHierarchy.put(cls, sub);
             classHierarchy.get(cls).remove(dataFactory.getOWLNothing());
             supClassHierarchy.put(cls, sup);
+                       
         }
         long endTime = System.nanoTime();
         long totalTime = (endTime-startTime)/1000000;

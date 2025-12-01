@@ -77,7 +77,7 @@ public class DefectSelector {
         
         Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(cls, false).getFlattened();
 
-        System.out.println("Inferred subclasses: " + inferredSubClasses);
+        // System.out.println("Inferred subclasses: " + inferredSubClasses);
         inferredSubClasses.remove(dataFactory.getOWLNothing());
 
         OWLAxiom selectedAxiom = null;
@@ -88,7 +88,7 @@ public class DefectSelector {
             selectedAxiom = dataFactory.getOWLSubClassOfAxiom(subClass, cls);
         } else {
             Set<OWLClass> inferredSupClasses = reasoner.getSuperClasses(cls, false).getFlattened();
-            System.out.println("Inferred superclasses: " + inferredSupClasses);
+            // System.out.println("Inferred superclasses: " + inferredSupClasses);
             inferredSupClasses.remove(dataFactory.getOWLThing());
             logger.info("Inferred Superclasses size: "+inferredSubClasses.size());
             if (! inferredSupClasses.isEmpty()){

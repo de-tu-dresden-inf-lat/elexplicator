@@ -17,12 +17,15 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.inject.Singleton;
+
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.AxiomType;
+import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
@@ -33,6 +36,7 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.semanticweb.owlapi.model.parameters.OntologyCopy;
 import org.semanticweb.owlapi.reasoner.InconsistentOntologyException;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 
@@ -53,14 +57,20 @@ public class RunEvaluation {
 
         OWLOntology ontology = null;
         String interestingAxiomOntology = null;
+        OWLOntology normalized = null;
+        String normalizedFilePath = exampleFile.getParent().toString() + File.separator + "normalized.owl";
 
         Map<String, Object> map = new HashMap<>();
         System.out.println("loading file: "+exampleFile.getName());
         try{
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
             ontology = manager.loadOntologyFromOntologyDocument(exampleFile);
+
+            OWLOntologyManager manager2 = OWLManager.createOWLOntologyManager();
+            normalized = manager2.copyOntology(ontology, OntologyCopy.DEEP);
         }
         catch(Exception e){
+            e.printStackTrace();
             System.out.println("Error loading ontology "+exampleFile.getName());
             return null;
         }
@@ -85,8 +95,12 @@ public class RunEvaluation {
         }
 
         try{
-            OntologyToDNF ontToDNF = new OntologyToDNF(ontology);
-            ontology = ontToDNF.normalizeOntology();
+            OntologyToDNF ontToDNF = new OntologyToDNF(normalized);
+            normalized = ontToDNF.normalizeOntology();
+            OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+            OutputStream outputstream = Files.newOutputStream(new File(normalizedFilePath).toPath());
+            OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
+            manager.saveOntology(normalized, ontologyFormat, outputstream);
         } catch (Exception e){
             System.out.println("Error normalizing ontology "+exampleFile.getName());
             return null;
@@ -94,9 +108,11 @@ public class RunEvaluation {
 
         map.put("example", exampleFile.getName());
         map.put("ontology", ontology);
+        map.put("normalizedOntology", normalized);
         map.put("defectAxiom", axiom);
         map.put("interestingAxiomOntology", interestingAxiomOntology);
-        map.put("ontologyPathStr", exampleFile.getPath());       
+        map.put("ontologyPathStr", exampleFile.getPath());  
+        map.put("normalizedOntologyPathStr", normalizedFilePath);     
         
         return map;
 
@@ -298,10 +314,10 @@ public class RunEvaluation {
             }
             
             String exampleName = (String) example.get("example");
-            OWLOntology ontology = (OWLOntology) example.get("ontology");
+            OWLOntology normalizedOntology = (OWLOntology) example.get("normalizedOntology");
             OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
             String interestingAxiomOntology = (String) example.get("interestingAxiomOntology");
-            String ontologyPathStr = (String) example.get("ontologyPathStr");
+            String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
             
             
 
@@ -319,7 +335,7 @@ public class RunEvaluation {
             String defectAxiomStr = renderer.render(axiom);
             Map<String, Object> exampleTimeTracker = new HashMap<>();
             try{
-                ABoxGenerator aBoxGenerator = new ABoxGenerator(ontology, exampleFile.getName(), defectAxiomStr, intermediateOutDir);
+                ABoxGenerator aBoxGenerator = new ABoxGenerator(normalizedOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir);
                 aBoxGenerator.generateABox();
                 Map<String, Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
                 exampleTimeTracker.put("Example", exampleName);
@@ -338,7 +354,7 @@ public class RunEvaluation {
             }
             String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
             try{
-                EvaluateOptions evaluateOptions = new EvaluateOptions(ontologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString);
+                EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString);
                 List<RepairEvaluation> repEvalList = evaluateOptions.evaluateOpt();
                 writeToCSV(outDirString, repEvalList, exampleName);
                 logDecisions(outDirString, repEvalList, exampleName, axiom);
