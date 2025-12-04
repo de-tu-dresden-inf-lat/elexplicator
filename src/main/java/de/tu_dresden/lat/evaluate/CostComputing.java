@@ -6,14 +6,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.semanticweb.elk.owlapi.ElkReasoner;
+import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.NodeSet;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
-import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
-import org.semanticweb.owlapi.reasoner.structural.StructuralReasonerFactory;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLNamedIndividual;
 
@@ -34,10 +34,10 @@ public class CostComputing {
             e.printStackTrace();
             return -1;
         }
-        OWLReasonerFactory reasonerFactory = new StructuralReasonerFactory();
-        OWLReasoner aboxReasoner = reasonerFactory.createReasoner(aboxOntology);
+        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
+        ElkReasoner aboxReasoner = reasonerFactory.createReasoner(aboxOntology);
         aboxReasoner.precomputeInferences(InferenceType.CLASS_ASSERTIONS, InferenceType.CLASS_HIERARCHY);
-        OWLReasoner tboxReasoner = reasonerFactory.createReasoner(tboxOntology);
+        ElkReasoner tboxReasoner = reasonerFactory.createReasoner(tboxOntology);
         tboxReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY, InferenceType.CLASS_ASSERTIONS);
         
         Set<OWLClass>classNames = null;
@@ -59,7 +59,11 @@ public class CostComputing {
         } catch (OWLOntologyCreationException e) {
             e.printStackTrace();
             return -1;
-        } 
+        } finally{
+            aboxReasoner.dispose();
+            tboxReasoner.dispose();
+            System.gc();
+        }
         // System.out.println("Concept\tDepth\tBreadth\tInstances\tCost");
         // for (Map.Entry<OWLClass, ConceptMetrics> entry : costMap.entrySet())
         // {
@@ -79,7 +83,7 @@ public class CostComputing {
         return overallCost;
     }
 
-    private static Map<OWLClass, ConceptMetrics> computeConceptCost(OWLClass concept, OWLReasoner reasoner, Map<OWLClass, ConceptMetrics> metricsMap) {
+    private static Map<OWLClass, ConceptMetrics> computeConceptCost(OWLClass concept, ElkReasoner reasoner, Map<OWLClass, ConceptMetrics> metricsMap) {
         if (metricsMap.containsKey(concept)) {
             return metricsMap;
         }
@@ -137,7 +141,7 @@ public class CostComputing {
         return classNames; //return the concepts
     }
 
-    private static int getInstancesForConcept(OWLClass concept, OWLOntology aboxOntology, OWLReasoner reasoner) {
+    private static int getInstancesForConcept(OWLClass concept, OWLOntology aboxOntology, ElkReasoner reasoner) {
         //read abox onto
         //get number of instances from ABox classified under concept
         int instanceCount = 0;
@@ -206,40 +210,6 @@ public class CostComputing {
         }
         return maxBreadth;
     }
-
-    /*private static Map<OWLClass, ArrayList<Object>> computeConceptCost(Map<OWLClass, ArrayList<Object>> conceptInfo, OWLReasoner reasoner) {
-        double totalCost = 0.0;
-        for (Map.Entry<OWLClass, ArrayList<Object>> entry : conceptInfo.entrySet()) {
-            totalCost = conceptCost(conceptInfo, entry.getKey(), reasoner);
-            conceptInfo.get(entry.getKey()).add(totalCost);
-        }
-        return conceptInfo;
-    }*/
-
-    /*private static double conceptCost(Map<OWLClass, ArrayList<Object>> conceptInfo, OWLClass concept, OWLReasoner reasoner) {
-        double k = 0.5; // weight for depth
-        double m = 0.3; // weight for breadth
-        
-        double parentCost = 0;
-        ArrayList<?> metrics = conceptInfo.get(concept);
-        int depth = (int) metrics.get(0);
-        int breadth = (int) metrics.get(1);
-        OWLClass parentClass = null;
-        Set<OWLClass> parentClasses = reasoner.getSuperClasses(concept, true).getFlattened();
-        parentClasses.remove(reasoner.getRootOntology().getOWLOntologyManager()
-            .getOWLDataFactory().getOWLThing());
-        if (parentClasses.isEmpty()){
-            parentCost = 0;
-        } else {
-            for (OWLClass parent : parentClasses) {
-                parentClass = parent;
-                parentCost = Math.max(parentCost, conceptCost(conceptInfo, parentClass, reasoner));
-            }
-        }
-        // Example cost function: weighted sum of depth, breadth, and instances
-        double cost = parentCost + (k * depth) + (m * breadth);
-        return cost;
-    }*/
 
     private static double overallTBoxCost(Map<OWLClass,ConceptMetrics> conceptInfoMap) {
         double totalCost = 0.0;

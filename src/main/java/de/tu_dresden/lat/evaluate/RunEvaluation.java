@@ -358,6 +358,8 @@ public class RunEvaluation {
                 List<RepairEvaluation> repEvalList = evaluateOptions.evaluateOpt();
                 writeToCSV(outDirString, repEvalList, exampleName);
                 logDecisions(outDirString, repEvalList, exampleName, axiom);
+                new File(aboxPathStr).delete();
+                new File(normOntologyPathStr).delete();
             } catch (IOException e) {
                 e.printStackTrace();
             }

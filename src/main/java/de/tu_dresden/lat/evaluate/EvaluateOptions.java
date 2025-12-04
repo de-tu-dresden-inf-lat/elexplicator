@@ -56,7 +56,7 @@ public class EvaluateOptions {
         String[] commands = {"java", "-jar", jar_path, 
             "-a", defectAxiomString,
             "-o", ontologyPathString,
-            "-r",  "Hermit",
+            "-r",  "ELK",
             "-ia", interestingAxiomString,
             "-od", outputPathString
         };
@@ -67,6 +67,7 @@ public class EvaluateOptions {
         options.add("option3");
         options.add("user");
         options.add("mix");
+        
 
         for (String option : options){
             double cost = -1;
@@ -89,11 +90,12 @@ public class EvaluateOptions {
                 while (true){
                     Map<String, String> answersMap= runRepairProcess(outputPathString, commands, "user", Optional.of(yesProb));
                     if (answersMap != null){
-                        repEval.setAnswersMap(answersMap);;
+                        repEval.setAnswersMap(answersMap);
                         break;
                     } else {
                         System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
                         yesProb = yesProb - 0.15;
+                        System.out.println(yesProb);
                         if (yesProb < 0.0){
                             System.out.println("No repair possible with user option.");
                             noRepair = true;
@@ -119,11 +121,11 @@ public class EvaluateOptions {
     }
 
     private static Map<String, String> runRepairProcess(String outputPathString, String[] commands, String option, Optional<Double> yesProbOpt) {
-            
+        ProcessBuilder pb = new ProcessBuilder(commands);
+        pb.redirectErrorStream(true);
+        Process process = null;
         try {
-            ProcessBuilder pb = new ProcessBuilder(commands);
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
+            process = pb.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
@@ -171,6 +173,7 @@ public class EvaluateOptions {
                                 inputText = optionUserDecision(yesProb); // call the function to read from the impact file and decide on the result.
                             }
                             answersMap.put(question, inputText);
+                            System.out.println("Question: "+question + "\nAnswer: " + inputText);
                             currentState = State.NORMAL;
                             break;
                         case NORMAL:
@@ -217,6 +220,15 @@ public class EvaluateOptions {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        } finally {
+            if (process!=null){
+                process.destroy();
+                try{
+                    process.waitFor();
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
             
             

@@ -32,6 +32,7 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
+import org.semanticweb.owlapi.reasoner.InconsistentOntologyException;
 import org.semanticweb.owlapi.reasoner.NodeSet;
 
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
@@ -71,12 +72,10 @@ public class ABoxGenerator {
         ElkReasoner aboxReasoner = reasonerFactory.createReasoner(abox);
         Map<OWLClass, Set<OWLClass>> classHierarchy = new HashMap<>();
         Map<OWLClass, Set<OWLClass>> supClassHierarchy = new HashMap<>();
-        System.out.println("Number of classes in signature:"+tbox.getClassesInSignature().size());
+        // System.out.println("Number of classes in signature:"+tbox.getClassesInSignature().size());
         Set<OWLClass> classes = tbox.getClassesInSignature();
         long startTime = System.nanoTime();
         for (OWLClass cls : classes) {
-            System.out.println("Class:"+cls.getIRI().getShortForm());
-            System.out.println("Satisfiable?: "+reasoner.isSatisfiable(cls));
             Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
             Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
             classHierarchy.put(cls, sub);
@@ -134,7 +133,7 @@ public class ABoxGenerator {
                 for (OWLClass sup : supClassHierarchy.get(cls)){
                     OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(sup, indv);
                     if (!abox.containsAxiom(classAssertion)) {
-                        manager.addAxiom(abox, classAssertion);
+                        manager.addAxiom(abox, classAssertion); //The inconsistent onto error probably from here
                     }
                 }
             }
@@ -154,17 +153,18 @@ public class ABoxGenerator {
         for (OWLClassExpression ce : classExpressionsMap.get("add")){
             OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(ce, defectIndv);
             manager.addAxiom(abox, classAssertion);
-            try{
-                Set<OWLClass> superClasses = supClassHierarchy.get(ce.asOWLClass());
-                for (OWLClassExpression avoidCE : classExpressionsMap.get("avoid")){
-                    superClasses.remove(avoidCE.asOWLClass());
-                }
-                for (OWLClass sc : superClasses) {
-                    OWLClassAssertionAxiom ax = dataFactory.getOWLClassAssertionAxiom(sc, defectIndv);
+            Set<OWLClass> superClasses = supClassHierarchy.get(ce.asOWLClass());
+            for (OWLClassExpression avoidCE : classExpressionsMap.get("avoid")){
+                superClasses.remove(avoidCE.asOWLClass());
+            }
+            for (OWLClass sc : superClasses) {
+                OWLClassAssertionAxiom ax = dataFactory.getOWLClassAssertionAxiom(sc, defectIndv);
+                try{
                     manager.addAxiom(abox, ax);
+                } catch (InconsistentOntologyException e){
+                    System.out.println("Couldn't assert to superclass due to inconsistency" + sc);
+                    continue;
                 }
-            } catch (Exception e){
-                System.out.println(e.getMessage());
             }
 
         } 
@@ -179,7 +179,9 @@ public class ABoxGenerator {
         OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
         manager.saveOntology(abox, ontologyFormat, outputstream);
         
-
+        reasoner.dispose();
+        aboxReasoner.dispose();
+        System.gc();
         return ExitCode.terminatedSuccessfully;
     }
 

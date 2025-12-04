@@ -2,10 +2,10 @@ package de.tu_dresden.lat.tools;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.log4j.Logger;
 import org.semanticweb.elk.owlapi.ElkReasoner;
@@ -13,7 +13,6 @@ import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.model.AxiomType;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
-import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLEquivalentClassesAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -34,10 +33,13 @@ public class DefectSelector {
  */
     public static OWLAxiom selectDefect(OWLOntology ontology) throws OWLOntologyCreationException{
         classConnectivityMap = new java.util.HashMap<>();
-        subClassAxiomClasses(ontology);
-        Set<OWLClass> classesInSubClassAxioms = classConnectivityMap.keySet();
+        Set<OWLClass> classesInSubClassAxioms = subClassAxiomClasses(ontology); //classes that are involved in subclassof axioms with only atomic concepts
         equivalentClassAxiomClasses(ontology);
-        classConnectivityMap.entrySet().stream().filter(cls -> classesInSubClassAxioms.contains(cls.getKey()) && !cls.getKey().isOWLThing() && !cls.getKey().isOWLNothing());
+        classConnectivityMap = classConnectivityMap.entrySet().stream()
+            .filter(cls ->  
+                !cls.getKey().isOWLThing() 
+                && !cls.getKey().isOWLNothing())
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         classConnectivityMap = classConnectivityMap.entrySet().stream()
             .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
@@ -45,21 +47,32 @@ public class DefectSelector {
                 Map.Entry::getKey, Map.Entry::getValue,
                 (oldVal, newVal) -> oldVal, java.util.LinkedHashMap::new));
         
-        OWLClass candidateClass = classConnectivityMap.entrySet().iterator().next().getKey();
+        OWLClass candidateClass = null;
+        for (OWLClass cls : classConnectivityMap.keySet()){
+            if (classesInSubClassAxioms.contains(cls)){
+                candidateClass = cls;
+                break;
+            }
+        }
+        // System.out.println("Candidate class is OWL thing or Nothing? "+ (candidateClass.isOWLThing()|| candidateClass.isOWLNothing()));
         logger.info("Selected most connected class: "+candidateClass.toString());
         OWLAxiom defectAxiom = selectSubClassAxiom(ontology, candidateClass);
         return defectAxiom;
     } 
 
-    private static Map<OWLClass, Integer> subClassAxiomClasses(OWLOntology ontology){
+    private static Set<OWLClass> subClassAxiomClasses(OWLOntology ontology){
         Set<OWLSubClassOfAxiom> axioms = ontology.getAxioms(AxiomType.SUBCLASS_OF);
+        Set<OWLClass> simpleSubClassClasses = new HashSet<>();
         for (OWLSubClassOfAxiom axiom : axioms){
+            if (!axiom.getSubClass().isAnonymous() && !axiom.getSuperClass().isAnonymous()){
+                simpleSubClassClasses.addAll(axiom.getClassesInSignature());
+            }
             axiom.getClassesInSignature().forEach( cls -> {
                 classConnectivityMap.putIfAbsent(cls, 0);
                 classConnectivityMap.put(cls, classConnectivityMap.get(cls)+1);
             });
         }
-        return classConnectivityMap;
+        return simpleSubClassClasses;
     }
 
     private static Map<OWLClass, Integer> equivalentClassAxiomClasses(OWLOntology ontology){
@@ -72,33 +85,6 @@ public class DefectSelector {
         }
         return classConnectivityMap;
     }
-
-    // public static Set<OWLClass> getClassesInSubclassRelations(OWLOntology ontology){
-    //     Set<OWLAxiom> axioms = ontology.getAxioms(AxiomType.SUBCLASS_OF).stream().filter(
-    //         axiom -> {
-    //             OWLClassExpression sub = axiom.getSubClass();
-    //             OWLClassExpression sup = axiom.getSuperClass();
-    //             return !sub.isAnonymous() && !sup.isAnonymous() && !sub.isBottomEntity() && !sup.isTopEntity();
-    //         }).collect(Collectors.toSet());
-        
-    //         Set<OWLClass> classes = axioms.stream()
-    //             .flatMap(ax -> Stream.of(((OWLSubClassOfAxiom) ax).getSubClass(), ((OWLSubClassOfAxiom) ax).getSuperClass()))
-    //             .filter(c -> !c.isAnonymous())
-    //             .map(c -> c.asOWLClass())
-    //             .filter(c -> !c.isOWLThing() && !c.isOWLThing())
-    //             .collect(Collectors.toSet());
-            
-    //     return classes;
-    // }
-
-    // public static Integer computeScore(OWLClass cls, OWLOntology ontology){
-    //     int score = ontology.getSubClassAxiomsForSubClass(cls).size() +
-    //             ontology.getSubClassAxiomsForSuperClass(cls).size() + 
-    //             ontology.getEquivalentClassesAxioms(cls).size() +
-    //             ontology.getDisjointClassesAxioms(cls).size();
-        
-    //     return score;
-    // }
 
     public static OWLAxiom selectSubClassAxiom(OWLOntology ontology, OWLClass cls) throws OWLOntologyCreationException{
         OWLOntologyManager manager = ontology.getOWLOntologyManager();
@@ -126,7 +112,14 @@ public class DefectSelector {
                 selectedAxiom = dataFactory.getOWLSubClassOfAxiom(cls, supClass);
             }
         }
-        logger.info("Defect selected: "+selectedAxiom.toString());
+        reasoner.dispose();
+        if(selectedAxiom != null){
+            logger.info("Defect selected: "+selectedAxiom.toString());
+        } else {
+            logger.info("No defect selected.");
+        }
+        
+        System.gc();
         return selectedAxiom;
     }
 }
