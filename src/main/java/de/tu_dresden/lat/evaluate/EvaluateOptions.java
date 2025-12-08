@@ -75,20 +75,20 @@ public class EvaluateOptions {
             RepairEvaluation repEval = new RepairEvaluation(option);
             System.out.println("Running repair process for option: " + option);
             if (option.equals("option1")){
-                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "1", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(commands, "1", Optional.empty());
                 repEval.setAnswersMap(answersMap);
             } else if (option.equals("option2")){
-                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "2", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(commands, "2", Optional.empty());
                 repEval.setAnswersMap(answersMap);
             } else if (option.equals("option3")){
-                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "3", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(commands, "3", Optional.empty());
                 repEval.setAnswersMap(answersMap);
             } else if (option.equals("mix")){
-                Map<String, String> answersMap = runRepairProcess(outputPathString, commands, "mix", Optional.empty());
+                Map<String, String> answersMap = runRepairProcess(commands, "mix", Optional.empty());
                 repEval.setAnswersMap(answersMap);
             } else if (option.equals("user")){
                 while (true){
-                    Map<String, String> answersMap= runRepairProcess(outputPathString, commands, "user", Optional.of(yesProb));
+                    Map<String, String> answersMap= runRepairProcess(commands, "user", Optional.of(yesProb));
                     if (answersMap != null){
                         repEval.setAnswersMap(answersMap);
                         break;
@@ -106,7 +106,7 @@ public class EvaluateOptions {
             }
             if (!noRepair){
                 if (!repEval.getAnswersMap().isEmpty()){
-                    cost = evaluateRepair(outputPathString, aboxOntologyString);
+                    cost = evaluateRepair();
                 } else {
                     cost = -1; 
                 }               
@@ -120,7 +120,7 @@ public class EvaluateOptions {
         
     }
 
-    private static Map<String, String> runRepairProcess(String outputPathString, String[] commands, String option, Optional<Double> yesProbOpt) {
+    private Map<String, String> runRepairProcess(String[] commands, String option, Optional<Double> yesProbOpt) {
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb.redirectErrorStream(true);
         Process process = null;
@@ -161,11 +161,11 @@ public class EvaluateOptions {
                             break;
                         case WAITING_FOR_ANSWER:
                             if (option.equals("1")){
-                                inputText = option1Decision(outputPathString); // call the function to read from the impact file and decide on the result.
+                                inputText = option1Decision(); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("2")){
-                                inputText = option2Decision(outputPathString); // call the function to read from the impact file and decide on the result.
+                                inputText = option2Decision(); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("3")){
-                                inputText = option3Decision(outputPathString); // call the function to read from the impact file and decide on the result.
+                                inputText = option3Decision(); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("mix")){
                                 inputText = optionMixDecision(outputPathString); // call the function to read from the impact file and decide on the result.
                             } else if (option.equals("user")){
@@ -234,7 +234,7 @@ public class EvaluateOptions {
             
     }
 
-    private static String option1Decision(String outputPathString) throws IOException {
+    private String option1Decision() throws IOException {
         double sumYes = 0.0;
         double sumNo = 0.0;
         // Read from json file. Sum the probabilities for "yes" and "no". return the option with higher probability.
@@ -260,15 +260,14 @@ public class EvaluateOptions {
             return "no";    
     }
 
-    private static String option2Decision(String outputPathString) throws IOException {
+    private String option2Decision() throws IOException {
         //Read from class hierarchy json file, the two owl class hierarchies and evaluate them with the computeCost function. Select the one with lowest and answer accordingly.
         double costYes = 0.0;
         double costNo = 0.0;
-        String aboxPathString = "";
         String ontologyYes = outputPathString + File.separator + "ontoYes.owl";
         String ontologyNo = outputPathString + File.separator + "ontoNo.owl";
-        costYes = CostComputing.CostComputing(ontologyYes, aboxPathString);
-        costNo = CostComputing.CostComputing(ontologyNo, aboxPathString);
+        costYes = CostComputing.CostComputing(ontologyYes, aboxOntologyString);
+        costNo = CostComputing.CostComputing(ontologyNo, aboxOntologyString);
 
         if (costYes <= costNo){
             return "yes"; 
@@ -277,7 +276,7 @@ public class EvaluateOptions {
         }        
     }
 
-    private static String option3Decision(String outputPathString) throws IOException {
+    private String option3Decision() throws IOException {
         String answer = "yes";
         Double hammingYes = 0.0;
         Double hammingNo = 0.0;
@@ -307,16 +306,16 @@ public class EvaluateOptions {
         return answer;
     }
 
-    private static String optionUserDecision(double yesProb) {
+    private String optionUserDecision(double yesProb) {
         String decision = Math.random() < yesProb ? "yes" : "no";
         return decision;
         
     }
-    private static String optionMixDecision(String outputPathString) throws IOException {
+    private String optionMixDecision(String outputPathString) throws IOException {
         List<String> answers = new ArrayList<>();
-        answers.add(option1Decision(outputPathString));
-        answers.add(option2Decision(outputPathString));
-        answers.add(option3Decision(outputPathString));
+        answers.add(option1Decision());
+        answers.add(option2Decision());
+        answers.add(option3Decision());
 
         long countYes = answers.stream().filter(ans -> ans.equals("yes")).count();
         long countNo = answers.stream().filter(ans -> ans.equals("no")).count();
@@ -328,7 +327,7 @@ public class EvaluateOptions {
         }
     }
 
-    private static double evaluateRepair(String outputPathString, String aboxOntologyString) {
+    private double evaluateRepair() {
         // TO DO: for ontologies with name starting with RepairOntology and file type .owl computeCost and store the result in map.
         //return the sum of costs.
         //for file in outputPathString
