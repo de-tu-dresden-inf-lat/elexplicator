@@ -13,8 +13,8 @@ u='service'
 
 more=0;
 
-examples_dir='/home/service/Desktop/Example'
-intermediate_out_dir='/home/service/Desktop/Example'
+examples_dir='/home/service/Desktop/Examples2'
+intermediate_out_dir='/home/service/Desktop/Examples2'
 
 echo "Watching out for -> process = "$p", user = "$u
 if ! id -u $u > /dev/null;

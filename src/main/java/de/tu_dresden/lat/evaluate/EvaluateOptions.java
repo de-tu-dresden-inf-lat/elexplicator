@@ -242,14 +242,14 @@ public class EvaluateOptions {
         ObjectMapper objectMapper = new ObjectMapper();
         Map<String, Object> probabilitiesMap = objectMapper.readValue(new File(probabilitiesJson), new TypeReference<Map<String, Object>>(){});
         if (probabilitiesMap.get("yes") instanceof String){
-            sumYes = 0.0;
+            return "no";
         } else {
             Map<String, Double> probabilitiesYes = (Map<String, Double>) probabilitiesMap.get("yes");
             sumYes = probabilitiesYes.values().stream().mapToDouble(Double::doubleValue).sum();
         }
 
         if (probabilitiesMap.get("no") instanceof String){
-            sumNo = 0.0;
+            return "yes";
         } else {
             Map<String, Double> probabilitiesNo = (Map<String, Double>) probabilitiesMap.get("no");
             sumNo = probabilitiesNo.values().stream().mapToDouble(Double::doubleValue).sum();
@@ -264,11 +264,17 @@ public class EvaluateOptions {
         //Read from class hierarchy json file, the two owl class hierarchies and evaluate them with the computeCost function. Select the one with lowest and answer accordingly.
         double costYes = 0.0;
         double costNo = 0.0;
-        String classHierarchyJson = outputPathString + File.separator + "classHierarchyDifference.json";
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(new File(classHierarchyJson));
-        
-        return "no";
+        String aboxPathString = "";
+        String ontologyYes = outputPathString + File.separator + "ontoYes.owl";
+        String ontologyNo = outputPathString + File.separator + "ontoNo.owl";
+        costYes = CostComputing.CostComputing(ontologyYes, aboxPathString);
+        costNo = CostComputing.CostComputing(ontologyNo, aboxPathString);
+
+        if (costYes <= costNo){
+            return "yes"; 
+        } else {
+            return "no";
+        }        
     }
 
     private static String option3Decision(String outputPathString) throws IOException {
