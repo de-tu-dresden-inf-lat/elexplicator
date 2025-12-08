@@ -2,7 +2,9 @@ package de.tu_dresden.lat.evaluate;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -23,8 +25,7 @@ public class CostComputing {
         // String ontologyPathStr = "src/test/resources/ontologies/SimpleTBox.owl";
         // String aboxPathStr = "src/test/resources/ontologies/SimpleABox.owl";
         OWLOntology aboxOntology = null;
-        OWLOntology tboxOntology = null;
-        Map<OWLClass, ArrayList<Object>> conceptInfo = new HashMap<>();    
+        OWLOntology tboxOntology = null; 
         try {
             aboxOntology = OWLManager.createOWLOntologyManager()
                 .loadOntologyFromOntologyDocument(new File(aboxPathStr));
@@ -40,7 +41,7 @@ public class CostComputing {
         ElkReasoner tboxReasoner = reasonerFactory.createReasoner(tboxOntology);
         tboxReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY, InferenceType.CLASS_ASSERTIONS);
         
-        Set<OWLClass>classNames = null;
+        List<OWLClass>classNames = null;
         Map<OWLClass, ConceptMetrics> costMap = new HashMap<>();
         //read tbox onto
         //get all concepts 
@@ -64,20 +65,6 @@ public class CostComputing {
             tboxReasoner.dispose();
             System.gc();
         }
-        // System.out.println("Concept\tDepth\tBreadth\tInstances\tCost");
-        // for (Map.Entry<OWLClass, ConceptMetrics> entry : costMap.entrySet())
-        // {
-        //     System.out.println(entry.getKey() + "\t" + entry.getValue().depth + "\t" + entry.getValue().breadth + "\t" + entry.getValue().individualCount + "\t" + entry.getValue().cost);
-        // }
-
-       //calculate cost for each concept
-        // conceptInfo = computeConceptCost(conceptInfo, tboxReasoner);
-        // System.out.println("Concept\tDepth\tBreadth\tInstances\tCost");
-        // for (Map.Entry<OWLClass, ArrayList<Object>> entry : conceptInfo.entrySet()) {
-        //     System.out.println(entry.getKey() + "\t" + entry.getValue().get(0) + "\t" + entry.getValue().get(1) + "\t" + entry.getValue().get(2) + "\t" + entry.getValue().get(3));
-        // } 
-       
-       //calculate overall cost for tbox
         double overallCost = overallTBoxCost(costMap);
         System.out.println("TBox Cost: " + overallCost);
         return overallCost;
@@ -96,7 +83,8 @@ public class CostComputing {
         
         //Get all direct superclasses (parents) of the concept
         NodeSet<OWLClass> superClasses = reasoner.getSuperClasses(concept, true);
-        Set<OWLClass> directParents = superClasses.getFlattened();
+        List<OWLClass> directParents = new ArrayList<>(superClasses.getFlattened());
+        directParents.sort(Comparator.comparing(OWLClass::toStringID));
         //Handle the case of owl:Thing, which is a superclass of all others
         directParents.remove(reasoner.getRootOntology().getOWLOntologyManager()
             .getOWLDataFactory().getOWLThing());
@@ -133,11 +121,12 @@ public class CostComputing {
         return metricsMap;
     }
 
-    private static Set<OWLClass> fetchTBox(String ontologyPathStr) throws OWLOntologyCreationException {
+    private static List<OWLClass> fetchTBox(String ontologyPathStr) throws OWLOntologyCreationException {
         //read tbox onto
         OWLOntology axiomsOntology = OWLManager.createOWLOntologyManager()
 				.loadOntologyFromOntologyDocument(new File(ontologyPathStr));
-        Set<OWLClass> classNames = axiomsOntology.getClassesInSignature();
+        List<OWLClass> classNames = new ArrayList<>(axiomsOntology.getClassesInSignature());
+        classNames.sort(Comparator.comparing(OWLClass::toStringID));
         return classNames; //return the concepts
     }
 
@@ -155,60 +144,6 @@ public class CostComputing {
             }
         };
         return instanceCount;
-    }
-
-    private static Map<OWLClass, Integer> getConceptDepth(OWLReasoner reasoner, OWLClass concept) {
-        Map<OWLClass, Integer> depthMap = new HashMap<>();
-        OWLClass parentClass = null;
-        if (reasoner.isSatisfiable(concept)) {
-            // Get all direct superclasses (parents) of the concept
-            NodeSet<OWLClass> superClasses = reasoner.getSuperClasses(concept, true);
-
-            // Handle the case of owl:Thing, which is a superclass of all others
-            Set<OWLClass> directParents = superClasses.getFlattened();
-            directParents.remove(reasoner.getRootOntology().getOWLOntologyManager()
-                .getOWLDataFactory().getOWLThing());
-
-            if (directParents.isEmpty()) {
-                // This is a root class
-                parentClass = reasoner.getRootOntology().getOWLOntologyManager()
-                    .getOWLDataFactory().getOWLThing();
-                depthMap.put(parentClass, 1);
-                return depthMap;
-            }
-
-            int maxDepth = 1;
-            // Recursively find the depth of all direct parents
-            for (OWLClass parent : directParents) {
-                // System.out.println("Concept: " + concept);
-                // System.out.println("Parent: " + parent);
-                int depth = getConceptDepth(reasoner, parent).entrySet().iterator().next().getValue();
-                maxDepth = Math.max(maxDepth, depth);
-                if (maxDepth == depth) {
-                    parentClass = parent;
-                }
-                
-            }
-            depthMap.put(parentClass, maxDepth + 1);
-            // System.out.println("Concept: " + concept + ", Parent: " + parentClass + ", Depth: " + (maxDepth + 1));
-            return depthMap;
-        } else {
-            // Unsatifiable class
-            return depthMap;
-        }
-    };
-
-    private static int getConceptBreadth(OWLReasoner reasoner, OWLClass concept) {
-        //get the direct superclasses of the concept
-        NodeSet<OWLClass> superClasses = reasoner.getSuperClasses(concept, true);
-        Set<OWLClass> directParents = superClasses.getFlattened();
-        //for each direct superclass, get its number of direct subclasses. The maximum of these is the breadth
-        int maxBreadth = 0;
-        for (OWLClass parent : directParents) {
-            NodeSet<OWLClass> siblingClasses = reasoner.getSubClasses(parent, true);
-            maxBreadth = Math.max(maxBreadth, siblingClasses.getFlattened().size());
-        }
-        return maxBreadth;
     }
 
     private static double overallTBoxCost(Map<OWLClass,ConceptMetrics> conceptInfoMap) {
