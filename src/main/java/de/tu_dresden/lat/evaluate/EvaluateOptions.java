@@ -89,28 +89,30 @@ public class EvaluateOptions {
             } else if (option.equals("user")){
                 while (true){
                     Map<String, String> answersMap= runRepairProcess(commands, "user", Optional.of(yesProb));
-                    if (answersMap != null){
+                    if (!answersMap.get("Status").equals("Repair not possible!")){
                         repEval.setAnswersMap(answersMap);
                         break;
                     } else {
-                        System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
                         yesProb = yesProb - 0.15;
                         System.out.println(yesProb);
                         if (yesProb < 0.0){
                             System.out.println("No repair possible with user option.");
-                            noRepair = true;
+                            repEval.setAnswersMap(answersMap);
+                            // noRepair = true;
                             break;
                         }
+                        System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
                     }
                 }
             }
-            if (!noRepair){
-                if (!repEval.getAnswersMap().isEmpty()){
-                    cost = evaluateRepair();
-                } else {
-                    cost = -1; 
-                }               
-            }              
+            // if (!noRepair){
+            if(repEval.getAnswersMap().get("Status").equals("Repair reached!")){
+                System.out.println("Computing cost!");
+                cost = evaluateRepair();
+            } else {
+                cost = -1;
+            }             
+            // }              
             repEval.setCost(cost);
             System.out.println("Total repair cost for option " + option + ": " + cost);
             evalList.add(repEval);
@@ -183,21 +185,27 @@ public class EvaluateOptions {
                             }
 
                             else if (outputText.contains("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.")){
-                                inputText = "save";
+                                inputText = "save";                                
                             }
 
                             else if (outputText.contains("Enter the filename to save as:")){
                                 inputText = "repairOntology";
+                                answersMap.put("Status", "Repair reached!");
                             }
 
                             else if (outputText.contains("The resulting ontology is not a repair")){
                                 inputText = "Cancel\nExit";
-                                return null;
+                                if (answersMap.size() > 1){
+                                    answersMap.put("Status", "Repair not possible!");
+                                } else {
+                                    answersMap.put("Status", "No selection!");
+                                }                                
                             }
                             else{
                                 //read the axiom in outputText
                                 // if option is not "not sure", currentState = Waiting for options:
                                 question = prevLine.trim();
+                                System.out.println("Q: " + question);
                                 if (!option.equals("user")){
                                     currentState = State.WAITING_FOR_OPTIONS;
                                     inputText = "not sure";
@@ -266,14 +274,32 @@ public class EvaluateOptions {
         double costNo = 0.0;
         String ontologyYes = outputPathString + File.separator + "ontoYes.owl";
         String ontologyNo = outputPathString + File.separator + "ontoNo.owl";
-        costYes = CostComputing.CostComputing(ontologyYes, aboxOntologyString);
-        costNo = CostComputing.CostComputing(ontologyNo, aboxOntologyString);
-
-        if (costYes <= costNo){
-            return "yes"; 
-        } else {
+        String jsonFile = outputPathString + File.separator + "classHierarchyDifference.json";
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> classHierarchyMap = objectMapper.readValue(new File(jsonFile), new TypeReference<Map<String, Object>>(){});
+        
+        Boolean repairYes = (Boolean) classHierarchyMap.get("repairYes");
+        Boolean repairNo = (Boolean) classHierarchyMap.get("repairNo");
+        
+        if (repairYes && repairNo){
+            System.out.println("Repair possible from both");
+            costYes = CostComputing.CostComputing(ontologyYes, aboxOntologyString);
+            costNo = CostComputing.CostComputing(ontologyNo, aboxOntologyString);
+            if (costYes <= costNo){
+                return "yes"; 
+            } else {
+                return "no";
+            } 
+        } else if (repairYes && !repairNo){
+            System.out.println("Repair possible from yes");
+            return "yes";
+        } else if (!repairYes && repairNo){
+            System.out.println("Repair possible from no");
             return "no";
-        }        
+        } else{
+            System.out.println("Repair possible from none");
+            return "yes";
+        }     
     }
 
     private String option3Decision() throws IOException {
