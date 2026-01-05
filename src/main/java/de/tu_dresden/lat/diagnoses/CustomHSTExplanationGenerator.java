@@ -6,7 +6,8 @@ import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLException;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLRuntimeException;
-import org.semanticweb.owlapi.util.CollectionFactory;
+// import org.semanticweb.owlapi.util.CollectionFactory;
+import java.util.Collections;
 import org.semanticweb.owlapi.util.OWLAPIPreconditions;
 import org.semanticweb.owlapi.util.OWLEntityCollector;
 import org.slf4j.Logger;
@@ -56,7 +57,7 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
         try {
             Set<OWLAxiom> firstMups = getExplanation(unsatClass);
             if (firstMups.isEmpty()) {
-                return CollectionFactory.emptySet();
+                return Collections.emptySet();
             }
             Set<Set<OWLAxiom>> allMups = new LinkedHashSet<>();
             progressMonitor.foundExplanation(firstMups);
@@ -298,7 +299,7 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
         for (OWLDeclarationAxiom decl : temporaryDeclarations) {
             assert decl != null;
             OntologyUtils.removeAxiom(decl, getReasoner().getRootOntology()
-                    .getImportsClosure(), getOntologyManager());
+                    .getImportsClosure().stream());
         }
         // Done with the axiom that was removed. Add it back in
         OntologyUtils.addAxiom(axiom, ontologies, getOntologyManager());
@@ -350,8 +351,7 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
         // Remove the current axiom from all the ontologies it is included
         // in
         Set<OWLOntology> ontologies = OntologyUtils.removeAxiom(axiom,
-                getReasoner().getRootOntology().getImportsClosure(),
-                getOntologyManager());
+                getReasoner().getRootOntology().getImportsClosure().stream());
         collectTemporaryDeclarations(axiom, temporaryDeclarations);
         for (OWLDeclarationAxiom decl : temporaryDeclarations) {
             assert decl != null;
