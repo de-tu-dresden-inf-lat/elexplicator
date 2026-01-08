@@ -154,7 +154,7 @@ public class RepairModeTester {
         Map<OWLAxiom, List<OWLOntology>> modulesMap = ComputeRepair.computeRepairsModules(ontologyPathString, diagnoses, interestingAxiomsSet);
 		int totalRepairs = diagnoses.size();
 			// ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
-		Map<OWLAxiom, Integer> actualAxiomWeight = ComputeRepair.computeAxiomWeight(modulesMap, reasonerName, totalRepairs);
+		Map<OWLAxiom, Double> actualAxiomWeight = ComputeRepair.computeAxiomWeight(modulesMap, reasonerName, totalRepairs);
         assertEquals("The axiom weight calculation is inaccurate!", expectedAxiomWeight, actualAxiomWeight);
         
     }

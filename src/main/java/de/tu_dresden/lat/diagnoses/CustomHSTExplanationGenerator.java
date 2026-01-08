@@ -299,7 +299,7 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
         for (OWLDeclarationAxiom decl : temporaryDeclarations) {
             assert decl != null;
             OntologyUtils.removeAxiom(decl, getReasoner().getRootOntology()
-                    .getImportsClosure().stream());
+                    .getImportsClosure(), getOntologyManager());
         }
         // Done with the axiom that was removed. Add it back in
         OntologyUtils.addAxiom(axiom, ontologies, getOntologyManager());
@@ -351,7 +351,7 @@ public class CustomHSTExplanationGenerator extends HSTExplanationGenerator {
         // Remove the current axiom from all the ontologies it is included
         // in
         Set<OWLOntology> ontologies = OntologyUtils.removeAxiom(axiom,
-                getReasoner().getRootOntology().getImportsClosure().stream());
+                getReasoner().getRootOntology().getImportsClosure(), getOntologyManager());
         collectTemporaryDeclarations(axiom, temporaryDeclarations);
         for (OWLDeclarationAxiom decl : temporaryDeclarations) {
             assert decl != null;

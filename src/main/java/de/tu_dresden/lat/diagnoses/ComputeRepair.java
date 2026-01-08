@@ -131,6 +131,9 @@ public class ComputeRepair {
 		OWLOntology defectModule =  Segmenter.getStarModule(ontology, axiom.getSignature(),
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
+
+		// OWLOntology defectModule = Segmenter.getStarModule(ontology, axiom.getSignature(), 
+		// 		ontology.getOntologyID().getOntologyIRI().orElse(IRI.create("http://example.org/temp-ontology")));
 		try{
 			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
 			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
@@ -1267,10 +1270,20 @@ public class ComputeRepair {
 
 	public static Map<OWLOntology, Set<OWLAxiom>> getPreferredRepair(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, EntityCheckerException{
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
+		//get the set of MDs with smallest size from allOptimalDiagnoses
+		//compute the repairs - preferred repairs
+		//if multiple preferred repairs -> check entailment and repairEntailMap
+		int minMDSize = allOptimalDiagnoses.stream()
+							.mapToInt(Set::size)
+							.min()
+							.orElse(0);
+		Set<Set<? extends OWLAxiom>> smallestMDs = allOptimalDiagnoses.stream()
+													.filter(s -> s.size() == minMDSize).collect(Collectors.toSet());
 		int max_entailed = 0;
 		Map<OWLOntology, Set<OWLAxiom>> repairEntailMap = new HashMap<>();
 		Map<OWLOntology, Set<OWLAxiom>> preferredRepairs = new HashMap<>();
-		for (Set<? extends OWLAxiom> diagnosisSet : allOptimalDiagnoses){
+
+		for (Set<? extends OWLAxiom> diagnosisSet : smallestMDs){
 			int ia_entailment_count = 0;
 
 			//for each repairOnto : add to map - <onto, num of entailments> then at the endfrom this map get the keys with highest value...check hamming distance and return the best ones
@@ -1323,6 +1336,7 @@ public class ComputeRepair {
 			repairHammingDist.put(bestRepair, distance);
 			return repairHammingDist;
 		}
+
 		for (OWLOntology repair : repairs) {
 			double distance = computeHammingDistance(ontology, repair);
 			if (distance < minDistance) {
@@ -1331,6 +1345,17 @@ public class ComputeRepair {
 			}
 		}
 		repairHammingDist.put(bestRepair, minDistance);
+		return repairHammingDist;
+	}
+
+	private static Map<OWLOntology, Double> getBestRepair(Map<OWLOntology, Set<OWLAxiom>> repairs, OWLOntology ontology) {
+		if (repairs == null || repairs.isEmpty()) return null;
+		Map<OWLOntology, Double> repairHammingDist = new HashMap<>();
+		OWLOntology bestRepair = null;
+		double minDistance = Double.MAX_VALUE;
+		bestRepair = repairs.keySet().iterator().next();
+		double distance = computeHammingDistance(ontology, bestRepair);
+		repairHammingDist.put(bestRepair, distance);
 		return repairHammingDist;
 	}
 
@@ -1359,8 +1384,10 @@ public class ComputeRepair {
 		if (unsatJust_yes!=null){
 			noRepairYes=true;
 		} else {
+			//getPreferredRepair -> getPreferredMDS i.e. the smallest MDs
 			preferredRepairs_yes = getPreferredRepair(updKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-			preferredRepair_yes = getBestHammingRepair(preferredRepairs_yes.keySet(), ontology);
+			// preferredRepair_yes = getBestHammingRepair(preferredRepairs_yes.keySet(), ontology);
+			preferredRepair_yes = getBestRepair(preferredRepairs_yes, ontology);
 			entailedIA_yes = preferredRepairs_yes.get(preferredRepair_yes.keySet().iterator().next());
 		}
 		
@@ -1370,7 +1397,8 @@ public class ComputeRepair {
 			noRepairNo=true;
 		} else {
 			preferredRepairs_no = getPreferredRepair(keepAxioms, updRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-			preferredRepair_no = getBestHammingRepair(preferredRepairs_no.keySet(), ontology);
+			// preferredRepair_no = getBestHammingRepair(preferredRepairs_no.keySet(), ontology);
+			preferredRepair_no = getBestRepair(preferredRepairs_no, ontology);
 			entailedIA_no = preferredRepairs_no.get(preferredRepair_no.keySet().iterator().next());
 		}
 
