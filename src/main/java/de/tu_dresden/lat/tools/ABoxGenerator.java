@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 import org.apache.log4j.Logger;
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
+import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.OWLXMLDocumentFormat;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -61,10 +62,11 @@ public class ABoxGenerator {
         //read the TBox ontology from the given path
         logger.info("Abox generating for "+ this.tboxOntoName);
         OWLOntologyManager manager = tbox.getOWLOntologyManager();
+        OWLOntologyManager aboxManager = OWLManager.createOWLOntologyManager();
         OWLDataFactory dataFactory = manager.getOWLDataFactory();
 
         IRI aboxIRI = IRI.create(tbox.getOntologyID().getOntologyIRI().get() + "_ABox");
-        OWLOntology abox = manager.createOntology(aboxIRI);
+        OWLOntology abox = aboxManager.createOntology(aboxIRI);
 
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
         ElkReasoner reasoner = reasonerFactory.createReasoner(tbox);
@@ -106,14 +108,14 @@ public class ABoxGenerator {
         startTime = System.nanoTime();
         for (OWLClass cls : selectedClasses) {
             OWLDeclarationAxiom declAxiom = dataFactory.getOWLDeclarationAxiom(cls);
-            manager.addAxiom(abox, declAxiom);
+            aboxManager.addAxiom(abox, declAxiom);
             //add random number of individuals per class
             int individualCount = 1 + (int)(Math.random() * 5); //between 1 and 5 individuals
             for (int i = 0; i < individualCount; i++) {
                 String individualIRI = cls.getIRI().toString() + "_indv_" + i;
                 OWLNamedIndividual individual = dataFactory.getOWLNamedIndividual(IRI.create(individualIRI));
                 OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(cls, individual);
-                manager.addAxiom(abox, classAssertion);
+                aboxManager.addAxiom(abox, classAssertion);
             }
         }
         endTime = System.nanoTime();
@@ -133,7 +135,7 @@ public class ABoxGenerator {
                 for (OWLClass sup : supClassHierarchy.get(cls)){
                     OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(sup, indv);
                     if (!abox.containsAxiom(classAssertion)) {
-                        manager.addAxiom(abox, classAssertion); //The inconsistent onto error probably from here
+                        aboxManager.addAxiom(abox, classAssertion); //The inconsistent onto error probably from here
                     }
                 }
             }
@@ -152,7 +154,7 @@ public class ABoxGenerator {
         //for add classes in map add assertions and avoid propagating to classes in avoid set
         for (OWLClassExpression ce : classExpressionsMap.get("add")){
             OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(ce, defectIndv);
-            manager.addAxiom(abox, classAssertion);
+            aboxManager.addAxiom(abox, classAssertion);
             Set<OWLClass> superClasses = supClassHierarchy.get(ce.asOWLClass());
             for (OWLClassExpression avoidCE : classExpressionsMap.get("avoid")){
                 superClasses.remove(avoidCE.asOWLClass());
@@ -160,7 +162,7 @@ public class ABoxGenerator {
             for (OWLClass sc : superClasses) {
                 OWLClassAssertionAxiom ax = dataFactory.getOWLClassAssertionAxiom(sc, defectIndv);
                 try{
-                    manager.addAxiom(abox, ax);
+                    aboxManager.addAxiom(abox, ax);
                 } catch (InconsistentOntologyException e){
                     System.out.println("Couldn't assert to superclass due to inconsistency" + sc);
                     continue;
@@ -177,7 +179,7 @@ public class ABoxGenerator {
         String aboxPath = outputDir + File.separator + tboxOntoName.split(".owl")[0] + "_ABox.owl";
         OutputStream outputstream = Files.newOutputStream(new File(aboxPath).toPath());
         OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
-        manager.saveOntology(abox, ontologyFormat, outputstream);
+        aboxManager.saveOntology(abox, ontologyFormat, outputstream);
         
         reasoner.dispose();
         aboxReasoner.dispose();
