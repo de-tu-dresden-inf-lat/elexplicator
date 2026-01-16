@@ -278,7 +278,7 @@ public class RunEvaluation {
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, rootNode);
     }
 
-    public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException {
+    public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException, EvaluationException {
         String examplePath = args[0];
         String intermediateOutDir = args[1];
         String outDirString = "OptionsEval";
@@ -350,8 +350,9 @@ public class RunEvaluation {
                 e.printStackTrace();
             }
             String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
+            List<String> options = Arrays.asList("option1", "option2", "option3", "user", "mix");
             try{
-                EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString);
+                EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, options);
                 List<RepairEvaluation> repEvalList = evaluateOptions.evaluateOpt();
                 writeToCSV(outDirString, repEvalList, exampleName);
                 logDecisions(outDirString, repEvalList, exampleName, axiom);

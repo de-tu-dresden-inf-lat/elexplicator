@@ -1,10 +1,11 @@
 package de.tu_dresden.lat.evaluate;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Array;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -18,7 +19,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import org.checkerframework.checker.units.qual.h;
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -40,6 +40,7 @@ import org.semanticweb.owlapi.reasoner.InconsistentOntologyException;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 
 import com.fasterxml.jackson.core.exc.StreamWriteException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -73,9 +74,9 @@ public class RunEvaluation2 {
             System.out.println("Error loading ontology "+exampleFile.getName());
             return null;
         }
-        Set<OWLAxiom> defectsSet = null;
+        List<OWLAxiom> defectsSet = null;
         try{
-            defectsSet = DefectSelector.selectNDefects(ontology, 10);
+            defectsSet = (List<OWLAxiom>) DefectSelector.selectNDefects(ontology, 10);
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -282,10 +283,16 @@ public class RunEvaluation2 {
     }
 
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException {
-        // String examplePath = args[0];
-        // String intermediateOutDir = args[1];
-        String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
-        String intermediateOutDir = examplePath;
+        String examplePath = args[0];
+        String intermediateOutDir = args[1];
+        Boolean resume = Boolean.parseBoolean(args[2]);  
+        // String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
+        //get an arg to specify if first run or rerun
+        //if rerun, read program state from a file and resume
+        // else start fresh
+
+        //for the first run, create output dir, get list of example files and serialize
+        // else read from serialized file
         String outDirString = "OptionsEval";
 
         if(!(new File(outDirString)).exists()){
@@ -296,92 +303,221 @@ public class RunEvaluation2 {
                 return;
             }
         }
-        Map<String, Object> example = new HashMap<>();
+
         File[] exampleFiles = null;
-        File resultFile = new File(outDirString + File.separator + "result.csv");
-        try {
-            Files.deleteIfExists(resultFile.toPath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        File exampleDir = new File(examplePath); 
-        exampleFiles = exampleDir.listFiles();
-        Arrays.sort(exampleFiles, Comparator.comparingLong(File::length));
-
-        for (File exampleFile : exampleFiles){
-            long fileSize = exampleFile.length();
-            example = loadExampleInstances(exampleFile, outDirString);
-            if (example == null){
-                continue;
-            }
+        Map<String, Object> example = new HashMap<>();
+        Map<String, Object> programState = new HashMap<>();
+        if (!resume){           
             
-            String exampleName = (String) example.get("example");
-            OWLOntology normalizedOntology = (OWLOntology) example.get("normalizedOntology");
-            Set<OWLAxiom> defectsSet = (Set<OWLAxiom>) example.get("defectAxiomsSet");
-            String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
-            // OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
-            for (OWLAxiom axiom : defectsSet){
-                System.out.println("Processing defect: "+axiom.toString());
-                String interestingAxiomOntology = null;
-                try{
-                    interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirString);
-                    System.out.print("Interesting axiom ontology generated!");
-                }
-                catch(Exception e){
-                    System.out.println("Error generating interesting axiom "+exampleFile.getName());
-                    continue;
-                }             
-            
-                ManchesterOWLSyntaxOWLObjectRendererImpl renderer = new ManchesterOWLSyntaxOWLObjectRendererImpl();
-                // renderer.setShortFormProvider(new SimpleShortFormProvider());;
-                renderer.setShortFormProvider(new ShortFormProvider() {
-                    @Override
-                    public String getShortForm(OWLEntity entity){
-                        return "<"+entity.getIRI().toString()+">";
-                    }
-
-                    @Override
-                    public void dispose(){}
-                });
-                String defectAxiomStr = renderer.render(axiom);
-                Map<String, Object> exampleTimeTracker = new HashMap<>();
-                try{
-                    ABoxGenerator aBoxGenerator = new ABoxGenerator(normalizedOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir);
-                    aBoxGenerator.generateABox();
-                    Map<String, Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
-                    exampleTimeTracker.put("Example", exampleName);
-                    exampleTimeTracker.put("Defect", defectAxiomStr);
-                    exampleTimeTracker.put("File Size (kB)", fileSize/1000);
-                    exampleTimeTracker.putAll(aboxGenTimeMap);               
-                    
-                } catch (InconsistentOntologyException e){
-                    System.out.println("Inconsistent Onto Error");
-                    continue;
-                } 
-                try{
-                    logAboxGenerationTime(exampleTimeTracker);
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-                String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
-                try{
-                    EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString);
-                    List<RepairEvaluation> repEvalList = evaluateOptions.evaluateOpt();
-                    writeToCSV(outDirString, repEvalList, exampleName, axiom);
-                    logDecisions(outDirString, repEvalList, exampleName, axiom);
-                    new File(aboxPathStr).delete();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            try{
-                new File(normOntologyPathStr).delete();
-            } catch (Exception e){
+            File resultFile = new File(outDirString + File.separator + "result.csv");
+            try {
+                Files.deleteIfExists(resultFile.toPath());
+            } catch (IOException e) {
                 e.printStackTrace();
             }
+            File exampleDir = new File(examplePath); 
+            exampleFiles = exampleDir.listFiles();
+            Arrays.sort(exampleFiles, Comparator.comparingLong(File::length));
+        } else {
+            //load from serialized file
+            exampleFiles = getExampleFiles();
+            programState = loadCheckpoint();
+        }
+        
+        List<String> options = Arrays.asList("option1", "option2", "option3", "user", "mix");
+        for (File exampleFile : exampleFiles){
+            if (resume && exampleFile.getName().equals(((Map<String, Object>) programState.get("currentExample")).get("example").toString())){
+                // resumeExample(send the deserialized program state) 
+                resumeExample(exampleFile, intermediateOutDir, programState, options);
+                resume = false;
+                continue;
+            } else if (resume){
+                continue;
+            } else {
+                example = loadExampleInstances(exampleFile, outDirString);
+                if (example == null){
+                    return;
+                }               
+                
+                runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
+            }
+            
 
         }
             
+    }
+
+    private static File[] getExampleFiles(){
+        File [] exampleFiles = null;
+        try{
+            FileInputStream exampleListIn = new FileInputStream("examplesList.ser");
+            ObjectInputStream in = new ObjectInputStream(exampleListIn);
+            exampleFiles = (File[]) in.readObject();
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return exampleFiles;
+        }
+        return exampleFiles;
+    }
+
+    private static Map<String, Object> loadCheckpoint(){
+        Map<String, Object> programState = new HashMap<>();
+        ObjectMapper objectMapper = new ObjectMapper();
+        File checkpointFile = new File("programState.json");
+        if (checkpointFile.exists() && checkpointFile.length() > 0){
+            try {
+                programState = objectMapper.readValue(checkpointFile, 
+                    new TypeReference<Map<String, Object>>(){}
+                );
+            } catch (IOException e) {
+                e.printStackTrace();
+                return programState;
+            }
+        }
+        return programState;
+    }
+
+    private static void resumeExample(File exampleFile, String intermediateOutDir, Map<String, Object> programState, List<String> options) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException{
+        // To-Do: implement resuming from serialized file
+        // get current defect axiom and current evaluation option
+        Map<String, Object> example = (Map<String, Object>) programState.get("currentExample");
+        String exampleName = (String) example.get("example");
+        String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
+        
+        String defectAxiomStr = programState.get("defectStr").toString();
+        String interestingAxiomOntology = programState.get("iaOnto").toString(); 
+        String aboxPathStr = programState.get("abox").toString();
+        String outDirString = programState.get("outDir").toString();
+        OWLAxiom defectAxiom = (OWLAxiom) programState.get("defectAxiom");
+        List<OWLAxiom> defectsList = (List<OWLAxiom>) example.get("defectAxiomsSet");
+
+        String evaluationOption = programState.get("currentOption").toString();
+        List<RepairEvaluation> repEvalList = new ArrayList<>();
+        if (!evaluationOption.equals("option1")){
+            repEvalList = (List<RepairEvaluation>) programState.get("evaluations");
+        }
+        List<String> remainingOpts = options.subList(options.indexOf(evaluationOption), options.size());
+        EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, remainingOpts);
+        try{
+            List<RepairEvaluation> newEvalList = evaluateOptions.evaluateOpt();
+            repEvalList.addAll(newEvalList);
+        } catch (EvaluationException e){
+            repEvalList.addAll(e.getEvaluationResults());
+            //log current state and break
+            String currentOption = evaluateOptions.currentOption;
+            programState.clear();
+            programState.put("currentExample", example);
+            programState.put("defectStr", defectAxiomStr);
+            programState.put("iaOnto", interestingAxiomOntology);
+            programState.put("abox", aboxPathStr);
+            programState.put("outDir", outDirString);
+            programState.put("defectAxiom", defectAxiom);
+            programState.put("currentOption", currentOption);
+            programState.put("evaluations", repEvalList);
+            saveCheckpoint(programState);
+            System.exit(1);
+        }
+        try {
+            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom);
+            logDecisions(outDirString, repEvalList, exampleName, defectAxiom);
+            new File(aboxPathStr).delete();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }       
+
+        List<OWLAxiom> remainingDefects = defectsList.subList(defectsList.indexOf(defectAxiom)+1, defectsList.size());
+        example.put("defectAxiomsSet", remainingDefects);
+        if (!remainingDefects.isEmpty()){
+            runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
+        }
+    }
+
+    private static void runExampleRepairEvaluation(File exampleFile, String outDirString, String intermediateOutDir, List<String> options, Map<String, Object> example) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException{
+        String exampleName = (String) example.get("example");
+        OWLOntology normalizedOntology = (OWLOntology) example.get("normalizedOntology");
+        List<OWLAxiom> defectsSet = (List<OWLAxiom>) example.get("defectAxiomsSet");
+        String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
+        long fileSize = exampleFile.length();
+
+        
+        // OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
+        for (OWLAxiom axiom : defectsSet){
+            System.out.println("Processing defect: "+axiom.toString());
+            String interestingAxiomOntology = null;
+            try{
+                interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirString);
+                System.out.print("Interesting axiom ontology generated!");
+            }
+            catch(Exception e){
+                System.out.println("Error generating interesting axiom "+exampleFile.getName());
+                continue;
+            }             
+        
+            ManchesterOWLSyntaxOWLObjectRendererImpl renderer = new ManchesterOWLSyntaxOWLObjectRendererImpl();
+            // renderer.setShortFormProvider(new SimpleShortFormProvider());;
+            renderer.setShortFormProvider(new ShortFormProvider() {
+                @Override
+                public String getShortForm(OWLEntity entity){
+                    return "<"+entity.getIRI().toString()+">";
+                }
+
+                @Override
+                public void dispose(){}
+            });
+            String defectAxiomStr = renderer.render(axiom);
+            Map<String, Object> exampleTimeTracker = new HashMap<>();
+            try{
+                ABoxGenerator aBoxGenerator = new ABoxGenerator(normalizedOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir);
+                aBoxGenerator.generateABox();
+                Map<String, java.lang.Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
+                exampleTimeTracker.put("Example", exampleName);
+                exampleTimeTracker.put("Defect", defectAxiomStr);
+                exampleTimeTracker.put("File Size (kB)", fileSize/1000);
+                exampleTimeTracker.putAll(aboxGenTimeMap);               
+                
+            } catch (InconsistentOntologyException e){
+                System.out.println("Inconsistent Onto Error");
+                continue;
+            } 
+            try{
+                logAboxGenerationTime(exampleTimeTracker);
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+            String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
+            EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, options);
+            List<RepairEvaluation> repEvalList = new ArrayList<>();
+            try{
+                repEvalList = evaluateOptions.evaluateOpt();
+            } catch (EvaluationException e){
+                String currentOption = evaluateOptions.currentOption;
+                Map<String, Object> programState = new HashMap<>();
+                programState.put("currentExample", example);
+                programState.put("defectStr", defectAxiomStr);
+                programState.put("iaOnto", interestingAxiomOntology);
+                programState.put("abox", aboxPathStr);
+                programState.put("outDir", outDirString);
+                programState.put("defectAxiom", axiom);
+                programState.put("currentOption", currentOption);
+                programState.put("evaluations", repEvalList);
+                saveCheckpoint(programState);
+                System.exit(1);
+            }
+            try{
+                writeToCSV(outDirString, repEvalList, exampleName, axiom);
+                logDecisions(outDirString, repEvalList, exampleName, axiom);
+                new File(aboxPathStr).delete();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try{
+            new File(normOntologyPathStr).delete();
+        } catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private static void logAboxGenerationTime(Map<String, Object> aboxGenTimeMap) throws IOException{
@@ -402,6 +538,16 @@ public class RunEvaluation2 {
         
         fw.flush();
         fw.close();
+    }
+
+    private static void saveCheckpoint(Map<String, Object> programState){
+        ObjectMapper objectMapper = new ObjectMapper();
+        File checkpointFile = new File("programState.json");
+        try {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(checkpointFile, programState);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 

@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.management.RuntimeErrorException;
+
 import org.semanticweb.owlapi.model.OWLOntology;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -26,13 +28,17 @@ public class EvaluateOptions {
     String interestingAxiomString;
     String aboxOntologyString;
     String outputPathString;
+    List<String> options;
+    Boolean errorOccurred = false;
+    String currentOption = "";
 
-    public EvaluateOptions(String ontoPath, String defectStr, String intAxiomsStr, String aboxOnto, String outPath){
+    public EvaluateOptions(String ontoPath, String defectStr, String intAxiomsStr, String aboxOnto, String outPath, List<String> options){
         this.ontologyPathString = ontoPath;
         this.defectAxiomString =defectStr;
         this.interestingAxiomString = intAxiomsStr;
         this.aboxOntologyString = aboxOnto;
         this.outputPathString = outPath;
+        this.options = options;
     }
 
     enum State {
@@ -42,7 +48,7 @@ public class EvaluateOptions {
                 WAITING_FOR_ANSWER
             }
             
-    public List<RepairEvaluation> evaluateOpt() {
+    public List<RepairEvaluation> evaluateOpt() throws EvaluationException {
         // String ontologyPathString = args[0];
         // String defectAxiomString = args[1];
         // String interestingAxiomString = args[2];
@@ -59,63 +65,66 @@ public class EvaluateOptions {
             "-r",  "ELK",
             "-ia", interestingAxiomString,
             "-od", outputPathString
-        };
-
-        List<String> options = new ArrayList<>();
-        options.add("option1");
-        options.add("option2");
-        options.add("option3");
-        options.add("user");
-        options.add("mix");
-        
-
+        };       
         for (String option : options){
+            this.currentOption = option;
+            Map<String, String> answersMap = null;
             double cost = -1;
-            Boolean noRepair = false;
             RepairEvaluation repEval = new RepairEvaluation(option);
             System.out.println("Running repair process for option: " + option);
-            if (option.equals("option1")){
-                Map<String, String> answersMap = runRepairProcess(commands, "1", Optional.empty());
-                repEval.setAnswersMap(answersMap);
-            } else if (option.equals("option2")){
-                Map<String, String> answersMap = runRepairProcess(commands, "2", Optional.empty());
-                repEval.setAnswersMap(answersMap);
-            } else if (option.equals("option3")){
-                Map<String, String> answersMap = runRepairProcess(commands, "3", Optional.empty());
-                repEval.setAnswersMap(answersMap);
-            } else if (option.equals("mix")){
-                Map<String, String> answersMap = runRepairProcess(commands, "mix", Optional.empty());
-                repEval.setAnswersMap(answersMap);
-            } else if (option.equals("user")){
-                while (true){
-                    Map<String, String> answersMap= runRepairProcess(commands, "user", Optional.of(yesProb));
-                    if (!answersMap.get("Status").equals("Repair not possible!")){
-                        repEval.setAnswersMap(answersMap);
-                        break;
-                    } else {
-                        yesProb = yesProb - 0.15;
-                        System.out.println(yesProb);
-                        if (yesProb < 0.0){
-                            System.out.println("No repair possible with user option.");
-                            repEval.setAnswersMap(answersMap);
-                            // noRepair = true;
+            try{
+                if (option.equals("option1")){
+                    answersMap = runRepairProcess(commands, "1", Optional.empty());
+                    repEval.setAnswersMap(answersMap);
+                } else if (option.equals("option2")){
+                    answersMap = runRepairProcess(commands, "2", Optional.empty());
+                    repEval.setAnswersMap(answersMap);
+                } else if (option.equals("option3")){
+                    answersMap = runRepairProcess(commands, "3", Optional.empty());
+                    repEval.setAnswersMap(answersMap);
+                } else if (option.equals("mix")){
+                    answersMap = runRepairProcess(commands, "mix", Optional.empty());
+                    repEval.setAnswersMap(answersMap);
+                } else if (option.equals("user")){
+                    while (true){
+                        answersMap= runRepairProcess(commands, "user", Optional.of(yesProb));
+                        if (answersMap == null){
+                            this.errorOccurred = true;
+                            System.out.println("Error occurred during repair process for user option.");
                             break;
                         }
-                        System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
+                        if (!answersMap.get("Status").equals("Repair not possible!")){
+                            repEval.setAnswersMap(answersMap);
+                            break;
+                        } else {
+                            yesProb = yesProb - 0.15;
+                            System.out.println(yesProb);
+                            if (yesProb < 0.0){
+                                System.out.println("No repair possible with user option.");
+                                repEval.setAnswersMap(answersMap);
+                                // noRepair = true;
+                                break;
+                            }
+                            System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
+                        }
                     }
                 }
+            } catch (RuntimeErrorException e){
+                this.errorOccurred = true;
+                throw new EvaluationException("Error during repair process execution for option: " + option, e, evalList);
             }
-            // if (!noRepair){
+            
             if(repEval.getAnswersMap().get("Status").equals("Repair reached!")){
-                System.out.println("Computing cost!");
-                cost = evaluateRepair();
+            System.out.println("Computing cost!");
+            cost = evaluateRepair();
             } else {
                 cost = -1;
-            }             
-            // }              
+            }  
             repEval.setCost(cost);
             System.out.println("Total repair cost for option " + option + ": " + cost);
             evalList.add(repEval);
+                      
+            
         }
         
         return evalList;
@@ -227,7 +236,7 @@ public class EvaluateOptions {
             return answersMap;             
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            throw new RuntimeException("Error during repair process execution.");
         } finally {
             if (process!=null){
                 process.destroy();
