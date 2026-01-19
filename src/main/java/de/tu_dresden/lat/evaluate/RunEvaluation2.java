@@ -341,9 +341,8 @@ public class RunEvaluation2 {
                 
                 runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
             }
-            
-
         }
+        saveCheckpoint(Map.of("status", "Success"), outDirString);
             
     }
 
@@ -407,6 +406,7 @@ public class RunEvaluation2 {
             //log current state and break
             String currentOption = evaluateOptions.currentOption;
             programState.clear();
+            programState.put("status", "Failure");
             programState.put("currentExample", example);
             programState.put("defectStr", defectAxiomStr);
             programState.put("iaOnto", interestingAxiomOntology);
@@ -415,7 +415,7 @@ public class RunEvaluation2 {
             programState.put("defectAxiom", defectAxiom);
             programState.put("currentOption", currentOption);
             programState.put("evaluations", repEvalList);
-            saveCheckpoint(programState);
+            saveCheckpoint(programState, outDirString);
             System.exit(1);
         }
         try {
@@ -494,6 +494,7 @@ public class RunEvaluation2 {
             } catch (EvaluationException e){
                 String currentOption = evaluateOptions.currentOption;
                 Map<String, Object> programState = new HashMap<>();
+                programState.put("status", "Failure");
                 programState.put("currentExample", example);
                 programState.put("defectStr", defectAxiomStr);
                 programState.put("iaOnto", interestingAxiomOntology);
@@ -502,7 +503,7 @@ public class RunEvaluation2 {
                 programState.put("defectAxiom", axiom);
                 programState.put("currentOption", currentOption);
                 programState.put("evaluations", repEvalList);
-                saveCheckpoint(programState);
+                saveCheckpoint(programState, outDirString);
                 System.exit(1);
             }
             try{
@@ -540,9 +541,9 @@ public class RunEvaluation2 {
         fw.close();
     }
 
-    private static void saveCheckpoint(Map<String, Object> programState){
+    private static void saveCheckpoint(Map<String, Object> programState, String outDirString){
         ObjectMapper objectMapper = new ObjectMapper();
-        File checkpointFile = new File("programState.json");
+        File checkpointFile = new File(outDirString + File.separator + "programState.json");
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(checkpointFile, programState);
         } catch (IOException e) {
