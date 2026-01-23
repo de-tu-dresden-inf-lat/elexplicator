@@ -76,7 +76,7 @@ public class RunEvaluation2 {
         }
         List<OWLAxiom> defectsSet = null;
         try{
-            defectsSet = (List<OWLAxiom>) DefectSelector.selectNDefects(ontology, 10);
+            defectsSet = new ArrayList<>(DefectSelector.selectNDefects(ontology, 10));
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -84,9 +84,12 @@ public class RunEvaluation2 {
             System.out.println("Error selecting defects"+exampleFile.getName());
             return null;
         }
+
+        int axiomCount = 0;
         try{
             OntologyToDNF ontToDNF = new OntologyToDNF(normalized);
             normalized = ontToDNF.normalizeOntology();
+            axiomCount = ontology.getLogicalAxiomCount();
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
             OutputStream outputstream = Files.newOutputStream(new File(normalizedFilePath).toPath());
             OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
@@ -101,54 +104,11 @@ public class RunEvaluation2 {
         map.put("normalizedOntology", normalized);
         map.put("defectAxiomsSet", defectsSet);
         map.put("ontologyPathStr", exampleFile.getPath());  
-        map.put("normalizedOntologyPathStr", normalizedFilePath);     
+        map.put("normalizedOntologyPathStr", normalizedFilePath); 
+        map.put("axiomCount", axiomCount);    
         
         return map;
 
-    }
-
-    
-    private static OWLAxiom selectDefectAxiom(String ontologyPath) throws OWLOntologyCreationException{
-        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-        OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-        ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-        List<OWLClass> signClasses = new ArrayList<>(ontology.getClassesInSignature());
-        signClasses.removeAll(Collections.singleton(reasoner.getRootOntology().getOWLOntologyManager()
-        .getOWLDataFactory().getOWLThing()));
-    
-        Collections.shuffle(signClasses);
-        Set<OWLClass> classes = new HashSet<>(signClasses.subList(0, Math.min(20, signClasses.size())));
-        OWLDataFactory factory = manager.getOWLDataFactory();
-
-        List<OWLSubClassOfAxiom> axiomList = new ArrayList<>(); 
-        for (OWLClass owlClass : classes){
-            Set<OWLClass> inferredSubClasses = new HashSet<>();
-            inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
-
-            if(!inferredSubClasses.isEmpty()){
-                for (OWLClass inferredSubClass : inferredSubClasses){
-                    if(ontology.containsClassInSignature(inferredSubClass.getIRI())){
-                        OWLSubClassOfAxiom axiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
-                        if (!ontology.containsAxiom(axiom) && !inferredSubClass.isBottomEntity()){
-                            axiomList.add(axiom);
-                        }
-                    }
-                    
-                }
-            }
-        }
-        reasoner.dispose();
-        reasoner = null;
-        manager.removeOntology(ontology);
-        System.gc();
-        if(axiomList.isEmpty()){
-            axiomList = new ArrayList<>(ontology.getAxioms(AxiomType.SUBCLASS_OF));
-        }
-        Random random = new Random();
-        OWLAxiom selectedDefectAxiom = axiomList.get(random.nextInt(axiomList.size()));
-        System.out.println("Defect axiom selected: "+selectedDefectAxiom.toString());
-        return selectedDefectAxiom;
     }
 
     private static String generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom, String outDirStr) throws OWLOntologyCreationException, IOException{
@@ -221,28 +181,28 @@ public class RunEvaluation2 {
         return IApath;
     }
 
-    private static void writeToCSV(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom) throws IOException{
+    private static void writeToCSV(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom, int axiomCount) throws IOException{
         File resultfile = new File(filePath+File.separator+"result.csv");
         
         
         FileWriter writer = new FileWriter(filePath+File.separator+"result.csv", true);
         
-        List<String> headers = new ArrayList<>();
-        headers.add("Example");
-        headers.add("Defect Axiom");
+        List<String> headers = new ArrayList<>(Arrays.asList("Example", "Defect Axiom", "Axiom Count"));
         for (RepairEvaluation e : repairEval){
             headers.add(e.optionName);
         }
+        headers.addAll(Arrays.asList("Repair Time", "Evaluation Time"));
 
         if (resultfile.exists() && resultfile.length() == 0){
             writer.append(String.join(",", headers)).append("\n");
         }
-        headers.remove("Example");
+
         List<String> values = new ArrayList<>();
-        values.add(exampleName);
-        values.add(axiom.toString());
+        values.addAll(Arrays.asList(exampleName, axiom.toString(), String.valueOf(axiomCount)));
         for (int i=0; i<repairEval.size(); i++){
             values.add(String.valueOf(repairEval.get(i).cost));
+            values.add(String.valueOf(repairEval.get(i).getRepairTime()));
+            values.add(String.valueOf(repairEval.get(i).getEvaluationTime()));
         }
         writer.append(String.join(",", values));
         writer.append("\n");
@@ -251,7 +211,7 @@ public class RunEvaluation2 {
         writer.close();
     }
 
-    private static void logDecisions(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom) throws StreamWriteException, DatabindException, IOException{
+    private static void logDecisions(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom, int axiomCount) throws StreamWriteException, DatabindException, IOException{
         ObjectMapper objectMapper = new ObjectMapper();
         File jsonFile = new File(filePath + File.separator + "decisons.json");
 
@@ -266,6 +226,7 @@ public class RunEvaluation2 {
 
         ObjectNode exampleDetailsNode = objectMapper.createObjectNode();
         exampleDetailsNode.put("Defect", axiom.toString());
+        exampleDetailsNode.put("Axiom Count", axiomCount);
         exampleDetailsNode.put("Evaluation", evalListNode);
 
         if (rootNode.has(exampleName)){
@@ -283,17 +244,13 @@ public class RunEvaluation2 {
     }
 
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException {
-        String examplePath = args[0];
-        String intermediateOutDir = args[1];
-        Boolean resume = Boolean.parseBoolean(args[2]);  
-        // String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
-        //get an arg to specify if first run or rerun
-        //if rerun, read program state from a file and resume
-        // else start fresh
-
-        //for the first run, create output dir, get list of example files and serialize
-        // else read from serialized file
+        // String examplePath = args[0];
+        // String intermediateOutDir = args[1];
+        // Boolean resume = Boolean.parseBoolean(args[2]);  
         String outDirString = "OptionsEval";
+        String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
+        String intermediateOutDir = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
+        Boolean resume = false;
 
         if(!(new File(outDirString)).exists()){
             try {
@@ -308,7 +265,6 @@ public class RunEvaluation2 {
         Map<String, Object> example = new HashMap<>();
         Map<String, Object> programState = new HashMap<>();
         if (!resume){           
-            
             File resultFile = new File(outDirString + File.separator + "result.csv");
             try {
                 Files.deleteIfExists(resultFile.toPath());
@@ -383,6 +339,7 @@ public class RunEvaluation2 {
         Map<String, Object> example = (Map<String, Object>) programState.get("currentExample");
         String exampleName = (String) example.get("example");
         String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
+        int axiomCount = (int) example.get("axiomCount");
         
         String defectAxiomStr = programState.get("defectStr").toString();
         String interestingAxiomOntology = programState.get("iaOnto").toString(); 
@@ -415,12 +372,13 @@ public class RunEvaluation2 {
             programState.put("defectAxiom", defectAxiom);
             programState.put("currentOption", currentOption);
             programState.put("evaluations", repEvalList);
+            programState.put("axiomCount", example.get("axiomCount"));
             saveCheckpoint(programState, outDirString);
             System.exit(1);
         }
         try {
-            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom);
-            logDecisions(outDirString, repEvalList, exampleName, defectAxiom);
+            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom, axiomCount);
+            logDecisions(outDirString, repEvalList, exampleName, defectAxiom, axiomCount);
             new File(aboxPathStr).delete();
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -440,6 +398,7 @@ public class RunEvaluation2 {
         List<OWLAxiom> defectsSet = (List<OWLAxiom>) example.get("defectAxiomsSet");
         String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
         long fileSize = exampleFile.length();
+        int axiomCount = (int) example.get("axiomCount");
 
         
         // OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
@@ -503,12 +462,13 @@ public class RunEvaluation2 {
                 programState.put("defectAxiom", axiom);
                 programState.put("currentOption", currentOption);
                 programState.put("evaluations", repEvalList);
+                programState.put("axiomCount", axiomCount);
                 saveCheckpoint(programState, outDirString);
                 System.exit(1);
             }
             try{
-                writeToCSV(outDirString, repEvalList, exampleName, axiom);
-                logDecisions(outDirString, repEvalList, exampleName, axiom);
+                writeToCSV(outDirString, repEvalList, exampleName, axiom, axiomCount);
+                logDecisions(outDirString, repEvalList, exampleName, axiom, axiomCount);
                 new File(aboxPathStr).delete();
             } catch (IOException e) {
                 e.printStackTrace();

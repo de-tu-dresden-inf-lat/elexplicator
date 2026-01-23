@@ -7,6 +7,8 @@ public class RepairEvaluation {
     String optionName;
     Map<String, String> answersMap;
     double cost;
+    long repairTime;
+    long evaluationTime;
 
     public RepairEvaluation(String optionName){
         this.optionName = optionName;
@@ -40,5 +42,21 @@ public class RepairEvaluation {
         return this.cost;
     }
 
+    public void setRepairTime(long repairTime){
+        this.repairTime = repairTime;
+    
+    }
+
+    public long getRepairTime(){
+        return this.repairTime;
+    }
+
+    public void setEvaluationTime(long evaluationTime){
+        this.evaluationTime = evaluationTime;
+    }
+
+    public long getEvaluationTime(){
+        return this.evaluationTime;
+    }
 }
 

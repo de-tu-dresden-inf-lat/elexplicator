@@ -12,6 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.management.RuntimeErrorException;
 
@@ -41,12 +46,7 @@ public class EvaluateOptions {
         this.options = options;
     }
 
-    enum State {
-                NORMAL,
-                WAITING_FOR_OPTIONS,
-                WAITING_FOR_RESULTS,
-                WAITING_FOR_ANSWER
-            }
+    
             
     public List<RepairEvaluation> evaluateOpt() throws EvaluationException {
         // String ontologyPathString = args[0];
@@ -54,7 +54,6 @@ public class EvaluateOptions {
         // String interestingAxiomString = args[2];
         // String aboxOntologyString = args[3];
         // String outputPathString = args[4];
-        double yesProb = 0.75;
 
         List<RepairEvaluation> evalList = new ArrayList<>();
 
@@ -72,312 +71,123 @@ public class EvaluateOptions {
             double cost = -1;
             RepairEvaluation repEval = new RepairEvaluation(option);
             System.out.println("Running repair process for option: " + option);
+            ExecutorService service = Executors.newSingleThreadExecutor();
             try{
                 if (option.equals("option1")){
-                    answersMap = runRepairProcess(commands, "1", Optional.empty());
-                    repEval.setAnswersMap(answersMap);
+                    RunRepairProcess repairProcess = new RunRepairProcess(commands, "1", Optional.empty(), outputPathString, aboxOntologyString);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
                 } else if (option.equals("option2")){
-                    answersMap = runRepairProcess(commands, "2", Optional.empty());
-                    repEval.setAnswersMap(answersMap);
+                    RunRepairProcess repairProcess = new RunRepairProcess(commands, "2", Optional.empty(), outputPathString, aboxOntologyString);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
                 } else if (option.equals("option3")){
-                    answersMap = runRepairProcess(commands, "3", Optional.empty());
-                    repEval.setAnswersMap(answersMap);
+                    RunRepairProcess repairProcess = new RunRepairProcess(commands, "3", Optional.empty(), outputPathString, aboxOntologyString);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
                 } else if (option.equals("mix")){
-                    answersMap = runRepairProcess(commands, "mix", Optional.empty());
-                    repEval.setAnswersMap(answersMap);
+                    RunRepairProcess repairProcess = new RunRepairProcess(commands, "mix", Optional.empty(), outputPathString, aboxOntologyString);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
                 } else if (option.equals("user")){
-                    while (true){
-                        answersMap= runRepairProcess(commands, "user", Optional.of(yesProb));
-                        if (answersMap == null){
-                            this.errorOccurred = true;
-                            System.out.println("Error occurred during repair process for user option.");
-                            break;
-                        }
-                        if (!answersMap.get("Status").equals("Repair not possible!")){
-                            repEval.setAnswersMap(answersMap);
-                            break;
-                        } else {
-                            yesProb = yesProb - 0.15;
-                            System.out.println(yesProb);
-                            if (yesProb < 0.0){
-                                System.out.println("No repair possible with user option.");
-                                repEval.setAnswersMap(answersMap);
-                                // noRepair = true;
-                                break;
-                            }
-                            System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
-                        }
-                    }
+                    repEval = runUserOption(commands, repEval);
                 }
             } catch (RuntimeErrorException e){
                 this.errorOccurred = true;
                 throw new EvaluationException("Error during repair process execution for option: " + option, e, evalList);
             }
-            
+
+            //if not timeout and answersMap not null compute cost
             if(repEval.getAnswersMap().get("Status").equals("Repair reached!")){
-            System.out.println("Computing cost!");
-            cost = evaluateRepair();
+                System.out.println("Computing cost!");
+                
+                ExecutorService executor = Executors.newSingleThreadExecutor();
+                Future<Double> future = executor.submit(() -> evaluateRepair());
+
+                try {
+                    long startTime = System.currentTimeMillis();
+                    cost = future.get(15, TimeUnit.SECONDS);
+                    long endTime = System.currentTimeMillis();
+                    repEval.setEvaluationTime(endTime-startTime);
+                } catch (TimeoutException e) {
+                    future.cancel(true); // interrupts the thread
+                    repEval.setEvaluationTime(-1);
+                    System.out.println("Timeout during cost evaluation.");
+                } catch (Exception e) {
+                    this.errorOccurred = true;
+                    throw new EvaluationException("Error during repair evaluation for option: " + option, e, evalList);
+                } finally {
+                    executor.shutdown();
+                    try{
+                        executor.awaitTermination(30, TimeUnit.SECONDS);
+                    }catch (InterruptedException e){
+                        executor.shutdownNow();
+                    }
+                }
+                
             } else {
                 cost = -1;
             }  
             repEval.setCost(cost);
             System.out.println("Total repair cost for option " + option + ": " + cost);
+            System.out.println(repEval.getRepairTime());
             evalList.add(repEval);
-                      
-            
         }
         
         return evalList;
         
     }
 
-    private Map<String, String> runRepairProcess(String[] commands, String option, Optional<Double> yesProbOpt) {
-        ProcessBuilder pb = new ProcessBuilder(commands);
-        pb.redirectErrorStream(true);
-        Process process = null;
+    private RepairEvaluation runRepairWithTimeout(RunRepairProcess process, RepairEvaluation repEval, long timeout) throws RuntimeErrorException {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Future<Map<String, String>> future = executor.submit(process);
         try {
-            process = pb.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-
-            StringBuilder recentOutput = new StringBuilder();
-            String line;
-
-            State currentState = State.NORMAL;
-            Map<String, String> answersMap = new HashMap<>();
-            String question = "";
-            String prevLine = "";
-            while ((line = reader.readLine()) != null) {
-                // System.out.println("JAR output: " + line);
-                recentOutput.append(line).append("\n");
-                if (recentOutput.toString().contains("\u0007")) {
-                    String inputText = null;
-                    String outputText = recentOutput.toString();
-                    switch (currentState){
-                        
-                        case WAITING_FOR_OPTIONS:
-                            if (option.equals("mix")){
-                                inputText = "1,2,3"; //mix option
-                            } else if (option.equals("user")){
-                                inputText = ""; //user option
-                            } else {
-                                inputText = option; //option 1,2,3
-                            }
-                            currentState = State.WAITING_FOR_RESULTS;
-                            break;
-                        case WAITING_FOR_RESULTS:
-                            inputText = "";
-                            currentState = State.WAITING_FOR_ANSWER;
-                            break;
-                        case WAITING_FOR_ANSWER:
-                            if (option.equals("1")){
-                                inputText = option1Decision(); // call the function to read from the impact file and decide on the result.
-                            } else if (option.equals("2")){
-                                inputText = option2Decision(); // call the function to read from the impact file and decide on the result.
-                            } else if (option.equals("3")){
-                                inputText = option3Decision(); // call the function to read from the impact file and decide on the result.
-                            } else if (option.equals("mix")){
-                                inputText = optionMixDecision(outputPathString); // call the function to read from the impact file and decide on the result.
-                            } else if (option.equals("user")){
-                                double yesProb = Optional.of(yesProbOpt).get().get();
-                                inputText = optionUserDecision(yesProb); // call the function to read from the impact file and decide on the result.
-                            }
-                            answersMap.put(question, inputText);
-                            System.out.println("Question: "+question + "\nAnswer: " + inputText);
-                            currentState = State.NORMAL;
-                            break;
-                        case NORMAL:
-                        default:
-                            if(outputText.contains("All justifications have been computed.")){
-                                inputText = "save";
-                            }
-
-                            else if (outputText.contains("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.")){
-                                inputText = "save";                                
-                            }
-
-                            else if (outputText.contains("Enter the filename to save as:")){
-                                inputText = "repairOntology";
-                                answersMap.put("Status", "Repair reached!");
-                            }
-
-                            else if (outputText.contains("The resulting ontology is not a repair")){
-                                inputText = "Cancel\nExit";
-                                if (answersMap.size() > 1){
-                                    answersMap.put("Status", "Repair not possible!");
-                                } else {
-                                    answersMap.put("Status", "No selection!");
-                                }                                
-                            }
-                            else{
-                                //read the axiom in outputText
-                                // if option is not "not sure", currentState = Waiting for options:
-                                question = prevLine.trim();
-                                System.out.println("Q: " + question);
-                                if (!option.equals("user")){
-                                    currentState = State.WAITING_FOR_OPTIONS;
-                                    inputText = "not sure";
-                                } else {
-                                    inputText = "";
-                                    currentState = State.WAITING_FOR_ANSWER;
-                                }
-                            }
-                            break;
-                        
-                    }
-                    writer.write(inputText + "\n");
-                    writer.flush();
-                    recentOutput.setLength(0);
-                }
-                prevLine = line;
-            }
-            System.out.println("Answers given: " + answersMap); 
-            return answersMap;             
+            long startTime = System.currentTimeMillis();
+            Map<String, String> answersMap = future.get(timeout, TimeUnit.SECONDS);
+            long endTime = System.currentTimeMillis();
+            repEval.setRepairTime(endTime-startTime);
+            repEval.setAnswersMap(answersMap);
+            return repEval;
+        } catch (TimeoutException e) {
+            future.cancel(true); // interrupts the thread
+            System.out.println("Timeout");
+            repEval.setAnswersMap(Map.of("Status", "Timeout"));
+            repEval.setRepairTime(-1);
+            return repEval;
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Error during repair process execution.");
+            this.errorOccurred = true;
+            throw new RuntimeErrorException(new Error("Repair process execution failed."), e.getMessage());
         } finally {
-            if (process!=null){
-                process.destroy();
-                try{
-                    process.waitFor();
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
+            executor.shutdown();
+            try{
+                executor.awaitTermination(30, TimeUnit.SECONDS);
+            }catch (InterruptedException e){
+                executor.shutdownNow();
             }
         }
-            
-            
     }
 
-    private String option1Decision() throws IOException {
-        double sumYes = 0.0;
-        double sumNo = 0.0;
-        // Read from json file. Sum the probabilities for "yes" and "no". return the option with higher probability.
-        String probabilitiesJson = outputPathString + File.separator + "probabilities.json";
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> probabilitiesMap = objectMapper.readValue(new File(probabilitiesJson), new TypeReference<Map<String, Object>>(){});
-        if (probabilitiesMap.get("yes") instanceof String){
-            return "no";
-        } else {
-            Map<String, Double> probabilitiesYes = (Map<String, Double>) probabilitiesMap.get("yes");
-            sumYes = probabilitiesYes.values().stream().mapToDouble(Double::doubleValue).sum();
-        }
-
-        if (probabilitiesMap.get("no") instanceof String){
-            return "yes";
-        } else {
-            Map<String, Double> probabilitiesNo = (Map<String, Double>) probabilitiesMap.get("no");
-            sumNo = probabilitiesNo.values().stream().mapToDouble(Double::doubleValue).sum();
-        }
-        if (sumYes >= sumNo)
-            return "yes";
-        else
-            return "no";    
-    }
-
-    private String option2Decision() throws IOException {
-        //Read from class hierarchy json file, the two owl class hierarchies and evaluate them with the computeCost function. Select the one with lowest and answer accordingly.
-        double costYes = 0.0;
-        double costNo = 0.0;
-        String ontologyYes = outputPathString + File.separator + "ontoYes.owl";
-        String ontologyNo = outputPathString + File.separator + "ontoNo.owl";
-        String jsonFile = outputPathString + File.separator + "classHierarchyDifference.json";
-        ObjectMapper objectMapper = new ObjectMapper();
-        Map<String, Object> classHierarchyMap = objectMapper.readValue(new File(jsonFile), new TypeReference<Map<String, Object>>(){});
-        
-        Boolean repairYes = (Boolean) classHierarchyMap.get("repairYes");
-        Boolean repairNo = (Boolean) classHierarchyMap.get("repairNo");
-        
-        if (repairYes && repairNo){
-            System.out.println("Repair possible from both");
-            costYes = CostComputing.CostComputing(ontologyYes, aboxOntologyString);
-            costNo = CostComputing.CostComputing(ontologyNo, aboxOntologyString);
-            if (costYes <= costNo){
-                return "yes"; 
-            } else {
-                return "no";
+    private RepairEvaluation runUserOption(String[] commands, RepairEvaluation repEval) throws RuntimeErrorException {
+        double yesProb = 0.75;
+        while (yesProb >= 0.0){
+            RunRepairProcess repairProcess = new RunRepairProcess(commands, "user", Optional.of(yesProb), outputPathString, aboxOntologyString);
+            
+            RepairEvaluation repEvalResult = runRepairWithTimeout(repairProcess, repEval, 15);
+            if (!repEvalResult.getAnswersMap().get("Status").equals("Repair not possible!")){
+                return repEvalResult;
             } 
-        } else if (repairYes && !repairNo){
-            System.out.println("Repair possible from yes");
-            return "yes";
-        } else if (!repairYes && repairNo){
-            System.out.println("Repair possible from no");
-            return "no";
-        } else{
-            System.out.println("Repair possible from none");
-            return "yes";
-        }     
-    }
 
-    private String option3Decision() throws IOException {
-        String answer = "yes";
-        Double hammingYes = 0.0;
-        Double hammingNo = 0.0;
-        String probabilitiesJson = outputPathString + File.separator + "hammingDistance.json";
-        ObjectMapper objectMapper = new ObjectMapper();
-        JsonNode rootNode = objectMapper.readTree(new File(probabilitiesJson));
-        if (rootNode.get("hamming_yes").isTextual()){ //i.e. no repair when option "yes" is chosen
-            answer = "no";
-            return answer;
-        } else {
-            hammingYes = rootNode.get("hamming_yes").asDouble();
+            yesProb = yesProb - 0.15;
+            System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
         }
-
-        if (rootNode.get("hamming_no").isTextual()){ //i.e. no repair when option "no" is chosen
-            answer = "yes";
-            return answer;
-        } else {
-            hammingNo = rootNode.get("hamming_no").asDouble();
-        }
-
-        if (hammingYes <= hammingNo){
-            answer = "yes";
-        } else {
-            answer = "no";
-        }
-        
-        return answer;
-    }
-
-    private String optionUserDecision(double yesProb) {
-        String decision = Math.random() < yesProb ? "yes" : "no";
-        return decision;
-        
-    }
-    private String optionMixDecision(String outputPathString) throws IOException {
-        List<String> answers = new ArrayList<>();
-        answers.add(option1Decision());
-        answers.add(option2Decision());
-        answers.add(option3Decision());
-
-        long countYes = answers.stream().filter(ans -> ans.equals("yes")).count();
-        long countNo = answers.stream().filter(ans -> ans.equals("no")).count();
-
-        if (countYes >= countNo){
-            return "yes";
-        } else {
-            return "no";
-        }
+        repEval.setAnswersMap(Map.of("Status", "Repair not possible!"));
+        return repEval;
     }
 
     private double evaluateRepair() {
-        // TO DO: for ontologies with name starting with RepairOntology and file type .owl computeCost and store the result in map.
-        //return the sum of costs.
-        //for file in outputPathString
         File outputDir = new File(outputPathString);
         double repairCost = 0.0;
         for (File outFile : outputDir.listFiles()) {
             if (outFile.isFile() && outFile.getName().startsWith("repairOntology") && outFile.getName().endsWith(".owl")) {
                 String repairOntologyPath = outFile.getAbsolutePath();
-                double cost = CostComputing.CostComputing(repairOntologyPath, aboxOntologyString);
-                if (cost >= 0) {
-                    System.out.println("Computed cost for " + outFile.getName() + ": " + cost);
-                    repairCost += cost;
-                } else {
-                    System.out.println("Failed to compute cost for " + outFile.getName());
-                }
+                repairCost = CostComputing.CostComputing(repairOntologyPath, aboxOntologyString);
+                outFile.delete();
             }
         }
         return repairCost;
