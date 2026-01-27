@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
 set -x
 
 echo "Evaluating Not Sure Options"
@@ -11,16 +13,16 @@ current=0;
 p='elexplicator'
 u='service'
 
-more=0;
+more=0
 
-checkpoint = 'OptionsEval/programState.json'
+checkpoint='OptionsEval/programState.json'
 
 
-examples_dir='/home/service/Desktop/Examples2'
-intermediate_out_dir='/home/service/Desktop/Examples2'
+examples_dir='/home/service/Desktop/Examples'
+intermediate_out_dir='/home/service/Desktop/Examples'
 
-echo "Watching out for -> process = "$p", user = "$u
-if ! id -u $u > /dev/null;
+echo "Watching out for -> process = $p, user = $u"
+if ! id -u "$u" &> /dev/null;
 then
 	more=2;
 fi
@@ -32,35 +34,35 @@ CLASS_NAME="de.tu_dresden.lat.evaluate.RunEvaluation2"
 
 status_value="Failure";
 
-while [ $more -eq 0];
+while (( more == 0 ));
 do 
-	if [$current -eq 0];
+	if (( current == 0 ));
 	then 
-		current=$total;
-		if ! pgrep -u $u -x $p > /dev/null;
+		current=$total
+		if ! pgrep -u "$u" -x "$p" > /dev/null;
 		then 
-			echo "Run number: "$reRuns
-			if [ $reRuns -gt 0 ];
+			echo "Run number: $reRuns"
+			if (( reRuns > 0 ));
 			then 
-				status_value=$(grep -oP '"status":*"\K[^"]+' "$checkpoint");
-				if [[ $status_value == "Success" ]];
+				status_value=$(grep -oP '"status"\s*:*"\K[^"]+' "$checkpoint");
+				if [[ "$status_value" == "Success" ]];
 				then 
 					echo "Process completed successfully. Exiting.";
 					more=1;
 					exit 1;
 				fi
 			fi
-			if [ $reRuns -eq 0 ];
+			if (( reRuns == 0 ));
 			then 
 				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "False" -XX:+ExitOnOutOfMemoryError
 			else
 				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "True" -XX:+ExitOnOutOfMemoryError 
 			fi
-			let $reRuns=$reRuns+1;
+			((reRuns++))
 			sleep 5;
 		fi
 	else
-		let $current=$current-1;
+		((current--));
 		sleep 5;
 	fi
 done

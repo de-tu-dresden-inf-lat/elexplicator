@@ -190,8 +190,9 @@ public class RunEvaluation2 {
         List<String> headers = new ArrayList<>(Arrays.asList("Example", "Defect Axiom", "Axiom Count"));
         for (RepairEvaluation e : repairEval){
             headers.add(e.optionName);
+            headers.add(e.optionName + "_repairTime");
+            headers.add(e.optionName + "_evaluationTime");
         }
-        headers.addAll(Arrays.asList("Repair Time", "Evaluation Time"));
 
         if (resultfile.exists() && resultfile.length() == 0){
             writer.append(String.join(",", headers)).append("\n");
@@ -244,13 +245,13 @@ public class RunEvaluation2 {
     }
 
     public static void main(String[] args) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException {
-        // String examplePath = args[0];
-        // String intermediateOutDir = args[1];
-        // Boolean resume = Boolean.parseBoolean(args[2]);  
+        String examplePath = args[0];
+        String intermediateOutDir = args[1];
+        Boolean resume = Boolean.parseBoolean(args[2]);  
         String outDirString = "OptionsEval";
-        String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
-        String intermediateOutDir = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
-        Boolean resume = false;
+        // String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
+        // String intermediateOutDir = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
+
 
         if(!(new File(outDirString)).exists()){
             try {
@@ -389,6 +390,8 @@ public class RunEvaluation2 {
         example.put("defectAxiomsSet", remainingDefects);
         if (!remainingDefects.isEmpty()){
             runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
+        } else {
+            new File(normOntologyPathStr).delete();
         }
     }
 
