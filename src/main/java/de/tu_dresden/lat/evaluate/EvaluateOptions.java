@@ -75,16 +75,16 @@ public class EvaluateOptions {
             try{
                 if (option.equals("option1")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "1", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
                 } else if (option.equals("option2")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "2", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
                 } else if (option.equals("option3")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "3", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
                 } else if (option.equals("mix")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "mix", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 15);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
                 } else if (option.equals("user")){
                     repEval = runUserOption(commands, repEval);
                 }
@@ -102,7 +102,7 @@ public class EvaluateOptions {
 
                 try {
                     long startTime = System.currentTimeMillis();
-                    cost = future.get(15, TimeUnit.SECONDS);
+                    cost = future.get(3600, TimeUnit.SECONDS);
                     long endTime = System.currentTimeMillis();
                     repEval.setEvaluationTime(endTime-startTime);
                 } catch (TimeoutException e) {
@@ -168,7 +168,7 @@ public class EvaluateOptions {
         while (yesProb >= 0.0){
             RunRepairProcess repairProcess = new RunRepairProcess(commands, "user", Optional.of(yesProb), outputPathString, aboxOntologyString);
             
-            RepairEvaluation repEvalResult = runRepairWithTimeout(repairProcess, repEval, 15);
+            RepairEvaluation repEvalResult = runRepairWithTimeout(repairProcess, repEval, 3600);
             if (!repEvalResult.getAnswersMap().get("Status").equals("Repair not possible!")){
                 return repEvalResult;
             } 

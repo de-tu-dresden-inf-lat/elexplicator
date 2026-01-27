@@ -159,11 +159,14 @@ public class DefectSelector {
         inferredSuperClasses.remove(dataFactory.getOWLThing());
 
         List<OWLClass> sortedInferredSubClasses = inferredSubClasses.stream()
-            .sorted(Collections.reverseOrder(Comparator.comparingInt(subCls -> classConnectivityMap.get(subCls))))
-            .collect(Collectors.toList());
+        .sorted(Collections.reverseOrder(Comparator.comparingInt(subCls -> classConnectivityMap.getOrDefault(subCls, 0))))
+        .collect(Collectors.toList());
+        
+
+
         List<OWLClass> sortedInferredSuperClasses = inferredSuperClasses.stream()
-            .sorted(Collections.reverseOrder(Comparator.comparingInt(supCls -> classConnectivityMap.get(supCls))))
-            .collect(Collectors.toList());
+        .sorted(Collections.reverseOrder(Comparator.comparingInt(supCls -> classConnectivityMap.getOrDefault(supCls, 0))))
+        .collect(Collectors.toList());
 
         OWLAxiom selectedAxiom = null;
         while (!sortedInferredSubClasses.isEmpty()){
