@@ -30,11 +30,9 @@ import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
-import org.easymock.internal.matchers.And;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
-import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
@@ -55,6 +53,7 @@ import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.tools.LoadingScreen;
+import de.tu_dresden.lat.tools.OWLOntologyContentKey;
 
 
 public class ComputeRepair {
@@ -108,7 +107,6 @@ public class ComputeRepair {
 			System.out.println("Shutting down");
 			signal = false;
 			inputFlag = false;
-			// cleanup();
 		}));
 
 		if (outDirStr.isEmpty())
@@ -132,8 +130,6 @@ public class ComputeRepair {
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
 
-		// OWLOntology defectModule = Segmenter.getStarModule(ontology, axiom.getSignature(), 
-		// 		ontology.getOntologyID().getOntologyIRI().orElse(IRI.create("http://example.org/temp-ontology")));
 		try{
 			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
 			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
@@ -167,7 +163,6 @@ public class ComputeRepair {
 				try {
 					ElExplicatorApplication.main(new String[] { "server", "config.yml" });
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 
@@ -243,12 +238,6 @@ public class ComputeRepair {
 									break;
 								}
 								case "not sure":{
-									// try {
-									// 	ElExplicatorApplication.main(new String[] { "server", "config.yml" });
-									// } catch (Exception e) {
-									// 	// TODO Auto-generated catch block
-									// 	e.printStackTrace();
-									// }
 									String bufferedString = "Select from the options: \n" + //
 																"1. Compute the entailment probabilities of the interesting axioms\n" + //
 																"2. Compute the class hierarchy difference\n" + //
@@ -647,7 +636,6 @@ public class ComputeRepair {
 
 			for (OWLAxiom axiom: axiomSets){
 				manager.removeAxiom(ontology, axiom);
-				
 			}
 			for (OWLAxiom impAxiom : interestingAxiomsSet){
 				OWLOntology impModule = Segmenter.getStarModule(ontology, impAxiom.getSignature(),
@@ -669,10 +657,14 @@ public class ComputeRepair {
  */
 	public static OWLOntology computeRepair(Set<? extends OWLAxiom> selectedMinDiagnosis, String ontologyPath) throws OWLOntologyCreationException{
 			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-			OWLOntology repairOntology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-	
-				for (OWLAxiom axiom: selectedMinDiagnosis){
-				manager.removeAxiom(repairOntology, axiom);
+			OWLOntology originalOntology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
+			
+			OWLOntology repairOntology = manager.createOntology();
+			//for axioms in the original ontology, add to repair ontology if not in diagnosis
+			for (OWLAxiom axiom: originalOntology.getAxioms()){
+				if (!selectedMinDiagnosis.contains(axiom)){
+					manager.addAxiom(repairOntology, axiom);
+				}
 			}
 		
 		return repairOntology;
@@ -1089,7 +1081,7 @@ public class ComputeRepair {
 		}
 	}
 
-	private static void writeHammingDistanceToFile(Boolean noRepairYes, Boolean noRepairNo, Map<OWLOntology, Double> hammingYes, Map<OWLOntology, Double> hammingNo, Set<OWLAxiom> entailedYes, Set<OWLAxiom> entailedNo, Set<OWLAxiom> entailedBoth, String outDirStr, Optional<String> nodeId) {
+	private static void writeHammingDistanceToFile(Boolean noRepairYes, Boolean noRepairNo, Map<OWLOntologyContentKey, Double> hammingYes, Map<OWLOntologyContentKey, Double> hammingNo, Set<OWLAxiom> entailedYes, Set<OWLAxiom> entailedNo, Set<OWLAxiom> entailedBoth, String outDirStr, Optional<String> nodeId) {
 		ObjectMapper mapper = new ObjectMapper();
 		String filename = "hammingDistance.json";
 		if (nodeId.isPresent()) filename="hammingDistance_"+nodeId.get()+".json";
@@ -1240,78 +1232,92 @@ public class ComputeRepair {
     
 	}
 
-	public static void entropySorting(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> minimalDiagnoses){
-		//get entropy score for each axiom in the justification sets: 
-		//entropyscore = p(Y) log2 p(Y) + p(N) log2 p(N) + 1
-		Map<OWLAxiom, Double> entropyScoreMap = new HashMap<>();
-		for (Set<? extends OWLAxiom> justificationSet : allJustifications){
-			for (OWLAxiom justAxiom : justificationSet){
-				if (entropyScoreMap.containsKey(justAxiom)){
-					continue;
-				}
-				entropyScoreMap.putIfAbsent(justAxiom, 0.0);
-				int Dp = 0;
-				int Dn = 0;
-				for (Set<? extends OWLAxiom> diagSet : minimalDiagnoses){
-					if (diagSet.contains(justAxiom)){
-						Dp++;
-					} else if (!diagSet.contains(justAxiom)){
-						Dn++;
-					} 
-				}
-				double pYProb = (double) Dp / minimalDiagnoses.size();
-				double pNProb = (double) Dn / minimalDiagnoses.size();
-				double entropyScore = (pYProb * Math.log(pYProb) / Math.log(2)) + (pNProb * Math.log(pNProb) / Math.log(2)) + 1;
-				entropyScoreMap.put(justAxiom, entropyScore);
-			}
-		}
-		System.out.println("Entropy scores:" + entropyScoreMap);
-	}
+	// public static void entropySorting(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> minimalDiagnoses){
+	// 	//get entropy score for each axiom in the justification sets: 
+	// 	//entropyscore = p(Y) log2 p(Y) + p(N) log2 p(N) + 1
+	// 	Map<OWLAxiom, Double> entropyScoreMap = new HashMap<>();
+	// 	for (Set<? extends OWLAxiom> justificationSet : allJustifications){
+	// 		for (OWLAxiom justAxiom : justificationSet){
+	// 			if (entropyScoreMap.containsKey(justAxiom)){
+	// 				continue;
+	// 			}
+	// 			entropyScoreMap.putIfAbsent(justAxiom, 0.0);
+	// 			int Dp = 0;
+	// 			int Dn = 0;
+	// 			for (Set<? extends OWLAxiom> diagSet : minimalDiagnoses){
+	// 				if (diagSet.contains(justAxiom)){
+	// 					Dp++;
+	// 				} else if (!diagSet.contains(justAxiom)){
+	// 					Dn++;
+	// 				} 
+	// 			}
+	// 			double pYProb = (double) Dp / minimalDiagnoses.size();
+	// 			double pNProb = (double) Dn / minimalDiagnoses.size();
+	// 			double entropyScore = (pYProb * Math.log(pYProb) / Math.log(2)) + (pNProb * Math.log(pNProb) / Math.log(2)) + 1;
+	// 			entropyScoreMap.put(justAxiom, entropyScore);
+	// 		}
+	// 	}
+	// 	System.out.println("Entropy scores:" + entropyScoreMap);
+	// }
 
-	public static Map<OWLOntology, Set<OWLAxiom>> getPreferredRepair(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, EntityCheckerException{
+	/**
+	 * get the repairs from smallest minimal diagnosis sets that entail the maximum interesting axioms as preferred repairs
+	 * @param keepAxioms
+	 * @param removeAxioms
+	 * @param outDirStr
+	 * @param ontologyPath
+	 * @param interestingAxiomsSet
+	 * @param reasonerName
+	 * @return
+	 * @throws IOException
+	 * @throws OWLOntologyCreationException
+	 * @throws EntityCheckerException
+	 */
+
+	public static Map<OWLOntologyContentKey, Set<OWLAxiom>> getPreferredRepair(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, EntityCheckerException{
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
-		//get the set of MDs with smallest size from allOptimalDiagnoses
-		//compute the repairs - preferred repairs
-		//if multiple preferred repairs -> check entailment and repairEntailMap
 		int minMDSize = allOptimalDiagnoses.stream()
 							.mapToInt(Set::size)
 							.min()
 							.orElse(0);
 		Set<Set<? extends OWLAxiom>> smallestMDs = allOptimalDiagnoses.stream()
 													.filter(s -> s.size() == minMDSize).collect(Collectors.toSet());
-		int max_entailed = 0;
-		Map<OWLOntology, Set<OWLAxiom>> repairEntailMap = new HashMap<>();
-		Map<OWLOntology, Set<OWLAxiom>> preferredRepairs = new HashMap<>();
 
+		int max_entailed = 0, ia_entailment_count = 0;
+		Map<OWLOntologyContentKey, Set<OWLAxiom>> repairEntailMap = new HashMap<>();
+		Map<OWLOntologyContentKey, Set<OWLAxiom>> preferredRepairs = new HashMap<>();
+		Set<OWLAxiom> entailedIA;
+		OWLOntology repairOntology;
+		OWLOntologyContentKey ontologyKey;
 		for (Set<? extends OWLAxiom> diagnosisSet : smallestMDs){
-			int ia_entailment_count = 0;
-
-			//for each repairOnto : add to map - <onto, num of entailments> then at the endfrom this map get the keys with highest value...check hamming distance and return the best ones
-						
-			OWLOntology repairOntology = computeRepair(diagnosisSet, ontologyPath);
-			Set<OWLAxiom> entailedIA = new HashSet<>();
+			ia_entailment_count = 0;	
+			repairOntology = computeRepair(diagnosisSet, ontologyPath);
+			ontologyKey = new OWLOntologyContentKey(repairOntology);
+			entailedIA = new HashSet<>();
 			for (OWLAxiom ia : interestingAxiomsSet){
 				if (HelperFunctions.checkEntailment(repairOntology, ia, reasonerName)){
 					entailedIA.add(ia);
 					ia_entailment_count++;
 				}
 			}
-			repairEntailMap.put(repairOntology, entailedIA);
+			if (repairEntailMap.containsKey(ontologyKey)){
+				throw new IllegalStateException("Duplicate repair ontology detected!");
+			}
+			repairEntailMap.put(ontologyKey, entailedIA);
 			if (ia_entailment_count > max_entailed){
 				max_entailed = ia_entailment_count;
 			}
-
-			// if (ia_entailment_count > max_entailed){
-			// 	max_entailed = ia_entailment_count;
-			// 	preferredOntology = repairOntology; //also get the entailed ia axioms and return the Map<OWLOntology, Set<OWLAxiom>> of the ontology along with the set of ia axioms entailed. 
-			// }
 		}
-		for (Map.Entry<OWLOntology, Set<OWLAxiom>> entry : repairEntailMap.entrySet()) {
+		System.out.println("Max entailed interesting axioms count: " + max_entailed);
+		for (Map.Entry<OWLOntologyContentKey, Set<OWLAxiom>> entry : repairEntailMap.entrySet()) {
+			System.out.println("Repair: " + entry.getKey().getOntology().hashCode() + " entails interesting axioms: " + entry.getValue());
+			System.out.println("Count: " + entry.getValue().size());
 			if (entry.getValue().size() == max_entailed) {
+				System.out.println("Also max entailed! Adding to preferred repairs.");
 				preferredRepairs.put(entry.getKey(), entry.getValue());
 			}
 		}
-
+		System.out.println("Preferred repairs found: " + preferredRepairs);
 		return preferredRepairs;
 	}
 
@@ -1325,36 +1331,12 @@ public class ComputeRepair {
 		return hammingDistance;
 	}
 
-	private static Map<OWLOntology, Double> getBestHammingRepair(Set<OWLOntology> repairs, OWLOntology ontology) {
+	private static Map<OWLOntologyContentKey, Double> getBestRepair(Map<OWLOntologyContentKey, Set<OWLAxiom>> repairs, OWLOntology ontology) {
 		if (repairs == null || repairs.isEmpty()) return null;
-		Map<OWLOntology, Double> repairHammingDist = new HashMap<>();
-		OWLOntology bestRepair = null;
-		double minDistance = Double.MAX_VALUE;
-		if (repairs.size()==1){
-			bestRepair = repairs.iterator().next();
-			double distance = computeHammingDistance(ontology, bestRepair);
-			repairHammingDist.put(bestRepair, distance);
-			return repairHammingDist;
-		}
+		Map<OWLOntologyContentKey, Double> repairHammingDist = new HashMap<>();
+		OWLOntologyContentKey bestRepair = repairs.keySet().iterator().next();
 
-		for (OWLOntology repair : repairs) {
-			double distance = computeHammingDistance(ontology, repair);
-			if (distance < minDistance) {
-				minDistance = distance;
-				bestRepair = repair;
-			}
-		}
-		repairHammingDist.put(bestRepair, minDistance);
-		return repairHammingDist;
-	}
-
-	private static Map<OWLOntology, Double> getBestRepair(Map<OWLOntology, Set<OWLAxiom>> repairs, OWLOntology ontology) {
-		if (repairs == null || repairs.isEmpty()) return null;
-		Map<OWLOntology, Double> repairHammingDist = new HashMap<>();
-		OWLOntology bestRepair = null;
-		double minDistance = Double.MAX_VALUE;
-		bestRepair = repairs.keySet().iterator().next();
-		double distance = computeHammingDistance(ontology, bestRepair);
+		double distance = computeHammingDistance(ontology, bestRepair.getOntology());
 		repairHammingDist.put(bestRepair, distance);
 		return repairHammingDist;
 	}
@@ -1374,19 +1356,17 @@ public class ComputeRepair {
 		Set<OWLAxiom> updKeepAxioms = new HashSet<>(keepAxioms);
 		Set<OWLAxiom> updRemoveAxioms = new HashSet<>(removeAxioms);
 
-		Map<OWLOntology, Set<OWLAxiom>> preferredRepairs_yes = null;
-		Map<OWLOntology, Double> preferredRepair_yes = new HashMap<>();
-		Map<OWLOntology, Set<OWLAxiom>> preferredRepairs_no = null;
-		Map<OWLOntology, Double> preferredRepair_no = new HashMap<>();
+		Map<OWLOntologyContentKey, Set<OWLAxiom>> preferredRepairs_yes = null;
+		Map<OWLOntologyContentKey, Double> preferredRepair_yes = new HashMap<>();
+		Map<OWLOntologyContentKey, Set<OWLAxiom>> preferredRepairs_no = null;
+		Map<OWLOntologyContentKey, Double> preferredRepair_no = new HashMap<>();
 			
 		updKeepAxioms.add(justAxiom);
 		Set<? extends OWLAxiom>unsatJust_yes = checkAxiomSelection(allJustifications, updKeepAxioms);
 		if (unsatJust_yes!=null){
 			noRepairYes=true;
 		} else {
-			//getPreferredRepair -> getPreferredMDS i.e. the smallest MDs
 			preferredRepairs_yes = getPreferredRepair(updKeepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-			// preferredRepair_yes = getBestHammingRepair(preferredRepairs_yes.keySet(), ontology);
 			preferredRepair_yes = getBestRepair(preferredRepairs_yes, ontology);
 			entailedIA_yes = preferredRepairs_yes.get(preferredRepair_yes.keySet().iterator().next());
 		}
@@ -1397,12 +1377,10 @@ public class ComputeRepair {
 			noRepairNo=true;
 		} else {
 			preferredRepairs_no = getPreferredRepair(keepAxioms, updRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
-			// preferredRepair_no = getBestHammingRepair(preferredRepairs_no.keySet(), ontology);
 			preferredRepair_no = getBestRepair(preferredRepairs_no, ontology);
 			entailedIA_no = preferredRepairs_no.get(preferredRepair_no.keySet().iterator().next());
 		}
 
-		//Three sets of axioms: axioms entaile by ontology_yes, by ontology_no and by both.
 		Map<String, Set<OWLAxiom>> entailed_ia = getEntailedSets(entailedIA_yes, entailedIA_no);
 		Set<OWLAxiom> entailed_yes = entailed_ia.get("entailed_yes");
 		Set<OWLAxiom> entailed_no = entailed_ia.get("entailed_no");
@@ -1414,7 +1392,6 @@ public class ComputeRepair {
 		// Simulate printing class hierearchy difference
 		System.setOut(bufferStream);
 		System.out.println("\n\t\t3. Hamming Distance");
-		//hamming distance: 1 - (size of intersection of axiom sets / size of union of axiom sets))
 		System.out.println("============================");
 		System.out.println("\tAnswer = yes:");
 		
@@ -1437,7 +1414,6 @@ public class ComputeRepair {
 		
 		System.out.println("-----------------------------");
 
-		//hamming distance: 1 - (size of intersection of axiom sets / size of union of axiom sets))
 		System.out.println("\tAnswer = no:");
 		
 		if(noRepairNo){

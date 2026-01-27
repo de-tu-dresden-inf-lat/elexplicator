@@ -1,6 +1,7 @@
 package de.tu_dresden.lat.Tests;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -25,6 +26,8 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
+
+import com.google.common.collect.Sets;
 
 import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.model.tools.ToOWLTools;
@@ -231,6 +234,21 @@ public class RepairModeTester {
         OWLOntology expectedOntology = OWLManager.createOWLOntologyManager().loadOntologyFromOntologyDocument(expectedResultFile);
         Set<OWLAxiom> expectedResultOntoAxioms = expectedOntology.getAxioms();
         assertEquals("The generated result ontology is inaccurate!", expectedResultOntoAxioms, actualResultOntoAxioms);
+    }
+
+    @Test
+    public void testRepairUniqueness() throws OWLOntologyCreationException{
+        OWLOntology repair1, repair2;
+        Set<OWLAxiom> diagSet1, diagSet2; 
+        diagSet1 = Sets.newHashSet();
+        diagSet1.add(justificationAxioms.get(1));
+        diagSet2 = Sets.newHashSet();   
+        diagSet2.add(justificationAxioms.get(1));
+
+        repair1 = ComputeRepair.computeRepair(diagSet1, ontologyPathString);
+        repair2 = ComputeRepair.computeRepair(diagSet2, ontologyPathString);
+
+        assertFalse("Repair 1 and 2 are equal", repair1.equals(repair2));
     }
 
 }
