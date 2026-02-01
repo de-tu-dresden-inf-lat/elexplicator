@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,12 +27,14 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
     private Optional<Double> yesProbOpt;
     private String outputPathString;
     private String aboxOntologyString;
+    private final AtomicReference<Process> process;
     public RunRepairProcess(String[] commands, String option, Optional<Double> yesProbOpt, String outputPathString, String aboxOntologyString){
         this.commands = commands;
         this.option = option;
         this.yesProbOpt = yesProbOpt;
         this.outputPathString = outputPathString;
         this.aboxOntologyString = aboxOntologyString;
+        this.process = new AtomicReference<>();
     }
 
     enum State {
@@ -41,17 +44,19 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                 WAITING_FOR_ANSWER
             }
     
+    public Process getProcess(){
+        return this.process.get();
+    }
+
     @Override
     public Map<String, String> call() throws Exception {
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb.redirectErrorStream(true);
-        Process process = null;
         Map<String, String> answersMap = new HashMap<>();
         try {
-            process = pb.start();
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+            process.set(pb.start());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.get().getInputStream()));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.get().getOutputStream()));
 
             StringBuilder recentOutput = new StringBuilder();
             String line;
@@ -154,9 +159,9 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
             throw new RuntimeException("Error during repair process execution.");
         } finally {
             if (process!=null){
-                process.destroy();
+                process.get().destroy();
                 try{
-                    process.waitFor();
+                    process.get().waitFor();
                 } catch(Exception e) {
                     e.printStackTrace();
                 }
