@@ -149,6 +149,7 @@ public class EvaluateOptions {
             System.out.println("Timeout");
             repEval.setAnswersMap(Map.of("Status", "Timeout"));
             repEval.setRepairTime(-1);
+            killProcessTree(process.getProcess());
             return repEval;
         } catch (Exception e) {
             this.errorOccurred = true;
@@ -161,6 +162,20 @@ public class EvaluateOptions {
                 executor.shutdownNow();
             }
         }
+    }
+
+    private static void killProcessTree(Process process) {
+        if (process == null) {
+            return;
+        }
+        ProcessHandle processHandle = process.toHandle();
+        processHandle.descendants().forEach(child -> {
+            try {
+                child.destroy();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private RepairEvaluation runUserOption(String[] commands, RepairEvaluation repEval) throws RuntimeErrorException {
