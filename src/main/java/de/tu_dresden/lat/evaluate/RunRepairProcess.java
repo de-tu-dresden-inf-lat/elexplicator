@@ -66,6 +66,9 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
             String question = "";
             String prevLine = "";
             while ((line = reader.readLine()) != null) {
+                if(Thread.currentThread().isInterrupted()){
+                    return answersMap;
+                }
                 // System.out.println("JAR output: " + line);
                 recentOutput.append(line).append("\n");
                 if (recentOutput.toString().contains("\u0007")) {
@@ -158,14 +161,7 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
             e.printStackTrace();
             throw new RuntimeException("Error during repair process execution.");
         } finally {
-            if (process!=null){
-                process.get().destroy();
-                try{
-                    process.get().waitFor();
-                } catch(Exception e) {
-                    e.printStackTrace();
-                }
-            }
+            EvaluateOptions.killProcessTree(process.get());
         }           
             
     }
