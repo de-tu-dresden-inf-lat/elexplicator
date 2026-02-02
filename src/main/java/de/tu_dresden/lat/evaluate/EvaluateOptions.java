@@ -164,7 +164,7 @@ public class EvaluateOptions {
         }
     }
 
-    private static void killProcessTree(Process process) {
+    public static void killProcessTree(Process process) {
         if (process == null) {
             return;
         }
