@@ -15,11 +15,11 @@ u='service'
 
 more=0
 
-checkpoint='OptionsEval/programState.json'
+checkpoint='/home/service/elexplicator/OptionsEval/programState.json'
 
 
-examples_dir='/home/service/Desktop/Examples'
-intermediate_out_dir='/home/service/Desktop/Examples'
+examples_dir='/home/service/Desktop/Examples2'
+intermediate_out_dir='/home/service/Desktop/Examples2'
 
 echo "Watching out for -> process = $p, user = $u"
 if ! id -u "$u" &> /dev/null;
@@ -41,10 +41,9 @@ do
 		current=$total
 		if ! pgrep -u "$u" -x "$p" > /dev/null;
 		then 
-			echo "Run number: $reRuns"
 			if (( reRuns > 0 ));
 			then 
-				status_value=$(grep -oP '"status"\s*:*"\K[^"]+' "$checkpoint");
+				status_value=$(awk -F'"' '/"status"/ {print $4; exit}' "$checkpoint");
 				if [[ "$status_value" == "Success" ]];
 				then 
 					echo "Process completed successfully. Exiting.";
@@ -53,16 +52,18 @@ do
 				fi
 			fi
 			if (( reRuns == 0 ));
+			set +e
 			then 
-				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "False" -XX:+ExitOnOutOfMemoryError
+				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "False" -XX:+ExitOnOutOfMemoryError 
 			else
 				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "True" -XX:+ExitOnOutOfMemoryError 
 			fi
-			((reRuns++))
+			set -e
+			reRuns=$((reRuns + 1));
 			sleep 5;
 		fi
 	else
-		((current--));
+		current=$((current - 1));
 		sleep 5;
 	fi
 done

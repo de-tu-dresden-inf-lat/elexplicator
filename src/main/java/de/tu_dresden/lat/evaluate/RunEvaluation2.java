@@ -6,6 +6,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -100,8 +102,8 @@ public class RunEvaluation2 {
         }
 
         map.put("example", exampleFile.getName());
-        map.put("ontology", ontology);
-        map.put("normalizedOntology", normalized);
+        // map.put("ontology", ontology);
+        // map.put("normalizedOntology", normalized);
         map.put("defectAxiomsSet", defectsSet);
         map.put("ontologyPathStr", exampleFile.getPath());  
         map.put("normalizedOntologyPathStr", normalizedFilePath); 
@@ -275,6 +277,7 @@ public class RunEvaluation2 {
             File exampleDir = new File(examplePath); 
             exampleFiles = exampleDir.listFiles();
             Arrays.sort(exampleFiles, Comparator.comparingLong(File::length));
+            serializeExampleList(exampleFiles);
         } else {
             //load from serialized file
             exampleFiles = getExampleFiles();
@@ -303,6 +306,18 @@ public class RunEvaluation2 {
             
     }
 
+    private static void serializeExampleList(File[] exampleFiles){
+        try{
+            FileOutputStream exampleListOut = new FileOutputStream("examplesList.ser");
+            ObjectOutputStream out = new ObjectOutputStream(exampleListOut);
+            out.writeObject(exampleFiles);
+            out.close();
+            exampleListOut.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private static File[] getExampleFiles(){
         File [] exampleFiles = null;
         try{
@@ -319,17 +334,26 @@ public class RunEvaluation2 {
 
     private static Map<String, Object> loadCheckpoint(){
         Map<String, Object> programState = new HashMap<>();
-        ObjectMapper objectMapper = new ObjectMapper();
-        File checkpointFile = new File("programState.json");
-        if (checkpointFile.exists() && checkpointFile.length() > 0){
-            try {
-                programState = objectMapper.readValue(checkpointFile, 
-                    new TypeReference<Map<String, Object>>(){}
-                );
-            } catch (IOException e) {
-                e.printStackTrace();
-                return programState;
-            }
+        // ObjectMapper objectMapper = new ObjectMapper();
+        // File checkpointFile = new File("programState.json");
+        // if (checkpointFile.exists() && checkpointFile.length() > 0){
+        //     try {
+        //         programState = objectMapper.readValue(checkpointFile, 
+        //             new TypeReference<Map<String, Object>>(){}
+        //         );
+        //     } catch (IOException e) {
+        //         e.printStackTrace();
+        //         return programState;
+        //     }
+        // }
+        
+        try {
+            FileInputStream checkpointFile = new FileInputStream("OptionsEval"+ File.separator + "programState.ser");
+            ObjectInputStream ois = new ObjectInputStream(checkpointFile);
+            programState = (Map<String, Object>) ois.readObject();
+            ois.close();
+        } catch (Exception e) {
+            e.printStackTrace(); 
         }
         return programState;
     }
@@ -373,7 +397,7 @@ public class RunEvaluation2 {
             programState.put("defectAxiom", defectAxiom);
             programState.put("currentOption", currentOption);
             programState.put("evaluations", repEvalList);
-            programState.put("axiomCount", example.get("axiomCount"));
+            // programState.put("axiomCount", example.get("axiomCount"));
             saveCheckpoint(programState, outDirString);
             System.exit(1);
         }
@@ -397,13 +421,23 @@ public class RunEvaluation2 {
 
     private static void runExampleRepairEvaluation(File exampleFile, String outDirString, String intermediateOutDir, List<String> options, Map<String, Object> example) throws OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, IOException{
         String exampleName = (String) example.get("example");
-        OWLOntology normalizedOntology = (OWLOntology) example.get("normalizedOntology");
+        // OWLOntology normalizedOntology = (OWLOntology) example.get("normalizedOntology");
+        
         List<OWLAxiom> defectsSet = (List<OWLAxiom>) example.get("defectAxiomsSet");
         String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
         long fileSize = exampleFile.length();
         int axiomCount = (int) example.get("axiomCount");
 
-        
+        OWLOntology normalizedOntology = null;
+        try{
+            OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+            normalizedOntology = manager.loadOntologyFromOntologyDocument(new File(normOntologyPathStr));
+        } catch (Exception e){
+            e.printStackTrace();
+            System.out.println("Error loading normalized ontology "+exampleFile.getName());
+            return;
+        }
+
         // OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
         for (OWLAxiom axiom : defectsSet){
             System.out.println("Processing defect: "+axiom.toString());
@@ -454,6 +488,7 @@ public class RunEvaluation2 {
             try{
                 repEvalList = evaluateOptions.evaluateOpt();
             } catch (EvaluationException e){
+                System.out.println("Evaluation Exception occurred: " + e.getMessage());
                 String currentOption = evaluateOptions.currentOption;
                 Map<String, Object> programState = new HashMap<>();
                 programState.put("status", "Failure");
@@ -465,7 +500,7 @@ public class RunEvaluation2 {
                 programState.put("defectAxiom", axiom);
                 programState.put("currentOption", currentOption);
                 programState.put("evaluations", repEvalList);
-                programState.put("axiomCount", axiomCount);
+                // programState.put("axiomCount", axiomCount);
                 saveCheckpoint(programState, outDirString);
                 System.exit(1);
             }
@@ -508,10 +543,20 @@ public class RunEvaluation2 {
         ObjectMapper objectMapper = new ObjectMapper();
         File checkpointFile = new File(outDirString + File.separator + "programState.json");
         try {
-            objectMapper.writerWithDefaultPrettyPrinter().writeValue(checkpointFile, programState);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(checkpointFile, Map.of("status", programState.get("status")));
         } catch (IOException e) {
             e.printStackTrace();
         }
+        try {
+            FileOutputStream writer = new FileOutputStream(outDirString + File.separator + "programState.ser");
+            ObjectOutputStream oos = new ObjectOutputStream(writer);
+            oos.writeObject(programState);
+            oos.close();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } 
+
     }
 }
 

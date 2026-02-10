@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.lang.Thread.State;
 import java.nio.channels.InterruptedByTimeoutException;
+import java.util.concurrent.TimeoutException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,15 +50,15 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
     }
 
     @Override
-    public Map<String, String> call() throws Exception {
+    public Map<String, String> call() throws RuntimeException {
         ProcessBuilder pb = new ProcessBuilder(commands);
-        pb.redirectErrorStream(true);
+        pb.redirectErrorStream(false);
         Map<String, String> answersMap = new HashMap<>();
         try {
             process.set(pb.start());
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.get().getInputStream()));
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.get().getOutputStream()));
-
+            BufferedReader err = new BufferedReader(new InputStreamReader(process.get().getErrorStream()));
             StringBuilder recentOutput = new StringBuilder();
             String line;
 
@@ -67,7 +68,9 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
             String prevLine = "";
             while ((line = reader.readLine()) != null) {
                 if(Thread.currentThread().isInterrupted()){
-                    return answersMap;
+                    System.out.println("Repair process interrupted. Killing process tree.");
+                    EvaluateOptions.killProcessTree(process.get());
+                    return null;
                 }
                 // System.out.println("JAR output: " + line);
                 recentOutput.append(line).append("\n");
@@ -152,17 +155,23 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                 }
                 prevLine = line;
             }
+
+            if (process.get().waitFor() != 0) {
+                StringBuilder errorOutput = new StringBuilder();
+                String errLine;
+                while ((errLine = err.readLine()) != null) {
+                    errorOutput.append(errLine).append("\n");
+                }
+                throw new RuntimeException("Repair process exited with non-zero code. Error output: " + errorOutput.toString());
+            }
+
             System.out.println("Complete Answers given: " + answersMap); 
             return answersMap;             
-        } catch (InterruptedByTimeoutException e){
-            return answersMap;
         }
         catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException("Error during repair process execution.");
-        } finally {
-            EvaluateOptions.killProcessTree(process.get());
-        }           
+        }      
             
     }
 

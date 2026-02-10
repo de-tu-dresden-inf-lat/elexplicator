@@ -36,6 +36,7 @@ public class EvaluateOptions {
     List<String> options;
     Boolean errorOccurred = false;
     String currentOption = "";
+    Integer timeoutSeconds = 3600;
 
     public EvaluateOptions(String ontoPath, String defectStr, String intAxiomsStr, String aboxOnto, String outPath, List<String> options){
         this.ontologyPathString = ontoPath;
@@ -75,20 +76,20 @@ public class EvaluateOptions {
             try{
                 if (option.equals("option1")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "1", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, timeoutSeconds);
                 } else if (option.equals("option2")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "2", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, timeoutSeconds);
                 } else if (option.equals("option3")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "3", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, timeoutSeconds);
                 } else if (option.equals("mix")){
                     RunRepairProcess repairProcess = new RunRepairProcess(commands, "mix", Optional.empty(), outputPathString, aboxOntologyString);
-                    repEval = runRepairWithTimeout(repairProcess, repEval, 3600);
+                    repEval = runRepairWithTimeout(repairProcess, repEval, timeoutSeconds);
                 } else if (option.equals("user")){
                     repEval = runUserOption(commands, repEval);
                 }
-            } catch (RuntimeErrorException e){
+            } catch (RuntimeException e){
                 this.errorOccurred = true;
                 throw new EvaluationException("Error during repair process execution for option: " + option, e, evalList);
             }
@@ -102,15 +103,16 @@ public class EvaluateOptions {
 
                 try {
                     long startTime = System.currentTimeMillis();
-                    cost = future.get(3600, TimeUnit.SECONDS);
+                    cost = future.get(timeoutSeconds, TimeUnit.SECONDS);
                     long endTime = System.currentTimeMillis();
                     repEval.setEvaluationTime(endTime-startTime);
                 } catch (TimeoutException e) {
-                    future.cancel(true); // interrupts the thread
+                    future.cancel(true); 
                     repEval.setEvaluationTime(-1);
                     System.out.println("Timeout during cost evaluation.");
                 } catch (Exception e) {
                     this.errorOccurred = true;
+                    e.printStackTrace();
                     throw new EvaluationException("Error during repair evaluation for option: " + option, e, evalList);
                 } finally {
                     executor.shutdown();
@@ -146,7 +148,7 @@ public class EvaluateOptions {
             return repEval;
         } catch (TimeoutException e) {
             future.cancel(true); // interrupts the thread
-            System.out.println("Timeout");
+            System.out.println("Timeout on option: " + this.currentOption);
             repEval.setAnswersMap(Map.of("Status", "Timeout"));
             repEval.setRepairTime(-1);
             killProcessTree(process.getProcess());
@@ -176,6 +178,7 @@ public class EvaluateOptions {
                 e.printStackTrace();
             }
         });
+        process.destroy();
     }
 
     private RepairEvaluation runUserOption(String[] commands, RepairEvaluation repEval) throws RuntimeErrorException {
@@ -183,7 +186,7 @@ public class EvaluateOptions {
         while (yesProb >= 0.0){
             RunRepairProcess repairProcess = new RunRepairProcess(commands, "user", Optional.of(yesProb), outputPathString, aboxOntologyString);
             
-            RepairEvaluation repEvalResult = runRepairWithTimeout(repairProcess, repEval, 3600);
+            RepairEvaluation repEvalResult = runRepairWithTimeout(repairProcess, repEval, timeoutSeconds);
             if (!repEvalResult.getAnswersMap().get("Status").equals("Repair not possible!")){
                 return repEvalResult;
             } 
