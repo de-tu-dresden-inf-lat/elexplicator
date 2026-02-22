@@ -68,7 +68,8 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
             String prevLine = "";
             while ((line = reader.readLine()) != null) {
                 if(Thread.currentThread().isInterrupted()){
-                    System.out.println("Repair process interrupted. Killing process tree.");
+                    System.out.println("Repair process interrupted!");
+                    Thread.currentThread().interrupt();
                     EvaluateOptions.killProcessTree(process.get());
                     return null;
                 }

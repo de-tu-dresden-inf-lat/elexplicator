@@ -166,21 +166,31 @@ public class EvaluateOptions {
         }
     }
 
-    public static void killProcessTree(Process process) {
-        if (process == null) {
+    public static void killProcessTree(Process process){
+        if(process == null){
             return;
         }
         ProcessHandle processHandle = process.toHandle();
         processHandle.descendants().forEach(child -> {
-            try {
+            try{
                 child.destroy();
-            } catch (Exception e) {
+            } catch (Exception e){
                 e.printStackTrace();
             }
         });
         process.destroy();
-    }
 
+        try{
+            if(process.waitFor(500, TimeUnit.MILLISECONDS)){
+                return;
+            }
+        }catch(InterruptedException e){
+            e.printStackTrace();
+        }
+
+        processHandle.descendants().forEach(child -> child.destroyForcibly());
+        process.destroyForcibly();
+    }
     private RepairEvaluation runUserOption(String[] commands, RepairEvaluation repEval) throws RuntimeErrorException {
         double yesProb = 0.75;
         while (yesProb >= 0.0){
