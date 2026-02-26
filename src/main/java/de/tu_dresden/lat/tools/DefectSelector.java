@@ -70,7 +70,7 @@ public class DefectSelector {
      * @return set of selected defect classes
      * @throws OWLOntologyCreationException 
      */
-    public static Set<OWLAxiom> selectNDefects(OWLOntology ontology, int n) throws OWLOntologyCreationException{
+    public static Set<OWLAxiom> selectNDefects(OWLOntology ontology, int n, HierarchyMapping hierarchyMapping) throws OWLOntologyCreationException{
         //TODO : get top n classes from classConnectivityMap
         //for each class select the most connected subclass if none, select the most connected superclass
         //collect the appropriate axiom in set if not already present. If present, try another sub/super class
@@ -99,7 +99,7 @@ public class DefectSelector {
             }
             OWLClass candidateClass = (OWLClass)classConnectivityMap.keySet().toArray()[classIndex];
             if (classesInSubClassAxioms.contains(candidateClass)){
-                OWLAxiom defectAxiom = selectNewSubClassAxiom(ontology, candidateClass, selectedDefects);
+                OWLAxiom defectAxiom = selectNewSubClassAxiom(ontology, candidateClass, selectedDefects, hierarchyMapping);
                 if (defectAxiom != null){
                     // System.out.println("Defect already exists? " + selectedDefects.contains(defectAxiom));
                     selectedDefects.add(defectAxiom);
@@ -143,17 +143,14 @@ public class DefectSelector {
         return classConnectivityMap;
     }
 
-    public static OWLAxiom selectNewSubClassAxiom(OWLOntology ontology, OWLClass cls, Set<OWLAxiom> existingDefects) throws OWLOntologyCreationException{
+    public static OWLAxiom selectNewSubClassAxiom(OWLOntology ontology, OWLClass cls, Set<OWLAxiom> existingDefects, HierarchyMapping hierarchyMapping) throws OWLOntologyCreationException{
         System.out.println("Selecting new defect for class: " + cls.toString());
         Boolean foundNewDefect = false;
         OWLOntologyManager manager = ontology.getOWLOntologyManager();
         OWLDataFactory dataFactory = manager.getOWLDataFactory();
 
-        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-        ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-        
-        Set<OWLClass> inferredSubClasses = reasoner.getSubClasses(cls, false).getFlattened();
-        Set<OWLClass> inferredSuperClasses = reasoner.getSuperClasses(cls, false).getFlattened();
+        Set<OWLClass> inferredSubClasses = hierarchyMapping.getSubClassMap().getOrDefault(cls, Collections.emptySet());
+        Set<OWLClass> inferredSuperClasses = hierarchyMapping.getSuperClassMap().getOrDefault(cls, Collections.emptySet());
 
         inferredSubClasses.remove(dataFactory.getOWLNothing());
         inferredSuperClasses.remove(dataFactory.getOWLThing());
@@ -187,7 +184,6 @@ public class DefectSelector {
                 }
             }
         }
-        reasoner.dispose();
         if(foundNewDefect){
             logger.info("Defect selected: "+selectedAxiom.toString());
         } else {
@@ -232,15 +228,15 @@ public class DefectSelector {
         return selectedAxiom;
     }
 
-    public static void main(String[] args) {
-        // TODO Auto-generated method stub
-        OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-        try {
-            OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File("src/test/TestOntology/HospitalManagement.owl"));
-            Set<OWLAxiom> defectAxioms = selectNDefects(ontology, 10);
-        } catch (OWLOntologyCreationException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
+    // public static void main(String[] args) {
+    //     // TODO Auto-generated method stub
+    //     OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+    //     try {
+    //         OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File("src/test/TestOntology/HospitalManagement.owl"));
+    //         Set<OWLAxiom> defectAxioms = selectNDefects(ontology, 10);
+    //     } catch (OWLOntologyCreationException e) {
+    //         // TODO Auto-generated catch block
+    //         e.printStackTrace();
+    //     }
+    // }
 }

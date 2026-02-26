@@ -53,6 +53,9 @@ import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.lat.tools.ABoxGenerator;
 import de.tu_dresden.lat.tools.DefectSelector;
 import de.tu_dresden.lat.tools.OntologyToDNF;
+import de.tu_dresden.lat.tools.HierarchyMapping;
+
+import java.time.LocalDateTime;
 
 public class RunEvaluation2 {
     
@@ -61,7 +64,8 @@ public class RunEvaluation2 {
         OWLOntology ontology = null;
         OWLOntology normalized = null;
         String normalizedFilePath = exampleFile.getParent().toString() + File.separator + "normalized.owl";
-
+        HierarchyMapping classHierarchyMapping = null;
+        HierarchyMapping classHierarchyMappingNormalized = null;
         Map<String, Object> map = new HashMap<>();
         System.out.println("loading file: "+exampleFile.getName());
         try{
@@ -76,9 +80,12 @@ public class RunEvaluation2 {
             System.out.println("Error loading ontology "+exampleFile.getName());
             return null;
         }
+        classHierarchyMapping = createClassHierarchyMapping(ontology);
+
         List<OWLAxiom> defectsSet = null;
         try{
-            defectsSet = new ArrayList<>(DefectSelector.selectNDefects(ontology, 10));
+            defectsSet = new ArrayList<>(DefectSelector.selectNDefects(ontology, 10, classHierarchyMapping));
+            System.out.println(LocalDateTime.now() + " Defects selection completed!");
         } catch (Exception e){
             e.printStackTrace();
         }
@@ -96,14 +103,18 @@ public class RunEvaluation2 {
             OutputStream outputstream = Files.newOutputStream(new File(normalizedFilePath).toPath());
             OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
             manager.saveOntology(normalized, ontologyFormat, outputstream);
+            System.out.println(LocalDateTime.now() + " Ontology normalized and saved!");
         } catch (Exception e){
-            System.out.println("Error normalizing ontology "+exampleFile.getName());
+            System.out.println(LocalDateTime.now() + "Error normalizing ontology "+exampleFile.getName());
             return null;
         }
+        classHierarchyMappingNormalized = createClassHierarchyMapping(normalized);
 
         map.put("example", exampleFile.getName());
         // map.put("ontology", ontology);
         // map.put("normalizedOntology", normalized);
+        map.put("classHierarchyMapping", classHierarchyMapping);
+        map.put("classHierarchyMappingNormalized", classHierarchyMappingNormalized);
         map.put("defectAxiomsSet", defectsSet);
         map.put("ontologyPathStr", exampleFile.getPath());  
         map.put("normalizedOntologyPathStr", normalizedFilePath); 
@@ -113,12 +124,10 @@ public class RunEvaluation2 {
 
     }
 
-    private static String generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom, String outDirStr) throws OWLOntologyCreationException, IOException{
-        System.out.println("Generating Interesting Axiom");
+    private static String generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom, String outDirStr, HierarchyMapping hierarchyMapping) throws OWLOntologyCreationException, IOException{
+        System.out.println(LocalDateTime.now() + " Generating Interesting Axiom");
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-        ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
         
         List<OWLClass> signClasses = new ArrayList<>(ontology.getClassesInSignature());
         Collections.shuffle(signClasses);
@@ -130,7 +139,7 @@ public class RunEvaluation2 {
 
         for (OWLClass owlClass : classes) {
             Set<OWLClass> inferredSubClasses = new HashSet<>();
-            inferredSubClasses = reasoner.getSubClasses(owlClass, false).getFlattened();
+            inferredSubClasses = hierarchyMapping.getSubClassMap().getOrDefault(owlClass, Collections.emptySet());
             if (!inferredSubClasses.isEmpty()) {                
                 for (OWLClass inferredSubClass: inferredSubClasses){
                     OWLSubClassOfAxiom subclassAxiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
@@ -146,10 +155,7 @@ public class RunEvaluation2 {
             }
         }
 
-        reasoner.dispose();
-        reasoner = null;
         manager.removeOntology(ontology);
-        System.gc();
 
         String IApath = outDirStr+File.separator+"IA_ontology.owl";
         OutputStream outputstream = Files.newOutputStream(new File(IApath).toPath());
@@ -251,9 +257,6 @@ public class RunEvaluation2 {
         String intermediateOutDir = args[1];
         Boolean resume = Boolean.parseBoolean(args[2]);  
         String outDirString = "OptionsEval";
-        // String examplePath = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
-        // String intermediateOutDir = "C:/Users/prati/Desktop/ELExplicator/elexplicator/Examples";
-
 
         if(!(new File(outDirString)).exists()){
             try {
@@ -296,7 +299,7 @@ public class RunEvaluation2 {
             } else {
                 example = loadExampleInstances(exampleFile, outDirString);
                 if (example == null){
-                    return;
+                    continue;
                 }               
                 
                 runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
@@ -333,20 +336,7 @@ public class RunEvaluation2 {
     }
 
     private static Map<String, Object> loadCheckpoint(){
-        Map<String, Object> programState = new HashMap<>();
-        // ObjectMapper objectMapper = new ObjectMapper();
-        // File checkpointFile = new File("programState.json");
-        // if (checkpointFile.exists() && checkpointFile.length() > 0){
-        //     try {
-        //         programState = objectMapper.readValue(checkpointFile, 
-        //             new TypeReference<Map<String, Object>>(){}
-        //         );
-        //     } catch (IOException e) {
-        //         e.printStackTrace();
-        //         return programState;
-        //     }
-        // }
-        
+        Map<String, Object> programState = new HashMap<>();        
         try {
             FileInputStream checkpointFile = new FileInputStream("OptionsEval"+ File.separator + "programState.ser");
             ObjectInputStream ois = new ObjectInputStream(checkpointFile);
@@ -427,6 +417,8 @@ public class RunEvaluation2 {
         String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
         long fileSize = exampleFile.length();
         int axiomCount = (int) example.get("axiomCount");
+        HierarchyMapping classHierarchyMapping = (HierarchyMapping) example.get("classHierarchyMapping");
+        HierarchyMapping classHierarchyMappingNormalized = (HierarchyMapping) example.get("classHierarchyMappingNormalized");
 
         OWLOntology normalizedOntology = null;
         try{
@@ -440,11 +432,11 @@ public class RunEvaluation2 {
 
         // OWLAxiom axiom = (OWLAxiom) example.get("defectAxiom");
         for (OWLAxiom axiom : defectsSet){
-            System.out.println("Processing defect: "+axiom.toString());
+            System.out.println(LocalDateTime.now() + " Processing defect: "+axiom.toString());
             String interestingAxiomOntology = null;
             try{
-                interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirString);
-                System.out.print("Interesting axiom ontology generated!");
+                interestingAxiomOntology = generateInterestingAxiom(exampleFile.getPath(), axiom, outDirString, classHierarchyMapping);
+                System.out.println(LocalDateTime.now() + " Interesting axiom ontology generated!");
             }
             catch(Exception e){
                 System.out.println("Error generating interesting axiom "+exampleFile.getName());
@@ -465,7 +457,7 @@ public class RunEvaluation2 {
             String defectAxiomStr = renderer.render(axiom);
             Map<String, Object> exampleTimeTracker = new HashMap<>();
             try{
-                ABoxGenerator aBoxGenerator = new ABoxGenerator(normalizedOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir);
+                ABoxGenerator aBoxGenerator = new ABoxGenerator(normalizedOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir, classHierarchyMappingNormalized);
                 aBoxGenerator.generateABox();
                 Map<String, java.lang.Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
                 exampleTimeTracker.put("Example", exampleName);
@@ -474,7 +466,7 @@ public class RunEvaluation2 {
                 exampleTimeTracker.putAll(aboxGenTimeMap);               
                 
             } catch (InconsistentOntologyException e){
-                System.out.println("Inconsistent Onto Error");
+                System.out.println(LocalDateTime.now() + " Inconsistent Onto Error");
                 continue;
             } 
             try{
@@ -488,7 +480,7 @@ public class RunEvaluation2 {
             try{
                 repEvalList = evaluateOptions.evaluateOpt();
             } catch (EvaluationException e){
-                System.out.println("Evaluation Exception occurred: " + e.getMessage());
+                System.out.println(LocalDateTime.now() + " Evaluation Exception occurred: " + e.getMessage());
                 String currentOption = evaluateOptions.currentOption;
                 Map<String, Object> programState = new HashMap<>();
                 programState.put("status", "Failure");
@@ -517,6 +509,24 @@ public class RunEvaluation2 {
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private static HierarchyMapping createClassHierarchyMapping(OWLOntology ontology){
+        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
+        ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
+        reasoner.precomputeInferences();
+        Map<OWLClass, Set<OWLClass>> subClasses = new HashMap<>();
+        Map<OWLClass, Set<OWLClass>> superClasses = new HashMap<>();
+        Set<OWLClass> classes = ontology.getClassesInSignature();
+        long startTime = System.nanoTime();
+        for (OWLClass cls : classes) {
+            Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
+            Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
+            subClasses.put(cls, sub);
+            superClasses.put(cls, sup);
+        }
+        reasoner.dispose();
+        return new HierarchyMapping(subClasses, superClasses);
     }
 
     private static void logAboxGenerationTime(Map<String, Object> aboxGenTimeMap) throws IOException{

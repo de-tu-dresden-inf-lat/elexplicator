@@ -18,6 +18,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import java.time.LocalDateTime;
+
 import javax.management.RuntimeErrorException;
 
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -71,7 +73,8 @@ public class EvaluateOptions {
             Map<String, String> answersMap = null;
             double cost = -1;
             RepairEvaluation repEval = new RepairEvaluation(option);
-            System.out.println("Running repair process for option: " + option);
+            
+            System.out.println(LocalDateTime.now() + " Running repair process for option: " + option);
             ExecutorService service = Executors.newSingleThreadExecutor();
             try{
                 if (option.equals("option1")){
@@ -96,7 +99,7 @@ public class EvaluateOptions {
 
             //if not timeout and answersMap not null compute cost
             if(repEval.getAnswersMap().get("Status").equals("Repair reached!")){
-                System.out.println("Computing cost!");
+                System.out.println(LocalDateTime.now() + " Computing cost!");
                 
                 ExecutorService executor = Executors.newSingleThreadExecutor();
                 Future<Double> future = executor.submit(() -> evaluateRepair());
@@ -127,7 +130,7 @@ public class EvaluateOptions {
                 cost = -1;
             }  
             repEval.setCost(cost);
-            System.out.println("Total repair cost for option " + option + ": " + cost);
+            System.out.println(LocalDateTime.now() + " Running repair process for option: " + option + ", Total repair cost: " + cost);
             System.out.println(repEval.getRepairTime());
             evalList.add(repEval);
         }
@@ -183,14 +186,15 @@ public class EvaluateOptions {
         try{
             if(process.waitFor(500, TimeUnit.MILLISECONDS)){
                 return;
-            }
-        }catch(InterruptedException e){
+            } 
+        }catch (InterruptedException e){
             e.printStackTrace();
         }
 
         processHandle.descendants().forEach(child -> child.destroyForcibly());
         process.destroyForcibly();
     }
+
     private RepairEvaluation runUserOption(String[] commands, RepairEvaluation repEval) throws RuntimeErrorException {
         double yesProb = 0.75;
         while (yesProb >= 0.0){
@@ -202,7 +206,7 @@ public class EvaluateOptions {
             } 
 
             yesProb = yesProb - 0.15;
-            System.out.println("Couldn't reach a repair. Lowering probability for 'yes'");
+            System.out.println(LocalDateTime.now() + " Couldn't reach a repair. Lowering probability for 'yes'");
         }
         repEval.setAnswersMap(Map.of("Status", "Repair not possible!"));
         return repEval;

@@ -49,12 +49,14 @@ public class ABoxGenerator {
     private String defectAxiom;
     private String outputDir;
     private Map<String, Object> aboxTimeMap;
+    private HierarchyMapping classHierarchyMapping;
 
-    public ABoxGenerator(OWLOntology ontology, String ontologyName, String defectAxiom, String outputDir) {
+    public ABoxGenerator(OWLOntology ontology, String ontologyName, String defectAxiom, String outputDir, HierarchyMapping classHierarchyMapping) {
         this.tbox = ontology;
         this.tboxOntoName = ontologyName;
         this.defectAxiom = defectAxiom;
         this.outputDir = outputDir;
+        this.classHierarchyMapping = classHierarchyMapping;
         this.aboxTimeMap = new HashMap<>();
     }
 
@@ -69,28 +71,31 @@ public class ABoxGenerator {
         OWLOntology abox = aboxManager.createOntology(aboxIRI);
 
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-        ElkReasoner reasoner = reasonerFactory.createReasoner(tbox);
-        reasoner.precomputeInferences();
+        // ElkReasoner reasoner = reasonerFactory.createReasoner(tbox);
+        // reasoner.precomputeInferences();
         ElkReasoner aboxReasoner = reasonerFactory.createReasoner(abox);
-        Map<OWLClass, Set<OWLClass>> classHierarchy = new HashMap<>();
-        Map<OWLClass, Set<OWLClass>> supClassHierarchy = new HashMap<>();
+        Map<OWLClass, Set<OWLClass>> classHierarchy = classHierarchyMapping.getSubClassMap();
+        Map<OWLClass, Set<OWLClass>> supClassHierarchy = classHierarchyMapping.getSuperClassMap();
+        // Map<OWLClass, Set<OWLClass>> classHierarchy = new HashMap<>();
+        // Map<OWLClass, Set<OWLClass>> supClassHierarchy = new HashMap<>();
         // System.out.println("Number of classes in signature:"+tbox.getClassesInSignature().size());
-        Set<OWLClass> classes = tbox.getClassesInSignature();
-        long startTime = System.nanoTime();
-        for (OWLClass cls : classes) {
-            Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
-            Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
-            classHierarchy.put(cls, sub);
-            classHierarchy.get(cls).remove(dataFactory.getOWLNothing());
-            supClassHierarchy.put(cls, sup);
+        // Set<OWLClass> classes = tbox.getClassesInSignature();
+        // long startTime = System.nanoTime();
+        // for (OWLClass cls : classes) {
+        //     Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
+        //     Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
+        //     classHierarchy.put(cls, sub);
+        //     classHierarchy.get(cls).remove(dataFactory.getOWLNothing());
+        //     supClassHierarchy.put(cls, sup);
                        
-        }
-        long endTime = System.nanoTime();
-        long totalTime = (endTime-startTime)/1000000;
-        logger.info("Class hierarchy creation time (ms): "+ totalTime);
-        aboxTimeMap.put("CH Creation (ms)", totalTime);
+        // }
+        // long endTime = System.nanoTime();
+        // long totalTime = (endTime-startTime)/1000000;
+        // logger.info("Class hierarchy creation time (ms): "+ totalTime);
+        // aboxTimeMap.put("CH Creation (ms)", totalTime);
 
         //select 80% from the class hierarchy:
+        long startTime, endTime, totalTime;
         startTime = System.nanoTime();
         List<OWLClass> leafNodes = classHierarchy.keySet().stream()
                 .filter(c -> classHierarchy.get(c).isEmpty())
@@ -107,6 +112,7 @@ public class ABoxGenerator {
         //add individuals for the selected classes
         startTime = System.nanoTime();
         for (OWLClass cls : selectedClasses) {
+            Set<OWLClassAssertionAxiom> classAssertions = new HashSet<>();
             OWLDeclarationAxiom declAxiom = dataFactory.getOWLDeclarationAxiom(cls);
             aboxManager.addAxiom(abox, declAxiom);
             //add random number of individuals per class
@@ -116,7 +122,13 @@ public class ABoxGenerator {
                 OWLNamedIndividual individual = dataFactory.getOWLNamedIndividual(IRI.create(individualIRI));
                 OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(cls, individual);
                 aboxManager.addAxiom(abox, classAssertion);
+                for (OWLClass supClass : supClassHierarchy.get(cls)){
+                    OWLClassAssertionAxiom supClassAssertion = dataFactory.getOWLClassAssertionAxiom(supClass, individual);
+                    aboxManager.addAxiom(abox, supClassAssertion);
+                }
             }
+
+            
         }
         endTime = System.nanoTime();
         totalTime = (endTime-startTime)/1000000;
@@ -125,25 +137,25 @@ public class ABoxGenerator {
 
         aboxReasoner.flush();
         //propagate the class assertions up the hierarchy
-        startTime = System.nanoTime();
-        for (OWLNamedIndividual indv : abox.getIndividualsInSignature()) {
-            NodeSet<OWLClass> types = aboxReasoner.getTypes(indv, false);
-            for(OWLClass cls : types.getFlattened()) {
-                if (supClassHierarchy.get(cls) == null) {
-                    continue;
-                }
-                for (OWLClass sup : supClassHierarchy.get(cls)){
-                    OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(sup, indv);
-                    if (!abox.containsAxiom(classAssertion)) {
-                        aboxManager.addAxiom(abox, classAssertion); //The inconsistent onto error probably from here
-                    }
-                }
-            }
-        }
-        endTime = System.nanoTime();
-        totalTime = (endTime - startTime)/1000000;
-        logger.info("Instance propagation time (ms): " + totalTime);
-        aboxTimeMap.put("Inst Propagation (ms)", totalTime);
+        // startTime = System.nanoTime();
+        // for (OWLNamedIndividual indv : abox.getIndividualsInSignature()) {
+        //     NodeSet<OWLClass> types = aboxReasoner.getTypes(indv, false);
+        //     for(OWLClass cls : types.getFlattened()) {
+        //         if (supClassHierarchy.get(cls) == null) {
+        //             continue;
+        //         }
+        //         for (OWLClass sup : supClassHierarchy.get(cls)){
+        //             OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(sup, indv);
+        //             if (!abox.containsAxiom(classAssertion)) {
+        //                 aboxManager.addAxiom(abox, classAssertion); //The inconsistent onto error probably from here
+        //             }
+        //         }
+        //     }
+        // }
+        // endTime = System.nanoTime();
+        // totalTime = (endTime - startTime)/1000000;
+        // logger.info("Instance propagation time (ms): " + totalTime);
+        // aboxTimeMap.put("Inst Propagation (ms)", totalTime);
 
         //Add counterexample to the defect axiom
         OWLAxiom defect = ToOWLTools.getInstance().getOWLAxiomFromStr(defectAxiom, tbox);
@@ -181,7 +193,7 @@ public class ABoxGenerator {
         OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
         aboxManager.saveOntology(abox, ontologyFormat, outputstream);
         
-        reasoner.dispose();
+        // reasoner.dispose();
         aboxReasoner.dispose();
         System.gc();
         return ExitCode.terminatedSuccessfully;
