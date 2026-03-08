@@ -215,6 +215,9 @@ public class ComputeRepair {
 					ElExplicatorApplication.setRepairSession(session);
 					for (OWLAxiom justificationAxiom : freqMap.keySet()){
 						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom) | justificationAxiom.equals(axiom)){
+							if (justificationAxiom.equals(axiom)){
+								removeAxioms.add(justificationAxiom);
+							}
 							continue;
 						}
 						while (signal){

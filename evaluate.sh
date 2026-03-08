@@ -51,8 +51,8 @@ do
 					exit 1;
 				fi
 			fi
-			if (( reRuns == 0 ));
 			set +e
+			if (( reRuns == 0 ));
 			then 
 				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "False" -XX:+ExitOnOutOfMemoryError 
 			else

@@ -402,6 +402,20 @@ public class RunEvaluation2 {
 
         List<OWLAxiom> remainingDefects = defectsList.subList(defectsList.indexOf(defectAxiom)+1, defectsList.size());
         example.put("defectAxiomsSet", remainingDefects);
+        String ontologyFile = (String)example.get("ontologyPathStr");
+        String normalizedOntologyFile = (String) example.get("normalizedOntologyPathStr");
+        try{
+            OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+            OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyFile));
+            OWLOntology normalizedOntology = manager.loadOntologyFromOntologyDocument(new File(normalizedOntologyFile));
+            // load the two ontologies and get their classHierarchyMapping and set them in the example map
+            HierarchyMapping classHierarchyMapping = createClassHierarchyMapping(ontology);
+            HierarchyMapping classHierarchyMappingNormalized = createClassHierarchyMapping(normalizedOntology);
+            example.put("classHierarchyMapping", classHierarchyMapping);
+            example.put("classHierarchyMappingNormalized", classHierarchyMappingNormalized);
+        } catch (Exception e){
+            e.printStackTrace();
+        }
         if (!remainingDefects.isEmpty()){
             runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
         } else {
@@ -483,6 +497,8 @@ public class RunEvaluation2 {
                 System.out.println(LocalDateTime.now() + " Evaluation Exception occurred: " + e.getMessage());
                 String currentOption = evaluateOptions.currentOption;
                 Map<String, Object> programState = new HashMap<>();
+                example.remove("classHierarchyMapping");
+                example.remove("classHierarchyMappingNormalized");
                 programState.put("status", "Failure");
                 programState.put("currentExample", example);
                 programState.put("defectStr", defectAxiomStr);

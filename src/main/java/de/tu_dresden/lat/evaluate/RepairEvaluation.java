@@ -2,8 +2,9 @@ package de.tu_dresden.lat.evaluate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.io.Serializable;
 
-public class RepairEvaluation {
+public class RepairEvaluation implements Serializable{
     String optionName;
     Map<String, String> answersMap;
     double cost;
