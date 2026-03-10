@@ -80,7 +80,19 @@ public class RunEvaluation2 {
             System.out.println("Error loading ontology "+exampleFile.getName());
             return null;
         }
-        classHierarchyMapping = createClassHierarchyMapping(ontology);
+        int CH_counter = 1;
+        while(classHierarchyMapping == null && CH_counter <= 5){
+            try{
+                classHierarchyMapping = createClassHierarchyMapping(ontology);
+                System.out.println("Class hierarchy created!");
+                break;
+            } catch (OutOfMemoryError e){
+                CH_counter++;
+            } catch (Exception e){
+                e.printStackTrace();
+                return null;
+            }
+        }
 
         List<OWLAxiom> defectsSet = null;
         try{
@@ -89,7 +101,7 @@ public class RunEvaluation2 {
         } catch (Exception e){
             e.printStackTrace();
         }
-        if (defectsSet.isEmpty()){
+        if (defectsSet.isEmpty() || defectsSet == null){
             System.out.println("Error selecting defects"+exampleFile.getName());
             return null;
         }
@@ -108,7 +120,19 @@ public class RunEvaluation2 {
             System.out.println(LocalDateTime.now() + "Error normalizing ontology "+exampleFile.getName());
             return null;
         }
-        classHierarchyMappingNormalized = createClassHierarchyMapping(normalized);
+        int CHN_counter = 1;
+        while(classHierarchyMappingNormalized == null && CHN_counter <= 5){
+            try{
+                classHierarchyMappingNormalized = createClassHierarchyMapping(normalized);
+                System.out.println("Normalized Class Hierarchy created!");
+                break;
+            } catch (OutOfMemoryError e){
+                CHN_counter++;
+            } catch (Exception e){
+                e.printStackTrace();
+                return null;
+            }
+        }
 
         map.put("example", exampleFile.getName());
         // map.put("ontology", ontology);
@@ -528,21 +552,28 @@ public class RunEvaluation2 {
     }
 
     private static HierarchyMapping createClassHierarchyMapping(OWLOntology ontology){
-        ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-        ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-        reasoner.precomputeInferences();
-        Map<OWLClass, Set<OWLClass>> subClasses = new HashMap<>();
-        Map<OWLClass, Set<OWLClass>> superClasses = new HashMap<>();
-        Set<OWLClass> classes = ontology.getClassesInSignature();
-        long startTime = System.nanoTime();
-        for (OWLClass cls : classes) {
-            Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
-            Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
-            subClasses.put(cls, sub);
-            superClasses.put(cls, sup);
+        ElkReasoner reasoner = null;
+        try{
+            ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
+            reasoner = reasonerFactory.createReasoner(ontology);
+            reasoner.precomputeInferences();
+            Map<OWLClass, Set<OWLClass>> subClasses = new HashMap<>();
+            Map<OWLClass, Set<OWLClass>> superClasses = new HashMap<>();
+            Set<OWLClass> classes = ontology.getClassesInSignature();
+            for (OWLClass cls : classes) {
+                Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
+                Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
+                subClasses.put(cls, sub);
+                superClasses.put(cls, sup);
+            }
+            reasoner.dispose();
+            return new HierarchyMapping(subClasses, superClasses);
+        } finally {
+            if (reasoner != null){
+                reasoner.dispose();
+                reasoner = null;
+            }
         }
-        reasoner.dispose();
-        return new HierarchyMapping(subClasses, superClasses);
     }
 
     private static void logAboxGenerationTime(Map<String, Object> aboxGenTimeMap) throws IOException{
