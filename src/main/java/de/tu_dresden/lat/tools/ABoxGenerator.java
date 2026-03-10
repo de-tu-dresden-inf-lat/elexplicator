@@ -71,28 +71,11 @@ public class ABoxGenerator {
         OWLOntology abox = aboxManager.createOntology(aboxIRI);
 
         ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-        // ElkReasoner reasoner = reasonerFactory.createReasoner(tbox);
-        // reasoner.precomputeInferences();
+        ElkReasoner reasoner = reasonerFactory.createReasoner(tbox);
+        reasoner.precomputeInferences();
         ElkReasoner aboxReasoner = reasonerFactory.createReasoner(abox);
         Map<OWLClass, Set<OWLClass>> classHierarchy = classHierarchyMapping.getSubClassMap();
         Map<OWLClass, Set<OWLClass>> supClassHierarchy = classHierarchyMapping.getSuperClassMap();
-        // Map<OWLClass, Set<OWLClass>> classHierarchy = new HashMap<>();
-        // Map<OWLClass, Set<OWLClass>> supClassHierarchy = new HashMap<>();
-        // System.out.println("Number of classes in signature:"+tbox.getClassesInSignature().size());
-        // Set<OWLClass> classes = tbox.getClassesInSignature();
-        // long startTime = System.nanoTime();
-        // for (OWLClass cls : classes) {
-        //     Set<OWLClass> sup = reasoner.getSuperClasses(cls, false).getFlattened();
-        //     Set<OWLClass> sub = reasoner.getSubClasses(cls, false).getFlattened();
-        //     classHierarchy.put(cls, sub);
-        //     classHierarchy.get(cls).remove(dataFactory.getOWLNothing());
-        //     supClassHierarchy.put(cls, sup);
-                       
-        // }
-        // long endTime = System.nanoTime();
-        // long totalTime = (endTime-startTime)/1000000;
-        // logger.info("Class hierarchy creation time (ms): "+ totalTime);
-        // aboxTimeMap.put("CH Creation (ms)", totalTime);
 
         //select 80% from the class hierarchy:
         long startTime, endTime, totalTime;
@@ -112,6 +95,10 @@ public class ABoxGenerator {
         //add individuals for the selected classes
         startTime = System.nanoTime();
         for (OWLClass cls : selectedClasses) {
+            if (!reasoner.isSatisfiable(cls)){
+                System.out.println("Skipping unsatisfiable leaf class: "+cls.toString());
+                continue;
+            }
             Set<OWLClassAssertionAxiom> classAssertions = new HashSet<>();
             OWLDeclarationAxiom declAxiom = dataFactory.getOWLDeclarationAxiom(cls);
             aboxManager.addAxiom(abox, declAxiom);
@@ -123,6 +110,10 @@ public class ABoxGenerator {
                 OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(cls, individual);
                 aboxManager.addAxiom(abox, classAssertion);
                 for (OWLClass supClass : supClassHierarchy.get(cls)){
+                    if (supClass.isOWLNothing()){
+                        System.out.println("Skipping unsat class: "+supClass.toString());
+                        continue;
+                    }
                     OWLClassAssertionAxiom supClassAssertion = dataFactory.getOWLClassAssertionAxiom(supClass, individual);
                     aboxManager.addAxiom(abox, supClassAssertion);
                 }
@@ -167,7 +158,7 @@ public class ABoxGenerator {
         for (OWLClassExpression ce : classExpressionsMap.get("add")){
             OWLClassAssertionAxiom classAssertion = dataFactory.getOWLClassAssertionAxiom(ce, defectIndv);
             aboxManager.addAxiom(abox, classAssertion);
-            Set<OWLClass> superClasses = supClassHierarchy.get(ce.asOWLClass());
+            Set<OWLClass> superClasses = new HashSet<>(supClassHierarchy.get(ce.asOWLClass()));
             for (OWLClassExpression avoidCE : classExpressionsMap.get("avoid")){
                 superClasses.remove(avoidCE.asOWLClass());
             }
@@ -192,7 +183,7 @@ public class ABoxGenerator {
         OutputStream outputstream = Files.newOutputStream(new File(aboxPath).toPath());
         OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
         aboxManager.saveOntology(abox, ontologyFormat, outputstream);
-        
+        logger.info("ABox ontology saved to: " + aboxPath);
         // reasoner.dispose();
         aboxReasoner.dispose();
         System.gc();

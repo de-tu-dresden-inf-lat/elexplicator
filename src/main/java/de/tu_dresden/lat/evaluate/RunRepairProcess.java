@@ -114,7 +114,12 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                         case NORMAL:
                         default:
                             if(outputText.contains("All justifications have been computed.")){
-                                inputText = "save";
+                                if (answersMap.size() > 1){
+                                    inputText = "save";
+                                } else {
+                                    inputText = "exit";
+                                    answersMap.put("Status", "No selection!");
+                                }
                             }
 
                             else if (outputText.contains("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.")){
