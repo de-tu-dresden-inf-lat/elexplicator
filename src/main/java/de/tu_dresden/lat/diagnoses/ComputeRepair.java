@@ -452,7 +452,6 @@ public class ComputeRepair {
  */
 	public static String computeHierarchyDiff(OWLAxiom defect, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, OWLAxiom justificationAxiom, ReasonerName reasonerName, Optional<String> nodeId) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException{
 		String bufferedString = "";
-		//class hierarchy difference when retaining and removing the justification axiom
 		ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(allJustifications, outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
 		classHierarchyDifference.getClassHierarchy(ontologyPath);
 		if (nodeId.isPresent()){
@@ -723,8 +722,8 @@ public class ComputeRepair {
 			return noRepair(repairOntology, outDirStr, save_filename, scanner);											
 		} else {
 			try {
-				return refineRepair2(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName);
-				// return refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
+				// return refineRepair2(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName);
+				return refineRepair(ontology, repairOntology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
 			} catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException | EntityCheckerException
 					| InterruptedException | ExecutionException e) {
 				e.printStackTrace();
@@ -1022,10 +1021,15 @@ public class ComputeRepair {
 
 /**
  * write the initial, modified class hierarchy and the difference to a json file
- * @param hierarchies
+ * @param hierarchy1
+ * @param hierarchy2
+ * @param hierarchyDiff
+ * @param repairYes
+ * @param repairNo
  * @param outDirStr
  */
-	private static void writeClassHierarchyDifferenceToFile(Map<String, Object> hierarchy1, Map<String, Object> hierarchy2, Map<String, Object> hierarchyDiff, Boolean repairYes,Boolean repairNo, String outDirStr, Optional<String> nodeId){
+
+	private static void writeClassHierarchyDifferenceToFile(Set<List<String>> hierarchy1, Set<List<String>> hierarchy2, Map<String, Set<List<String>>> hierarchyDiff, Boolean repairYes,Boolean repairNo, String outDirStr, Optional<String> nodeId){
 		ObjectMapper mapper = new ObjectMapper();
 		String filename = "classHierarchyDifference.json";
 		if (nodeId.isPresent()){
@@ -1119,7 +1123,7 @@ public class ComputeRepair {
  * @param hierarchyDifferenceMap
  * @throws UnsupportedEncodingException 
  */
-	private static void displayClassHierarchyDifference(Map<String, Object> hierarchyDifferenceMap) throws UnsupportedEncodingException {
+	private static void displayClassHierarchyDifference(Map<String, Set<List<String>>> hierarchyDifferenceMap) throws UnsupportedEncodingException {
 		PrintStream bufferStream = new PrintStream(axiomWeightOutputBuffer, true, StandardCharsets.UTF_8.name());
 		PrintStream originalOut = System.out;
 
@@ -1129,30 +1133,24 @@ public class ComputeRepair {
 		StringJoiner hierarchyDiff = new StringJoiner("\n");
 		
 		hierarchyDiff.add("\n\t\t2. Class Hierarchy Difference\n");
-		Object removedObjects = hierarchyDifferenceMap.get("removed:");
-		if (removedObjects instanceof Iterable && !((List<Map<String, Object>>) removedObjects).isEmpty()) {
+		Set<List<String>> removedObjects = hierarchyDifferenceMap.get("removedEdges");
+		if (removedObjects instanceof Iterable && !((Set<List<String>>) removedObjects).isEmpty()) {
 			hierarchyDiff.add("Following sub-structures would be removed:");
 			hierarchyDiff.add("==========================");
-			for (Map<String, Object> removedSubTree : (List<Map<String, Object>>) removedObjects) {
-				hierarchyDiff.add(printHierarchy(removedSubTree, "", new StringJoiner("\n")).toString());
-				hierarchyDiff.add("----------------------");
-			}
+			hierarchyDiff.add(HelperFunctions.getCHDifferenceTree(removedObjects).toString());
 			hierarchyDiff.add("==========================");
 		} 
 		hierarchyDiff.add("");
-		Object addedObjects = hierarchyDifferenceMap.get("added:");
+		Set<List<String>> addedObjects = hierarchyDifferenceMap.get("addedEdges");
 			
-		if (addedObjects instanceof Iterable && !((List<Map<String, Object>>) addedObjects).isEmpty()) {
+		if (addedObjects instanceof Iterable && !((Set<List<String>>) addedObjects).isEmpty()) {
 			hierarchyDiff.add("Following sub-structures would be added:");
 			hierarchyDiff.add("==========================");	
-			for (Map<String, Object> addedSubTree : (List<Map<String, Object>>) addedObjects) {
-				hierarchyDiff.add(printHierarchy(addedSubTree, "", new StringJoiner("\n")).toString());
-				hierarchyDiff.add("----------------------");
-			}
+			hierarchyDiff.add(HelperFunctions.getCHDifferenceTree(addedObjects).toString());
 			hierarchyDiff.add("==========================");
 		} 
 
-		if(((List<Map<String, Object>>) addedObjects).isEmpty() && ((List<Map<String, Object>>) removedObjects).isEmpty()){
+		if(((Set<List<String>>) addedObjects).isEmpty() && ((Set<List<String>>) removedObjects).isEmpty()){
 			hierarchyDiff.add("===========================");
 			hierarchyDiff.add("No changes in the class hierarchy.");
 			hierarchyDiff.add("===========================");
@@ -1167,37 +1165,6 @@ public class ComputeRepair {
 		System.out.print(axiomWeightOutputBuffer.toString(StandardCharsets.UTF_8.name()));
 	}
 
-	private static StringJoiner printHierarchy(Map<String, Object> hierarchy, String indent, StringJoiner hierarchyStr) {
-		for (Map.Entry<String, Object> entry : hierarchy.entrySet()) {
-            String clazz = entry.getKey();
-            Object value = entry.getValue();
-            
-            // Print the current class with proper indentation
-            // hierarchyStr.add(indent + clazz.getIRI().getShortForm());
-			hierarchyStr.add(indent + clazz);
-            
-            // If the value is a List, recursively print each child
-            if (value instanceof List) {
-                List<Map<String, Object>> childList = (List<Map<String, Object>>) value;
-                for (Map<String, Object> child : childList) {
-                    printHierarchy(child, indent+ "\t", hierarchyStr);  // Increase indentation
-                }
-            } else {
-                // If it's another map (e.g., a nested class), recurse on it
-				if (value instanceof String){
-					// hierarchyStr.add(indent + "\t" + ((OWLClass) value).getIRI().getShortForm());
-					hierarchyStr.add(indent + "\t" + value);
-				} else if (value == null){ 
-					hierarchyStr.add(indent + "\t" + "\u22A5");
-				} else {
-					hierarchyStr.add(indent + "\t" + value.toString());
-				}
-				
-                
-            }
-        }
-		return hierarchyStr;
-	}
 
 /**
  * overwrite the given output in console with blank lines 

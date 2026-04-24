@@ -2,22 +2,20 @@ package de.tu_dresden.lat.diagnoses;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
+import java.util.StringJoiner;
 
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
+import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
@@ -25,6 +23,7 @@ import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
+import org.semanticweb.owlapi.reasoner.Node;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
@@ -45,9 +44,9 @@ public class ClassHierarchyDifference {
 
     // Map<OWLClass, Object> hierarchyMap1; // hierarchy map for the first ontology without removing the selected axiom
     // Map<OWLClass, Object> hierarchyMap2;   // hierarchy map for the second ontology with removing the selected axiom
-    Map<String, Object> hierarchyMap1; 
-    Map<String, Object> hierarchyMap2;
-    Map<String, Object> hierarchyDifference;
+    Set<List<String>> hierarchyMap1; 
+    Set<List<String>> hierarchyMap2;
+    Map<String, Set<List<String>>> hierarchyDifference;
     Boolean repairYes;
     Boolean repairNo;
 
@@ -61,17 +60,15 @@ public class ClassHierarchyDifference {
         this.selectedAxiom = selectedAxiom;
         this.reasonerName = reasonerName;
 
-        this.hierarchyMap1 = new HashMap<>();
-        this.hierarchyMap2 = new HashMap<>();
+        this.hierarchyMap1 = new HashSet<>();
+        this.hierarchyMap2 = new HashSet<>();
         this.hierarchyDifference = new HashMap<>();
     }
 
     public void getClassHierarchy(String ontologyPath) throws OWLOntologyCreationException {
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-
-        
-        OWLClass clazz = manager.getOWLDataFactory().getOWLThing();     
+  
         manager.removeAxioms(ontology, removeAxioms);  
         try {
             ComputeRepair.saveRepairOntology(ontology, outputDirStr, "ontoYes");
@@ -81,7 +78,7 @@ public class ClassHierarchyDifference {
 
         keepAxioms.add(selectedAxiom);
         Set<? extends OWLAxiom> unsatJust_yes  = ComputeRepair.checkAxiomSelection(allJustifications, keepAxioms);
-        this.hierarchyMap1 = printClassHierarchy(clazz, ontology);
+        this.hierarchyMap1 = getInferredHierarchy(ontology);
 
         if (unsatJust_yes == null || unsatJust_yes.isEmpty()){
             this.repairYes = true;
@@ -102,93 +99,36 @@ public class ClassHierarchyDifference {
         } else {
             this.repairNo = false;
         }
-        this.hierarchyMap2 = printClassHierarchy(clazz, ontology);
+        this.hierarchyMap2 = getInferredHierarchy(ontology);
         
-        getHierarchyDifference(hierarchyMap1, hierarchyMap2, new ArrayList<>(), new ArrayList<>(), null);
-
-        // System.out.println("Removed:");
-        // System.out.println(hierarchyDifference.get("removed:"));
-        // System.out.println("Added:");
-        // System.out.println(hierarchyDifference.get("added:"));
-
-        // hierarchies.put("initial:", hierarchyMap1);	
-        // hierarchies.put("modified:", hierarchyMap2);
-        // hierarchies.put("difference:", hierarchyDifference);
-
-        // return hierarchies;
-    }
-
-    private void getHierarchyDifference(Map<String, Object> ch1, Map<String, Object> ch2, List<Map<String, Object>> removed, List<Map<String, Object>> added, String parentClass) {
-
-        Set<String> classes1 = ch1.keySet();
-        Set<String> classes2 = ch2.keySet();
-
-        for (String clazz: classes2){
-            if (!classes1.contains(clazz)){
-                if (parentClass != null){
-                    List<Map<String, Object>> addedChild = Collections.singletonList(Collections.singletonMap(clazz, ch2.get(clazz)));
-                    added.add(Collections.singletonMap(parentClass, addedChild));
-                } else {
-                    added.add(Collections.singletonMap(clazz, ch2.get(clazz)));
-                }
-            }
-            
-        }
-
-        for (String clazz: classes1){
-            Object children1Obj = ch1.get(clazz);
-            if (!ch2.containsKey(clazz)) {
-                // Entire subtree removed
-                removed.add(Collections.singletonMap(clazz, children1Obj));
-            } else {
-                Object children2Obj = ch2.get(clazz);      
-                if (children1Obj == null && children2Obj == null) { //both null
-                    continue;
-                } else if (children1Obj == null && children2Obj instanceof List) { //only 2 not null
-                    added.add(Collections.singletonMap(clazz, children2Obj));
-                } else if (children1Obj instanceof List && children2Obj == null) { //only 1 not null
-                    removed.add(Collections.singletonMap(clazz, children1Obj));
-                } else if (children1Obj instanceof List && children2Obj instanceof List) { //both lists but not equal
-                    List<Map<String, Object>> children1 = (List<Map<String, Object>>) children1Obj;
-                    List<Map<String, Object>> children2 = (List<Map<String, Object>>) children2Obj;
-
-                    Map<String, Object> map1 = tranformToMap(children1);
-                    Map<String, Object> map2 = tranformToMap(children2);
-
-                    getHierarchyDifference(map1, map2, removed, added, clazz);
-                } 
-                // else {
-                //     // both non-null but not equal i.e one is a list or null and other is a reference 
-                //     if (!children1Obj.equals(children2Obj)) {
-                //         removed.add(Collections.singletonMap(clazz, children1Obj));
-                //         added.add(Collections.singletonMap(clazz, children2Obj));
-                //     }
-                // }
-            }
-
-        }
-        
-
-        this.hierarchyDifference.put("removed:", removed);
-        this.hierarchyDifference.put("added:", added);
+        getHierarchyDifference(hierarchyMap1, hierarchyMap2);
 
     }
 
-    private Map<String, Object> tranformToMap(List<Map<String, Object>> childList) {
-        Map<String, Object> childrenMap = new HashMap<>();
-        if (childList == null) {
-            return Collections.emptyMap();
-        }
-        for (Map<String, Object> child : childList) {
-            for (Map.Entry<String, Object> entry : child.entrySet()) {
-                childrenMap.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return childrenMap;
-    }
+    private void getHierarchyDifference(Set<List<String>> initialHierarchy, Set<List<String>> resultHierarchy){
+		Set<List<String>> addedEdges = new HashSet<>();
+		Set<List<String>> removedEdges = new HashSet<>();
+		Map<String, Set<List<String>>> differencesMap = new HashMap<>();
+		for (List<String> edge : resultHierarchy){
+			if (!initialHierarchy.contains(edge)){
+				addedEdges.add(edge);
+			}
+		}
+		differencesMap.put("addedEdges", addedEdges);
 
-    private Map<String, Object> printClassHierarchy(OWLClass clazz, OWLOntology ontology) {
-        OWLReasoner reasoner = null;
+		for (List<String> edge : initialHierarchy){
+			if (!resultHierarchy.contains(edge)){
+				removedEdges.add(edge);
+			}
+		}
+		differencesMap.put("removedEdges", removedEdges);
+		
+		this.hierarchyDifference = differencesMap;
+	}
+
+    private Set<List<String>> getInferredHierarchy(OWLOntology ontology) {
+
+		OWLReasoner reasoner = null;
         if (this.reasonerName == ReasonerName.Elk) {
             // Use ELK reasoner to compute class hierarchy
             OWLReasonerFactory reasonerFactory = new ElkReasonerFactory();
@@ -198,56 +138,52 @@ public class ClassHierarchyDifference {
             OWLReasonerFactory reasonerFactory = new ReasonerFactory();
             reasoner = reasonerFactory.createNonBufferingReasoner(ontology);
         }
-        Set<OWLClass> visited = new HashSet<>();
-        Map<String, Object> hierarchyMap = printClassHierarchy(clazz, reasoner, visited, new HashSet<>());
-        return hierarchyMap;
-    }
 
-    public Map<String, Object> printClassHierarchy(OWLClass clazz, OWLReasoner reasoner, Set<OWLClass> visited, Set<OWLClass> visitedLeaf) {
- 
-        if (visited.contains(clazz)){
-            if (!visitedLeaf.contains(clazz)){ // already visited non-leaf nodes 
-                return Collections.singletonMap(sOWLFormatter.format(clazz), "ref");
-            } else {
-                return Collections.singletonMap(sOWLFormatter.format(clazz), null);
-            }
-        }
+		reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
 
-        visited.add(clazz);
-        reasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY);
-        Set<OWLClass> children = reasoner.getSubClasses(clazz, true).getFlattened();
-        children.addAll(reasoner.getEquivalentClasses(clazz).getEntities());
-        List<Map<String, Object>> childNodes = new ArrayList<>();        
-        for (OWLClass child : children) {            
-            if (!child.equals(clazz) && !child.isOWLNothing()) {
-                childNodes.add(printClassHierarchy(child, reasoner, visited, visitedLeaf));
-            }
-        }
-        if (childNodes.isEmpty()){ // if the class is not a leaf node then add track it as visited
-            visitedLeaf.add(clazz);
-        }
-        
-        
-        return Collections.singletonMap(sOWLFormatter.format(clazz),
-                childNodes.isEmpty() ? null : childNodes);
-    }
-    // private Map<OWLClass, Set<Object>> printClassHierarchy(OWLReasoner reasoner, OWLClass clazz, int level, Map<OWLClass, Set<Object>> hierarchyMap) {
-    //     if (reasoner.isSatisfiable(clazz)) {
-    //         for (int i = 0; i < level * 4; i++) {
-    //             System.out.print(" ");
-    //         }
-    //         System.out.println(clazz.getIRI());
-    //         List<OWLClass> children = new ArrayList<>(reasoner.getSubClasses(clazz, true).getFlattened());
-    //         for (OWLClass child : children){
-    //             if (!child.equals(clazz)){
-    //                 hierarchyMap.putIfAbsent(clazz, new HashSet<>());
-    //                 hierarchyMap.get(clazz).add(printClassHierarchy(reasoner, child, level+1, hierarchyMap));
-    //             }
-    //         }
-    //         return hierarchyMap;
-    //     }
-    //     else{
-    //         return hierarchyMap;
-    //     }
-    // }
+		Set<List<String>> edges = new HashSet<>();
+
+		OWLDataFactory df =
+				ontology.getOWLOntologyManager().getOWLDataFactory();
+
+		OWLClass top = df.getOWLThing();
+		OWLClass bottom = df.getOWLNothing();
+
+		Set<OWLClass> unsatisfiableClasses = reasoner.getUnsatisfiableClasses().getEntitiesMinusBottom();
+
+		traverse(reasoner, top, edges, unsatisfiableClasses);
+
+		if (!unsatisfiableClasses.isEmpty()) {
+			edges.add(List.of(sOWLFormatter.format(top), sOWLFormatter.format(bottom)));
+		}
+
+		for (OWLClass unsat : unsatisfiableClasses) {
+			edges.add(List.of(sOWLFormatter.format(bottom), sOWLFormatter.format(unsat)));
+		}
+
+		return edges;
+	}
+
+	private static void traverse(OWLReasoner reasoner, OWLClass parent, Set<List<String>> edges, Set<OWLClass> unsatisfiableClasses) {
+
+		for (Node<OWLClass> node : reasoner.getSubClasses(parent, true)) {
+
+			for (OWLClass child : node) {
+
+				if (child.isAnonymous()) continue;
+				if (child.isOWLThing()) continue;
+				if (child.isOWLNothing()) continue;
+				if (unsatisfiableClasses.contains(child)) continue;
+				if (!child.isOWLClass()) continue;
+
+				edges.add(List.of(
+						sOWLFormatter.format(parent),
+						sOWLFormatter.format(child)
+				));
+
+				traverse(reasoner, child, edges, unsatisfiableClasses);
+			}
+		}
+	}
+    
 }

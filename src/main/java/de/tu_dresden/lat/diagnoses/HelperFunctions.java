@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -433,4 +434,44 @@ public class HelperFunctions {
 		return columnsNames.toString();
 	}
 
+	public static Map<String, List<String>> buildCHTree(Set<List<String>> edges){
+        Map<String, List<String>> tree = new HashMap<>();
+        for (List<String> edge : edges){
+            String parent = edge.get(0);
+            String child = edge.get(1);
+            tree.computeIfAbsent(parent, k -> new ArrayList<>()).add(child);
+        }
+        return tree;
+    }
+
+    public static StringJoiner getCHTree(String node, Map<String, List<String>> tree, String prefix, Set<String> visited, StringJoiner hierarchyStr) {
+        if (visited.contains(node)) {
+            hierarchyStr.add(prefix + node + " (cycle)");
+            return hierarchyStr;
+        }
+        visited.add(node);
+        System.out.println(prefix + node);
+        List<String> children = tree.get(node);
+        if (children == null) return hierarchyStr;
+        for (int i = 0; i < children.size(); i++) {
+            String child = children.get(i);
+            String newPrefix = prefix + (i == children.size() - 1 ? "└── " : "├── ");
+            hierarchyStr.add(newPrefix + child);
+            getCHTree(child, tree, newPrefix, visited, hierarchyStr);
+        }
+        return hierarchyStr;
+    }
+    
+    public static StringJoiner getCHDifferenceTree(Set<List<String>> edges){
+        Map<String, List<String>> tree = buildCHTree(edges);
+        StringJoiner hierarchyStr = new StringJoiner("\n");
+         Set<String> visited = new HashSet<>();
+        for (String root : tree.keySet()) {
+            // hierarchyStr = hierarchyStr.add(getCHTree(root, tree, "", visited, hierarchyStr).toString());
+			String adjStr = root + " -> " + String.join(", ", tree.get(root));
+			hierarchyStr.add(adjStr);
+        }
+               
+        return hierarchyStr;
+    }
 }
