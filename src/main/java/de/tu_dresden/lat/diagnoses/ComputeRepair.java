@@ -672,8 +672,7 @@ public class ComputeRepair {
 		return repairOntology;
 	}
 
-	private static Boolean checkRepair(OWLAxiom defectAxiom, OWLOntology defectOntology, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName, String ontologyPath, Scanner scanner) throws IOException, InterruptedException{
-		
+	private static Boolean isRepair(Set<OWLAxiom> removeAxioms){
 		Set<Set<? extends OWLAxiom>> satisfiedDiagnoses = new HashSet<>();
 
 		if (minimalDiagnoses.size() > 0){
@@ -683,8 +682,12 @@ public class ComputeRepair {
 				}
 			}
 		} 
+		return satisfiedDiagnoses.size() > 0;
+	}
 
-		if (satisfiedDiagnoses.size() > 0){
+	private static Boolean checkRepair(OWLAxiom defectAxiom, OWLOntology defectOntology, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName, String ontologyPath, Scanner scanner) throws IOException, InterruptedException{
+		
+		if (isRepair(removeAxioms)){
 			System.out.println("Repair already reached!");
 			System.out.println("Enter \"save\" to save the repair or \"continue\" to continue answering the remaining justification axioms.");
 			while(true){
@@ -718,7 +721,8 @@ public class ComputeRepair {
 			e.printStackTrace();
 			return false;
 		}
-		if (HelperFunctions.checkEntailment(repairOntology, axiom, reasonerName)){
+
+		if (!isRepair(removeAxioms)){
 			return noRepair(repairOntology, outDirStr, save_filename, scanner);											
 		} else {
 			try {
