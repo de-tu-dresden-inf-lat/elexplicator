@@ -197,13 +197,16 @@ public class EvaluateOptions {
 
     private RepairEvaluation runUserOption(String[] commands, RepairEvaluation repEval) throws RuntimeErrorException {
         double yesProb = 0.75;
-        int attempts = 1;
+        int attempts = 0;
         while (yesProb >= 0.0){
             RunRepairProcess repairProcess = new RunRepairProcess(commands, "user", Optional.of(yesProb), outputPathString, aboxOntologyString);
             
             RepairEvaluation repEvalResult = runRepairWithTimeout(repairProcess, repEval, timeoutSeconds);
             if (!repEvalResult.getAnswersMap().get("Status").equals("Repair not possible!")){
-                repEvalResult.setAttempts(attempts);
+                if (!repEvalResult.getAnswersMap().get("Status").equals("No selection!")){
+                    attempts++;
+                    repEvalResult.setAttempts(attempts);
+                }
                 return repEvalResult;
             } 
             attempts++;

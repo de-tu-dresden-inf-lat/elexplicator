@@ -58,9 +58,9 @@ import de.tu_dresden.lat.tools.HierarchyMapping;
 import java.time.LocalDateTime;
 
 public class RunEvaluation2 {
+    private static Boolean normalize;
     
-    public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr, Boolean normalize){
-
+    public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){
         OWLOntology ontology = null;
         OWLOntology inputOntology = null;
         
@@ -239,6 +239,9 @@ public class RunEvaluation2 {
             headers.add(e.optionName);
             headers.add(e.optionName + "_repairTime");
             headers.add(e.optionName + "_evaluationTime");
+            if (e.getOptionName().equals("user")){
+                headers.add("Attempts");
+            }
         }
 
         if (resultfile.exists() && resultfile.length() == 0){
@@ -251,8 +254,10 @@ public class RunEvaluation2 {
             values.add(String.valueOf(repairEval.get(i).cost));
             values.add(String.valueOf(repairEval.get(i).getRepairTime()));
             values.add(String.valueOf(repairEval.get(i).getEvaluationTime()));
-        }
-        writer.append(String.join(",", values));
+            if (repairEval.get(i).getOptionName().equals("user")){
+                values.add(String.valueOf(repairEval.get(i).getAttempts()));
+            }
+        }writer.append(String.join(",", values));
         writer.append("\n");
 
         writer.flush();
@@ -297,7 +302,7 @@ public class RunEvaluation2 {
         String intermediateOutDir = args[1];
         Boolean resume = Boolean.parseBoolean(args[2]);  
         String outDirString = "OptionsEval";
-        Boolean normalize = Boolean.parseBoolean(args[3]);
+        normalize = Boolean.parseBoolean(args[3]);
 
         if(!(new File(outDirString)).exists()){
             try {
@@ -338,7 +343,7 @@ public class RunEvaluation2 {
             } else if (resume){
                 continue;
             } else {
-                example = loadExampleInstances(exampleFile, outDirString, normalize);
+                example = loadExampleInstances(exampleFile, outDirString);
                 if (example == null){
                     continue;
                 }               
@@ -462,7 +467,10 @@ public class RunEvaluation2 {
         if (!remainingDefects.isEmpty()){
             runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
         } else {
-            new File(inputOntologyPathStr).delete();
+            if (normalize){
+                new File(inputOntologyPathStr).delete();
+            }
+            
         }
     }
 
@@ -565,10 +573,12 @@ public class RunEvaluation2 {
                 e.printStackTrace();
             }
         }
-        try{
-            new File(inputOntologyPathStr).delete();
-        } catch (Exception e){
-            e.printStackTrace();
+        if(normalize){
+            try{
+                new File(inputOntologyPathStr).delete();
+            } catch (Exception e){
+                e.printStackTrace();
+            }
         }
     }
 

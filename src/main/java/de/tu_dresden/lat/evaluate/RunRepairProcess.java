@@ -114,7 +114,7 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                         case NORMAL:
                         default:
                             if(outputText.contains("All justifications have been computed.")){
-                                if (answersMap.size() > 1){
+                                if (answersMap.size() >= 1){
                                     inputText = "save";
                                 } else {
                                     inputText = "exit";
@@ -133,7 +133,7 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
 
                             else if (outputText.contains("The resulting ontology is not a repair")){
                                 inputText = "Cancel\nExit";
-                                if (answersMap.size() > 1){
+                                if (answersMap.size() >= 1){
                                     answersMap.put("Status", "Repair not possible!");
                                 } else {
                                     answersMap.put("Status", "No selection!");
