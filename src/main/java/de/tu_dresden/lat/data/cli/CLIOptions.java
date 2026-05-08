@@ -131,6 +131,8 @@ public class CLIOptions {
     public final Option sortMethodOptionREQUIRED = new Option(CLIOptionsStrings.sortMethodOptionShort, CLIOptionsStrings.sortMethodOptionLong,
             true, CLIOptionsDescriptions.sortMethodOptionDescription);
 
+    public final Option visualizeOption = new Option(CLIOptionsStrings.visualizeOptionShort, CLIOptionsStrings.visualizeOptionLong, false,
+            CLIOptionsDescriptions.visualizeOptionDescription);
     private CLIOptions() {
         formatter.setWidth(200);
 
@@ -238,6 +240,8 @@ public class CLIOptions {
         sortMethodOption.setArgName(CLIOptionsArgs.nameArg);
         sortMethodOptionREQUIRED.setRequired(true);
         sortMethodOptionREQUIRED.setArgName(CLIOptionsArgs.nameArg);
+
+        visualizeOption.setRequired(false);
     }
 
     private static class LazyHolder {

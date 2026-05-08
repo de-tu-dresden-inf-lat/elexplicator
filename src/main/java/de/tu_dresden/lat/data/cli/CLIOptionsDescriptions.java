@@ -55,6 +55,7 @@ public class CLIOptionsDescriptions {
             liveSortOptionDescription = "The axiom displaying and sorting is done as they are being generated\n",
             sortMethodOptionDescription = "Select one of the following sorting methods for the generated axioms: "
             + Arrays.asList(SortMethod.values()) + "\n" +
-            "The default is " + CLIOptionsDefaultValues.defaultSortMethodOptionStr + "\n"
+            "The default is " + CLIOptionsDefaultValues.defaultSortMethodOptionStr + "\n",
+            visualizeOptionDescription = "Enable visualization of the repair process. By default, the visualization is turned off\n"
     ;
 }

@@ -87,6 +87,9 @@ public class CLIOptionsStrings {
             liveSortOptionLong = "live-sort",
 
             sortMethodOptionShort = "sm",
-            sortMethodOptionLong = "sort-method"
+            sortMethodOptionLong = "sort-method",
+
+            visualizeOptionShort = "vis",
+            visualizeOptionLong = "visualize"
     ;
 }

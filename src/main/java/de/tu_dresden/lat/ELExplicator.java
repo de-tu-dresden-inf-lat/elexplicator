@@ -117,6 +117,8 @@ public class ELExplicator {
 
 		options.addOption(myOpts.sortMethodOption);
 
+		options.addOption(myOpts.visualizeOption);
+
 		CommandLine cmd = null;
 
 		try {
@@ -256,9 +258,10 @@ public class ELExplicator {
 			}
 			SortMethod sortMethod = SortMethod.getSortMethod(sortMethodStr);
 			Boolean liveSort = cmd.hasOption(CLIOptionsStrings.liveSortOptionShort);
+			Boolean visualize = cmd.hasOption(CLIOptionsStrings.visualizeOptionShort);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
 			try{
-				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);	
+				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort, visualize);	
 			} catch (Exception e){
 				e.printStackTrace();
 			}		

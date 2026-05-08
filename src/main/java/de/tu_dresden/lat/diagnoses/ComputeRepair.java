@@ -100,7 +100,7 @@ public class ComputeRepair {
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
  */
-	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 	
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
@@ -149,21 +149,25 @@ public class ComputeRepair {
 				EntropySortingThread sortJustificationsRunnable = new EntropySortingThread();
 				sortJustificationsThread = new Thread(sortJustificationsRunnable);
 			}	
-			session = new RepairSession();
+			if (visualize){
+				session = new RepairSession();
+			}
+			
 			if (!liveSort){
 				//loading screen till the justifications are computed
 				while (computeJustificationsThread.isAlive() || computeDiagnosisThread.isAlive()){
 					LoadingScreen.main(null);
 				}
 				computeJustificationsThread.join();
-
+				if (visualize){
 				
-				session.startRepair(axiom, allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
-				ElExplicatorApplication.setRepairSession(session);
-				try {
-					ElExplicatorApplication.main(new String[] { "server", "config.yml" });
-				} catch (Exception e) {
-					e.printStackTrace();
+					session.startRepair(axiom, allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
+					ElExplicatorApplication.setRepairSession(session);
+					try {
+						ElExplicatorApplication.main(new String[] { "server", "config.yml" });
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
 				}
 
 				computeDiagnosisThread.join();
@@ -210,9 +214,12 @@ public class ComputeRepair {
 							LinkedHashMap::new 
 						));
 					}
-					List<OWLAxiom> orderedAxioms = new ArrayList<>(freqMap.keySet());
-					session.buildTree(orderedAxioms);
-					ElExplicatorApplication.setRepairSession(session);
+					if (visualize){
+						List<OWLAxiom> orderedAxioms = new ArrayList<>(freqMap.keySet());
+						session.buildTree(orderedAxioms);
+						ElExplicatorApplication.setRepairSession(session);
+					}
+										
 					for (OWLAxiom justificationAxiom : freqMap.keySet()){
 						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom) | justificationAxiom.equals(axiom)){
 							if (justificationAxiom.equals(axiom)){
@@ -1486,9 +1493,10 @@ public class ComputeRepair {
 		String ontologyPath = (String) args[5];
 		SortMethod sortMethod = (SortMethod) args[6];
 		Boolean liveSort = (Boolean) args[7];
+		Boolean visualize = (Boolean) args[8];
 
 		try{
-			computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
+			computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort, visualize);
 		} catch(Exception e){
 			e.printStackTrace();
 		}
