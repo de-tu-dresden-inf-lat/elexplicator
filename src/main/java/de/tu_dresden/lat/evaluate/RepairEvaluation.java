@@ -10,6 +10,7 @@ public class RepairEvaluation implements Serializable{
     double cost;
     long repairTime;
     long evaluationTime;
+    int attempts;
 
     public RepairEvaluation(String optionName){
         this.optionName = optionName;
@@ -58,6 +59,14 @@ public class RepairEvaluation implements Serializable{
 
     public long getEvaluationTime(){
         return this.evaluationTime;
+    }
+
+    public void setAttempts(int attempts){
+        this.attempts = attempts;
+    }
+
+    public int getAttempts(){
+        return this.attempts;
     }
 }
 

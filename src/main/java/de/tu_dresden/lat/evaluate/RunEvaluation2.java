@@ -59,21 +59,20 @@ import java.time.LocalDateTime;
 
 public class RunEvaluation2 {
     
-    public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){
+    public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr, Boolean normalize){
 
         OWLOntology ontology = null;
-        OWLOntology normalized = null;
-        String normalizedFilePath = exampleFile.getParent().toString() + File.separator + "normalized.owl";
+        OWLOntology inputOntology = null;
+        
         HierarchyMapping classHierarchyMapping = null;
-        HierarchyMapping classHierarchyMappingNormalized = null;
+        HierarchyMapping classHierarchyMappingInput = null;
         Map<String, Object> map = new HashMap<>();
+        int axiomCount = 0;
         System.out.println("loading file: "+exampleFile.getName());
         try{
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
             ontology = manager.loadOntologyFromOntologyDocument(exampleFile);
-
-            OWLOntologyManager manager2 = OWLManager.createOWLOntologyManager();
-            normalized = manager2.copyOntology(ontology, OntologyCopy.DEEP);
+            axiomCount = ontology.getLogicalAxiomCount();            
         }
         catch(Exception e){
             e.printStackTrace();
@@ -106,42 +105,58 @@ public class RunEvaluation2 {
             return null;
         }
 
-        int axiomCount = 0;
-        try{
-            OntologyToDNF ontToDNF = new OntologyToDNF(normalized);
-            normalized = ontToDNF.normalizeOntology();
-            axiomCount = ontology.getLogicalAxiomCount();
-            OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-            OutputStream outputstream = Files.newOutputStream(new File(normalizedFilePath).toPath());
-            OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
-            manager.saveOntology(normalized, ontologyFormat, outputstream);
-            System.out.println(LocalDateTime.now() + " Ontology normalized and saved!");
-        } catch (Exception e){
-            System.out.println(LocalDateTime.now() + "Error normalizing ontology "+exampleFile.getName());
-            return null;
-        }
-        int CHN_counter = 1;
-        while(classHierarchyMappingNormalized == null && CHN_counter <= 5){
+        
+        if (normalize){
+            OWLOntology normalized = null;
+            String normalizedFilePath = exampleFile.getParent().toString() + File.separator + "normalized.owl";
+            HierarchyMapping classHierarchyMappingNormalized = null;
             try{
-                classHierarchyMappingNormalized = createClassHierarchyMapping(normalized);
-                System.out.println("Normalized Class Hierarchy created!");
-                break;
-            } catch (OutOfMemoryError e){
-                CHN_counter++;
+                OWLOntologyManager manager2 = OWLManager.createOWLOntologyManager();
+                normalized = manager2.copyOntology(ontology, OntologyCopy.DEEP);
+                OntologyToDNF ontToDNF = new OntologyToDNF(normalized);
+                normalized = ontToDNF.normalizeOntology();
+                axiomCount = ontology.getLogicalAxiomCount();
+                OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+                OutputStream outputstream = Files.newOutputStream(new File(normalizedFilePath).toPath());
+                OWLDocumentFormat ontologyFormat = new OWLXMLDocumentFormat();
+                manager.saveOntology(normalized, ontologyFormat, outputstream);
+                System.out.println(LocalDateTime.now() + " Ontology normalized and saved!");
+                map.put("inputOntologyPathStr", normalizedFilePath); 
             } catch (Exception e){
-                e.printStackTrace();
+                System.out.println(LocalDateTime.now() + "Error normalizing ontology "+exampleFile.getName());
                 return null;
             }
-        }
 
+            inputOntology = normalized;
+
+            int CHN_counter = 1;
+            while(classHierarchyMappingNormalized == null && CHN_counter <= 5){
+                try{
+                    classHierarchyMappingNormalized = createClassHierarchyMapping(inputOntology);
+                    System.out.println("Normalized Class Hierarchy created!");
+                    break;
+                } catch (OutOfMemoryError e){
+                    CHN_counter++;
+                } catch (Exception e){
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+            classHierarchyMappingInput = classHierarchyMappingNormalized;
+        } else {
+            inputOntology = ontology;
+            classHierarchyMappingInput = classHierarchyMapping;
+        }
+        
+        
         map.put("example", exampleFile.getName());
         // map.put("ontology", ontology);
         // map.put("normalizedOntology", normalized);
         map.put("classHierarchyMapping", classHierarchyMapping);
-        map.put("classHierarchyMappingNormalized", classHierarchyMappingNormalized);
+        map.put("classHierarchyMappingInput", classHierarchyMappingInput);
         map.put("defectAxiomsSet", defectsSet);
         map.put("ontologyPathStr", exampleFile.getPath());  
-        map.put("normalizedOntologyPathStr", normalizedFilePath); 
+        map.put("inputOntologyPathStr", exampleFile.getPath());
         map.put("axiomCount", axiomCount);    
         
         return map;
@@ -213,13 +228,13 @@ public class RunEvaluation2 {
         return IApath;
     }
 
-    private static void writeToCSV(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom, int axiomCount) throws IOException{
+    private static void writeToCSV(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom, int axiomCount, double cost) throws IOException{
         File resultfile = new File(filePath+File.separator+"result.csv");
         
         
         FileWriter writer = new FileWriter(filePath+File.separator+"result.csv", true);
         
-        List<String> headers = new ArrayList<>(Arrays.asList("Example", "Defect Axiom", "Axiom Count"));
+        List<String> headers = new ArrayList<>(Arrays.asList("Example", "Defect Axiom", "Axiom Count", "Cost"));
         for (RepairEvaluation e : repairEval){
             headers.add(e.optionName);
             headers.add(e.optionName + "_repairTime");
@@ -231,7 +246,7 @@ public class RunEvaluation2 {
         }
 
         List<String> values = new ArrayList<>();
-        values.addAll(Arrays.asList(exampleName, axiom.toString(), String.valueOf(axiomCount)));
+        values.addAll(Arrays.asList(exampleName, axiom.toString(), String.valueOf(axiomCount), String.valueOf(cost)));
         for (int i=0; i<repairEval.size(); i++){
             values.add(String.valueOf(repairEval.get(i).cost));
             values.add(String.valueOf(repairEval.get(i).getRepairTime()));
@@ -244,7 +259,7 @@ public class RunEvaluation2 {
         writer.close();
     }
 
-    private static void logDecisions(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom, int axiomCount) throws StreamWriteException, DatabindException, IOException{
+    private static void logDecisions(String filePath, List<RepairEvaluation> repairEval, String exampleName, OWLAxiom axiom, int axiomCount, double cost) throws StreamWriteException, DatabindException, IOException{
         ObjectMapper objectMapper = new ObjectMapper();
         File jsonFile = new File(filePath + File.separator + "decisons.json");
 
@@ -260,6 +275,7 @@ public class RunEvaluation2 {
         ObjectNode exampleDetailsNode = objectMapper.createObjectNode();
         exampleDetailsNode.put("Defect", axiom.toString());
         exampleDetailsNode.put("Axiom Count", axiomCount);
+        exampleDetailsNode.put("Cost", cost);
         exampleDetailsNode.put("Evaluation", evalListNode);
 
         if (rootNode.has(exampleName)){
@@ -281,6 +297,7 @@ public class RunEvaluation2 {
         String intermediateOutDir = args[1];
         Boolean resume = Boolean.parseBoolean(args[2]);  
         String outDirString = "OptionsEval";
+        Boolean normalize = Boolean.parseBoolean(args[3]);
 
         if(!(new File(outDirString)).exists()){
             try {
@@ -321,7 +338,7 @@ public class RunEvaluation2 {
             } else if (resume){
                 continue;
             } else {
-                example = loadExampleInstances(exampleFile, outDirString);
+                example = loadExampleInstances(exampleFile, outDirString, normalize);
                 if (example == null){
                     continue;
                 }               
@@ -377,7 +394,7 @@ public class RunEvaluation2 {
         // get current defect axiom and current evaluation option
         Map<String, Object> example = (Map<String, Object>) programState.get("currentExample");
         String exampleName = (String) example.get("example");
-        String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
+        String inputOntologyPathStr = (String) example.get("inputOntologyPathStr");
         int axiomCount = (int) example.get("axiomCount");
         
         String defectAxiomStr = programState.get("defectStr").toString();
@@ -393,7 +410,7 @@ public class RunEvaluation2 {
             repEvalList = (List<RepairEvaluation>) programState.get("evaluations");
         }
         List<String> remainingOpts = options.subList(options.indexOf(evaluationOption), options.size());
-        EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, remainingOpts);
+        EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, remainingOpts);
         try{
             List<RepairEvaluation> newEvalList = evaluateOptions.evaluateOpt();
             repEvalList.addAll(newEvalList);
@@ -416,8 +433,10 @@ public class RunEvaluation2 {
             System.exit(1);
         }
         try {
-            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom, axiomCount);
-            logDecisions(outDirString, repEvalList, exampleName, defectAxiom, axiomCount);
+            //evaluate original ontology wrt to the abox and log results
+            double cost = CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr);
+            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost);
+            logDecisions(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost);
             new File(aboxPathStr).delete();
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -427,23 +446,23 @@ public class RunEvaluation2 {
         List<OWLAxiom> remainingDefects = defectsList.subList(defectsList.indexOf(defectAxiom)+1, defectsList.size());
         example.put("defectAxiomsSet", remainingDefects);
         String ontologyFile = (String)example.get("ontologyPathStr");
-        String normalizedOntologyFile = (String) example.get("normalizedOntologyPathStr");
+        String inputOntologyFile = (String) example.get("inputOntologyPathStr");
         try{
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
             OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyFile));
-            OWLOntology normalizedOntology = manager.loadOntologyFromOntologyDocument(new File(normalizedOntologyFile));
+            OWLOntology inputOntology = manager.loadOntologyFromOntologyDocument(new File(inputOntologyFile));
             // load the two ontologies and get their classHierarchyMapping and set them in the example map
             HierarchyMapping classHierarchyMapping = createClassHierarchyMapping(ontology);
-            HierarchyMapping classHierarchyMappingNormalized = createClassHierarchyMapping(normalizedOntology);
+            HierarchyMapping classHierarchyMappingInput = createClassHierarchyMapping(inputOntology);
             example.put("classHierarchyMapping", classHierarchyMapping);
-            example.put("classHierarchyMappingNormalized", classHierarchyMappingNormalized);
+            example.put("classHierarchyMappingInput", classHierarchyMappingInput);
         } catch (Exception e){
             e.printStackTrace();
         }
         if (!remainingDefects.isEmpty()){
             runExampleRepairEvaluation(exampleFile, outDirString, intermediateOutDir, options, example);
         } else {
-            new File(normOntologyPathStr).delete();
+            new File(inputOntologyPathStr).delete();
         }
     }
 
@@ -452,19 +471,19 @@ public class RunEvaluation2 {
         // OWLOntology normalizedOntology = (OWLOntology) example.get("normalizedOntology");
         
         List<OWLAxiom> defectsSet = (List<OWLAxiom>) example.get("defectAxiomsSet");
-        String normOntologyPathStr = (String) example.get("normalizedOntologyPathStr");
+        String inputOntologyPathStr = (String) example.get("inputOntologyPathStr");
         long fileSize = exampleFile.length();
         int axiomCount = (int) example.get("axiomCount");
         HierarchyMapping classHierarchyMapping = (HierarchyMapping) example.get("classHierarchyMapping");
-        HierarchyMapping classHierarchyMappingNormalized = (HierarchyMapping) example.get("classHierarchyMappingNormalized");
+        HierarchyMapping classHierarchyMappingInput = (HierarchyMapping) example.get("classHierarchyMappingInput");
 
-        OWLOntology normalizedOntology = null;
+        OWLOntology inputOntology = null;
         try{
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-            normalizedOntology = manager.loadOntologyFromOntologyDocument(new File(normOntologyPathStr));
+            inputOntology = manager.loadOntologyFromOntologyDocument(new File(inputOntologyPathStr));
         } catch (Exception e){
             e.printStackTrace();
-            System.out.println("Error loading normalized ontology "+exampleFile.getName());
+            System.out.println("Error loading input ontology "+exampleFile.getName());
             return;
         }
 
@@ -495,7 +514,7 @@ public class RunEvaluation2 {
             String defectAxiomStr = renderer.render(axiom);
             Map<String, Object> exampleTimeTracker = new HashMap<>();
             try{
-                ABoxGenerator aBoxGenerator = new ABoxGenerator(normalizedOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir, classHierarchyMappingNormalized);
+                ABoxGenerator aBoxGenerator = new ABoxGenerator(inputOntology, exampleFile.getName(), defectAxiomStr, intermediateOutDir, classHierarchyMappingInput);
                 aBoxGenerator.generateABox();
                 Map<String, java.lang.Object> aboxGenTimeMap = aBoxGenerator.getAboxGenTimeMap();
                 exampleTimeTracker.put("Example", exampleName);
@@ -513,7 +532,7 @@ public class RunEvaluation2 {
                 e.printStackTrace();
             }
             String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
-            EvaluateOptions evaluateOptions = new EvaluateOptions(normOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, options);
+            EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, options);
             List<RepairEvaluation> repEvalList = new ArrayList<>();
             try{
                 repEvalList = evaluateOptions.evaluateOpt();
@@ -522,7 +541,7 @@ public class RunEvaluation2 {
                 String currentOption = evaluateOptions.currentOption;
                 Map<String, Object> programState = new HashMap<>();
                 example.remove("classHierarchyMapping");
-                example.remove("classHierarchyMappingNormalized");
+                example.remove("classHierarchyMappingInput");
                 programState.put("status", "Failure");
                 programState.put("currentExample", example);
                 programState.put("defectStr", defectAxiomStr);
@@ -537,15 +556,17 @@ public class RunEvaluation2 {
                 System.exit(1);
             }
             try{
-                writeToCSV(outDirString, repEvalList, exampleName, axiom, axiomCount);
-                logDecisions(outDirString, repEvalList, exampleName, axiom, axiomCount);
+                //evaluate the original ontology with the generated ABox and log the results
+                double cost = CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr);
+                writeToCSV(outDirString, repEvalList, exampleName, axiom, axiomCount, cost);
+                logDecisions(outDirString, repEvalList, exampleName, axiom, axiomCount, cost);
                 new File(aboxPathStr).delete();
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         try{
-            new File(normOntologyPathStr).delete();
+            new File(inputOntologyPathStr).delete();
         } catch (Exception e){
             e.printStackTrace();
         }
