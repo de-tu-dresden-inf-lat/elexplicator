@@ -130,7 +130,20 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                                 inputText = "repairOntology";
                                 answersMap.put("Status", "Repair reached!");
                             }
+                            
+                            else if (outputText.contains("Enter \"max\" to compute maximal or \"continue\" to save.")){
+                                inputText = "continue";                         
+                            }
 
+                            else if (outputText.contains("The resulting ontology is not a repair")){
+                                inputText = "Cancel\nExit";
+                                if (answersMap.size() >= 1){
+                                    answersMap.put("Status", "Repair not possible!");
+                                } else {
+                                    answersMap.put("Status", "No selection!");
+                                }                                
+                            }
+                            
                             else if (outputText.contains("The resulting ontology is not a repair")){
                                 inputText = "Cancel\nExit";
                                 if (answersMap.size() >= 1){
@@ -209,8 +222,8 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
 
     public String option2Decision() throws IOException {
         //Read from class hierarchy json file, the two owl class hierarchies and evaluate them with the computeCost function. Select the one with lowest and answer accordingly.
-        double costYes = 0.0;
-        double costNo = 0.0;
+        // double costYes = 0.0;
+        // double costNo = 0.0;
         String ontologyYes = outputPathString + File.separator + "ontoYes.owl";
         String ontologyNo = outputPathString + File.separator + "ontoNo.owl";
         String jsonFile = outputPathString + File.separator + "classHierarchyDifference.json";
@@ -222,9 +235,23 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
         
         if (repairYes && repairNo){
             System.out.println("Repair possible from both");
-            costYes = CostComputing.CostComputing(ontologyYes, aboxOntologyString);
-            costNo = CostComputing.CostComputing(ontologyNo, aboxOntologyString);
-            if (costYes <= costNo){
+            AtomicReference<Double> costYes = new AtomicReference<>(0.0);
+            Thread tYes = new Thread(()-> costYes.set(CostComputing.CostComputing(ontologyYes, aboxOntologyString)));
+            tYes.start();
+            try{
+                tYes.join();
+            } catch(InterruptedException e){
+                //swallow the exception
+            }
+            AtomicReference<Double> costNo = new AtomicReference<>(0.0);
+            Thread tNo = new Thread(()-> costNo.set(CostComputing.CostComputing(ontologyNo, aboxOntologyString)));
+            tNo.start();
+            try{
+                tNo.join();
+            } catch(InterruptedException e){
+                //swallow the exception
+            }
+            if (costYes.get() <= costNo.get()){
                 return "yes"; 
             } else {
                 return "no";

@@ -177,6 +177,13 @@ public class HelperFunctions {
 		}		
 	}
 
+	public static OWLReasoner createReasoner(OWLOntology ontology, ReasonerName reasonerName){
+		if (reasonerName == ReasonerName.Elk) {
+			return new ElkReasonerFactory().createReasoner(ontology);
+		} else {
+			return new ReasonerFactory().createReasoner(ontology);
+		}
+	}
     public static String getMDSFilePathStr(String outDir, String mDsID) {
 		String fileName = mDsID.isEmpty() ? "mDs.txt" : "mDs_" + mDsID + ".txt";
 		return outDir + File.separator + fileName;

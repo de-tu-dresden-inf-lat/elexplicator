@@ -30,6 +30,9 @@ import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
+import org.semanticweb.HermiT.ReasonerFactory;
+import org.semanticweb.elk.owlapi.ElkReasoner;
+import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.model.IRI;
 import org.semanticweb.owlapi.model.OWLAxiom;
@@ -39,6 +42,8 @@ import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
 import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 import org.semanticweb.owlapi.model.parameters.Imports;
+import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -52,6 +57,7 @@ import de.tu_dresden.lat.api.RepairSession;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.data.names.ReasonerName;
+import de.tu_dresden.lat.tools.Helper;
 import de.tu_dresden.lat.tools.LoadingScreen;
 import de.tu_dresden.lat.tools.OWLOntologyContentKey;
 
@@ -1275,12 +1281,24 @@ public class ComputeRepair {
 			repairOntology = computeRepair(diagnosisSet, ontologyPath);
 			ontologyKey = new OWLOntologyContentKey(repairOntology);
 			entailedIA = new HashSet<>();
-			for (OWLAxiom ia : interestingAxiomsSet){
-				if (HelperFunctions.checkEntailment(repairOntology, ia, reasonerName)){
-					entailedIA.add(ia);
-					ia_entailment_count++;
+			OWLReasoner reasoner = HelperFunctions.createReasoner(repairOntology, reasonerName);
+			try {
+				for (OWLAxiom ia : interestingAxiomsSet) {
+					try {
+						if (reasoner.isEntailed(ia)) {
+							entailedIA.add(ia);
+							ia_entailment_count++;
+						}
+					} catch (Exception e) {
+						logger.error("Failed to check entailment");
+						throw e;
+					}
 				}
+			} finally {
+				reasoner.dispose();
+				reasoner = null;
 			}
+			
 			if (repairEntailMap.containsKey(ontologyKey)){
 				throw new IllegalStateException("Duplicate repair ontology detected!");
 			}

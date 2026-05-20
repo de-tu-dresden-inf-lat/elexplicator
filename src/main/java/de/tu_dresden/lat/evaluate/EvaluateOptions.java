@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
+import java.util.concurrent.atomic.AtomicReference;
 import java.time.LocalDateTime;
 
 import javax.management.RuntimeErrorException;
@@ -61,7 +61,7 @@ public class EvaluateOptions {
         List<RepairEvaluation> evalList = new ArrayList<>();
 
         String jar_path = "target/ELExplicator.jar";
-        String[] commands = {"java", "-jar", jar_path, 
+        String[] commands = {"java", "-Xmx12g", "-Xms2g", "-jar", jar_path, 
             "-a", defectAxiomString,
             "-o", ontologyPathString,
             "-r",  "ELK",
@@ -220,14 +220,21 @@ public class EvaluateOptions {
 
     private double evaluateRepair() {
         File outputDir = new File(outputPathString);
-        double repairCost = 0.0;
+        AtomicReference<Double> repairCost = new AtomicReference<>(0.0);
         for (File outFile : outputDir.listFiles()) {
             if (outFile.isFile() && outFile.getName().startsWith("repairOntology") && outFile.getName().endsWith(".owl")) {
                 String repairOntologyPath = outFile.getAbsolutePath();
-                repairCost = CostComputing.CostComputing(repairOntologyPath, aboxOntologyString);
+                Thread t = new Thread(() -> repairCost.set(CostComputing.CostComputing(repairOntologyPath, aboxOntologyString)));
+                t.start();
+                try{
+                    t.join();
+                } catch (InterruptedException e){
+                    //already handled by outer thread.
+                }
                 outFile.delete();
+                break;
             }
         }
-        return repairCost;
+        return repairCost.get();
     }
 }

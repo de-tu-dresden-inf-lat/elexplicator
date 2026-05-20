@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
@@ -439,9 +440,16 @@ public class RunEvaluation2 {
         }
         try {
             //evaluate original ontology wrt to the abox and log results
-            double cost = CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr);
-            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost);
-            logDecisions(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost);
+            AtomicReference<Double> cost = new AtomicReference<>(0.0);
+            Thread t = new Thread(()-> cost.set(CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr)));
+            t.start();
+            try{
+                t.join();
+            } catch(InterruptedException e){
+                Thread.currentThread().interrupt();
+            }
+            writeToCSV(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost.get());
+            logDecisions(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost.get());
             new File(aboxPathStr).delete();
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -455,10 +463,16 @@ public class RunEvaluation2 {
         try{
             OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
             OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyFile));
-            OWLOntology inputOntology = manager.loadOntologyFromOntologyDocument(new File(inputOntologyFile));
-            // load the two ontologies and get their classHierarchyMapping and set them in the example map
             HierarchyMapping classHierarchyMapping = createClassHierarchyMapping(ontology);
-            HierarchyMapping classHierarchyMappingInput = createClassHierarchyMapping(inputOntology);
+            OWLOntology inputOntology;
+            HierarchyMapping classHierarchyMappingInput;
+            if (ontologyFile.equals(inputOntologyFile)){
+                inputOntology = ontology;
+                classHierarchyMappingInput = classHierarchyMapping;
+            } else {
+                inputOntology = manager.loadOntologyFromOntologyDocument(new File(inputOntologyFile));
+                classHierarchyMappingInput = createClassHierarchyMapping(inputOntology);
+            }
             example.put("classHierarchyMapping", classHierarchyMapping);
             example.put("classHierarchyMappingInput", classHierarchyMappingInput);
         } catch (Exception e){
@@ -565,9 +579,16 @@ public class RunEvaluation2 {
             }
             try{
                 //evaluate the original ontology with the generated ABox and log the results
-                double cost = CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr);
-                writeToCSV(outDirString, repEvalList, exampleName, axiom, axiomCount, cost);
-                logDecisions(outDirString, repEvalList, exampleName, axiom, axiomCount, cost);
+                AtomicReference<Double> cost = new AtomicReference<>(0.0);
+                Thread t = new Thread(()-> cost.set(CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr)));
+                t.start();
+                try{
+                    t.join();
+                } catch(InterruptedException e){
+                    Thread.currentThread().interrupt();
+                }
+                writeToCSV(outDirString, repEvalList, exampleName, axiom, axiomCount, cost.get());
+                logDecisions(outDirString, repEvalList, exampleName, axiom, axiomCount, cost.get());
                 new File(aboxPathStr).delete();
             } catch (IOException e) {
                 e.printStackTrace();
