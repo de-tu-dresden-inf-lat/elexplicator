@@ -38,15 +38,17 @@ public class EvaluateOptions {
     List<String> options;
     Boolean errorOccurred = false;
     String currentOption = "";
+    Integer currentAttempt;
     Integer timeoutSeconds = 3600;
 
-    public EvaluateOptions(String ontoPath, String defectStr, String intAxiomsStr, String aboxOnto, String outPath, List<String> options){
+    public EvaluateOptions(String ontoPath, String defectStr, String intAxiomsStr, String aboxOnto, String outPath, List<String> options, Integer currentAttempt){
         this.ontologyPathString = ontoPath;
         this.defectAxiomString =defectStr;
         this.interestingAxiomString = intAxiomsStr;
         this.aboxOntologyString = aboxOnto;
         this.outputPathString = outPath;
         this.options = options;
+        this.currentAttempt = currentAttempt;
     }
 
     
@@ -69,6 +71,18 @@ public class EvaluateOptions {
             "-od", outputPathString
         };       
         for (String option : options){
+            if (currentAttempt > 5){
+                System.out.println(LocalDateTime.now() + " Already tried option: " + option + " for 5 retries. Moving on to next evaluation.");
+                this.currentAttempt = 0;
+                //set repEval with status "Memory Error" and cost -1
+                RepairEvaluation repEval = new RepairEvaluation(option);
+                repEval.setAnswersMap(Map.of("Status", "Memory Error"));
+                repEval.setCost(0.0);
+                repEval.setRepairTime(-1);
+                repEval.setEvaluationTime(-1);
+                evalList.add(repEval);
+                continue;
+            }
             this.currentOption = option;
             Map<String, String> answersMap = null;
             double cost = -1;
@@ -134,7 +148,6 @@ public class EvaluateOptions {
             System.out.println(repEval.getRepairTime());
             evalList.add(repEval);
         }
-        
         return evalList;
         
     }

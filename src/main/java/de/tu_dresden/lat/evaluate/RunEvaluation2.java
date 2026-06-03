@@ -416,7 +416,9 @@ public class RunEvaluation2 {
             repEvalList = (List<RepairEvaluation>) programState.get("evaluations");
         }
         List<String> remainingOpts = options.subList(options.indexOf(evaluationOption), options.size());
-        EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, remainingOpts);
+        Integer currentAttempt =  (Integer) programState.getOrDefault("currentAttempt", 0);
+        System.out.println(LocalDateTime.now() + " Resuming evaluation for option: "+evaluationOption+" with attempt: "+currentAttempt+1);
+        EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, remainingOpts, currentAttempt+1);
         try{
             List<RepairEvaluation> newEvalList = evaluateOptions.evaluateOpt();
             repEvalList.addAll(newEvalList);
@@ -435,6 +437,7 @@ public class RunEvaluation2 {
             programState.put("currentOption", currentOption);
             programState.put("evaluations", repEvalList);
             // programState.put("axiomCount", example.get("axiomCount"));
+            programState.put("currentAttempt", evaluateOptions.currentAttempt);
             saveCheckpoint(programState, outDirString);
             System.exit(1);
         }
@@ -456,7 +459,7 @@ public class RunEvaluation2 {
             e.printStackTrace();
         }       
 
-        List<OWLAxiom> remainingDefects = defectsList.subList(defectsList.indexOf(defectAxiom)+1, defectsList.size());
+        List<OWLAxiom> remainingDefects = new ArrayList<>(defectsList.subList(defectsList.indexOf(defectAxiom)+1, defectsList.size()));
         example.put("defectAxiomsSet", remainingDefects);
         String ontologyFile = (String)example.get("ontologyPathStr");
         String inputOntologyFile = (String) example.get("inputOntologyPathStr");
@@ -554,7 +557,7 @@ public class RunEvaluation2 {
                 e.printStackTrace();
             }
             String aboxPathStr = intermediateOutDir + File.separator + exampleName.split(".owl")[0] + "_ABox.owl";
-            EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, options);
+            EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, options, 0);
             List<RepairEvaluation> repEvalList = new ArrayList<>();
             try{
                 repEvalList = evaluateOptions.evaluateOpt();
@@ -573,6 +576,7 @@ public class RunEvaluation2 {
                 programState.put("defectAxiom", axiom);
                 programState.put("currentOption", currentOption);
                 programState.put("evaluations", repEvalList);
+                programState.put("currentAttempt", evaluateOptions.currentAttempt);
                 // programState.put("axiomCount", axiomCount);
                 saveCheckpoint(programState, outDirString);
                 System.exit(1);
