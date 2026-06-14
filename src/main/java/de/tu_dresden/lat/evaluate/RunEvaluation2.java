@@ -417,7 +417,7 @@ public class RunEvaluation2 {
         }
         List<String> remainingOpts = options.subList(options.indexOf(evaluationOption), options.size());
         Integer currentAttempt =  (Integer) programState.getOrDefault("currentAttempt", 0);
-        System.out.println(LocalDateTime.now() + " Resuming evaluation for option: "+evaluationOption+" with attempt: "+currentAttempt+1);
+        System.out.println(LocalDateTime.now() + " Resuming evaluation for option: "+evaluationOption+" with attempt: "+ (currentAttempt+1));
         EvaluateOptions evaluateOptions = new EvaluateOptions(inputOntologyPathStr, defectAxiomStr, interestingAxiomOntology, aboxPathStr, outDirString, remainingOpts, currentAttempt+1);
         try{
             List<RepairEvaluation> newEvalList = evaluateOptions.evaluateOpt();
@@ -581,15 +581,26 @@ public class RunEvaluation2 {
                 saveCheckpoint(programState, outDirString);
                 System.exit(1);
             }
+            Boolean costInput = false;
+            for (RepairEvaluation eval: repEvalList){
+                if (eval.cost != -1){
+                    costInput = true;
+                    break;
+                }
+            }
             try{
-                //evaluate the original ontology with the generated ABox and log the results
+                //evaluate the original ontology with the generated ABox and log the results, only if atleast one of the evaluation results has a valid cost
                 AtomicReference<Double> cost = new AtomicReference<>(0.0);
-                Thread t = new Thread(()-> cost.set(CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr)));
-                t.start();
-                try{
-                    t.join();
-                } catch(InterruptedException e){
-                    Thread.currentThread().interrupt();
+                if (costInput){                    
+                    Thread t = new Thread(()-> cost.set(CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr)));
+                    t.start();
+                    try{
+                        t.join();
+                    } catch(InterruptedException e){
+                        Thread.currentThread().interrupt();
+                    }
+                } else {
+                    cost.set(-1.0);
                 }
                 writeToCSV(outDirString, repEvalList, exampleName, axiom, axiomCount, cost.get());
                 logDecisions(outDirString, repEvalList, exampleName, axiom, axiomCount, cost.get());
