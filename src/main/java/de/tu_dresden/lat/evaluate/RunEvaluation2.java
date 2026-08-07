@@ -147,6 +147,7 @@ public class RunEvaluation2 {
         } else {
             inputOntology = ontology;
             classHierarchyMappingInput = classHierarchyMapping;
+            map.put("inputOntologyPathStr", exampleFile.getPath());
         }
         
         
@@ -156,8 +157,7 @@ public class RunEvaluation2 {
         map.put("classHierarchyMapping", classHierarchyMapping);
         map.put("classHierarchyMappingInput", classHierarchyMappingInput);
         map.put("defectAxiomsSet", defectsSet);
-        map.put("ontologyPathStr", exampleFile.getPath());  
-        map.put("inputOntologyPathStr", exampleFile.getPath());
+        map.put("ontologyPathStr", exampleFile.getPath());          
         map.put("axiomCount", axiomCount);    
         
         return map;
@@ -441,23 +441,34 @@ public class RunEvaluation2 {
             saveCheckpoint(programState, outDirString);
             System.exit(1);
         }
-        try {
-            //evaluate original ontology wrt to the abox and log results
+        Boolean costInput = false;
+        for (RepairEvaluation eval: repEvalList){
+            if (eval.cost != -1){
+                costInput = true;
+                break;
+            }
+        }
+        try{
+            //evaluate the original ontology with the generated ABox and log the results, only if atleast one of the evaluation results has a valid cost
             AtomicReference<Double> cost = new AtomicReference<>(0.0);
-            Thread t = new Thread(()-> cost.set(CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr)));
-            t.start();
-            try{
-                t.join();
-            } catch(InterruptedException e){
-                Thread.currentThread().interrupt();
+            if (costInput){                    
+                Thread t = new Thread(()-> cost.set(CostComputing.CostComputing(inputOntologyPathStr, aboxPathStr)));
+                t.start();
+                try{
+                    t.join();
+                } catch(InterruptedException e){
+                    Thread.currentThread().interrupt();
+                }
+                
+            } else {
+                cost.set(-1.0);
             }
             writeToCSV(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost.get());
             logDecisions(outDirString, repEvalList, exampleName, defectAxiom, axiomCount, cost.get());
             new File(aboxPathStr).delete();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
-        }       
+        }
 
         List<OWLAxiom> remainingDefects = new ArrayList<>(defectsList.subList(defectsList.indexOf(defectAxiom)+1, defectsList.size()));
         example.put("defectAxiomsSet", remainingDefects);
@@ -524,7 +535,11 @@ public class RunEvaluation2 {
                 System.out.println("Error generating interesting axiom "+exampleFile.getName());
                 continue;
             }             
-        
+            catch(OutOfMemoryError e)
+            {
+                System.out.println("Out of memory error while generating interesting axiom "+exampleFile.getName());
+                continue;
+            }
             ManchesterOWLSyntaxOWLObjectRendererImpl renderer = new ManchesterOWLSyntaxOWLObjectRendererImpl();
             // renderer.setShortFormProvider(new SimpleShortFormProvider());;
             renderer.setShortFormProvider(new ShortFormProvider() {
@@ -550,7 +565,11 @@ public class RunEvaluation2 {
             } catch (InconsistentOntologyException e){
                 System.out.println(LocalDateTime.now() + " Inconsistent Onto Error");
                 continue;
-            } 
+            } catch (Exception e){
+                System.out.println(LocalDateTime.now() + " Error generating ABox");
+                e.printStackTrace();
+                continue;
+            }
             try{
                 logAboxGenerationTime(exampleTimeTracker);
             }catch (IOException e){

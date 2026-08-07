@@ -63,7 +63,7 @@ public class EvaluateOptions {
         List<RepairEvaluation> evalList = new ArrayList<>();
 
         String jar_path = "target/ELExplicator.jar";
-        String[] commands = {"java", "-Xmx12g", "-Xms2g", "-jar", jar_path, 
+        String[] commands = {"java", "-Xmx8g", "-Xms2g", "-jar", jar_path, 
             "-a", defectAxiomString,
             "-o", ontologyPathString,
             "-r",  "ELK",

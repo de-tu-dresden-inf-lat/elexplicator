@@ -242,6 +242,15 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                 tYes.join();
             } catch(InterruptedException e){
                 //swallow the exception
+                //if tYes is still running or exists, interrupt it and wait for it to finish
+                if (tYes.isAlive()) {
+                    tYes.interrupt();
+                    try {
+                        tYes.join();
+                    } catch (InterruptedException ex) {
+                        //swallow the exception
+                    }
+                }
             }
             AtomicReference<Double> costNo = new AtomicReference<>(0.0);
             Thread tNo = new Thread(()-> costNo.set(CostComputing.CostComputing(ontologyNo, aboxOntologyString)));
@@ -250,6 +259,14 @@ public class RunRepairProcess implements Callable<Map<String, String>> {
                 tNo.join();
             } catch(InterruptedException e){
                 //swallow the exception
+                if (tNo.isAlive()) {
+                    tNo.interrupt();
+                    try {
+                        tNo.join();
+                    } catch (InterruptedException ex) {
+                        //swallow the exception
+                    }
+                }
             }
             if (costYes.get() <= costNo.get()){
                 return "yes"; 

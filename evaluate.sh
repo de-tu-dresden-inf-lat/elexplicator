@@ -18,8 +18,8 @@ more=0
 checkpoint='/home/service/elexplicator/OptionsEval/programState.json'
 
 
-examples_dir='/home/service/Desktop/Examples2'
-intermediate_out_dir='/home/service/Desktop/Examples2'
+examples_dir='/home/service/Desktop/Examples'
+intermediate_out_dir='/home/service/Desktop/Examples'
 
 echo "Watching out for -> process = $p, user = $u"
 if ! id -u "$u" &> /dev/null;
@@ -33,6 +33,7 @@ JAR_PATH="target/ELExplicator.jar"
 CLASS_NAME="de.tu_dresden.lat.evaluate.RunEvaluation2"
 
 status_value="Failure";
+normalized='True';
 
 while (( more == 0 ));
 do 
@@ -54,9 +55,9 @@ do
 			set +e
 			if (( reRuns == 0 ));
 			then 
-				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "False" -XX:+ExitOnOutOfMemoryError 
+				java -Xmx8g -Xms2g -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "False" "$normalized" -XX:+ExitOnOutOfMemoryError 
 			else
-				java -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "True" -XX:+ExitOnOutOfMemoryError 
+				java -Xmx8g -Xms2g -cp "$JAR_PATH" "$CLASS_NAME" "$examples_dir" "$intermediate_out_dir" "True" "$normalized" -XX:+ExitOnOutOfMemoryError 
 			fi
 			set -e
 			reRuns=$((reRuns + 1));

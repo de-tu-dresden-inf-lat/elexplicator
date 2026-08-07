@@ -14,10 +14,16 @@ public class HierarchyMapping {
     }
 
     public Map<OWLClass, Set<OWLClass>> getSubClassMap() {
+        if (subClassMap == null) {
+            return new java.util.HashMap<>();
+        }
         return subClassMap;
     }
 
     public Map<OWLClass, Set<OWLClass>> getSuperClassMap() {
+        if (superClassMap == null) {
+            return new java.util.HashMap<>();
+        }
         return superClassMap;
     }
 }
