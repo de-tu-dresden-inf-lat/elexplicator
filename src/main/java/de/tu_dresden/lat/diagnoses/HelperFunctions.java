@@ -19,7 +19,6 @@ import java.util.StringJoiner;
 
 import org.apache.log4j.Logger;
 import org.semanticweb.HermiT.ReasonerFactory;
-import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
@@ -139,13 +138,25 @@ public class HelperFunctions {
 		}
 	}
 
+	public static Boolean checkEntailment(OWLOntology ontology, OWLAxiom axiom, OWLReasoner reasoner){
+		Boolean entailment;
+		try{
+			entailment = reasoner.isEntailed(axiom);
+			return entailment;
+		} catch (Exception e){
+			logger.error("Failed to check entailment");
+			throw e;
+		}
+	}
+
     public static Boolean checkEntailment(OWLOntology ontology, OWLAxiom axiom, ReasonerName reasonerName){
+		Boolean entailment;
 		if (reasonerName == ReasonerName.Elk){
 			ElkReasonerFactory reasonerFactory = new ElkReasonerFactory();
-			ElkReasoner reasoner = reasonerFactory.createReasoner(ontology);
-			Boolean entailment;
+			OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
+			
 			try{
-				entailment = reasoner.isEntailed(axiom);
+				entailment = checkEntailment(ontology, axiom, reasoner);
 				return entailment;
 			} catch (Exception e){
 				logger.error("Failed to check entailment");
@@ -158,14 +169,14 @@ public class HelperFunctions {
 				if (reasoner != null){
 					reasoner.dispose();
 					reasoner = null;
-				}
-				
+				}	
 			}
 		} else {
 			OWLReasonerFactory reasonerFactory = new ReasonerFactory();
 			OWLReasoner reasoner = reasonerFactory.createReasoner(ontology);
 			try{
-				return reasoner.isEntailed(axiom);
+				entailment = checkEntailment(ontology, axiom, reasoner);
+				return entailment;
 			} catch (Exception e){
 				logger.error("Failed to check entailment");
 				throw e;
@@ -327,7 +338,7 @@ public class HelperFunctions {
 /*
  * based on the provided arguments, construct the argument options and run the py script with the argument options
  */
-    public static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun, Optional<String> facetIdentifier) throws IOException {
+    public static void runProgram(String mDsID, String outDirStr, Boolean minDiag, Boolean facetDiag, Boolean firstRun, Boolean allDiag, Optional<String> facetIdentifier) throws IOException {
 		String argsOpt = "";
 		if (minDiag){
 			argsOpt = argsOpt + " -md";
@@ -341,6 +352,11 @@ public class HelperFunctions {
 		if (facetIdentifier.isPresent()){
 			argsOpt = argsOpt + " -facet \"" + facetIdentifier.get().toString() +"\"";
 		}
+		if (allDiag){
+			argsOpt = argsOpt + " -ad";
+			argsOpt = argsOpt + " -out2 " + getMDSFilePathStr(outDirStr, mDsID + "_all");
+			System.out.println(argsOpt);
+		}
 		Process p = null;
 		int tc = -1;
 		
@@ -351,7 +367,7 @@ public class HelperFunctions {
 								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
 								+ getMDSFilePathStr(outDirStr, mDsID) + argsOpt);
 				try{
-					tc = p.waitFor();	
+					tc = p.waitFor();
 				}catch(InterruptedException e){
 					p.destroyForcibly();
 				}

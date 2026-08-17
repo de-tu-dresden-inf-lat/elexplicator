@@ -72,8 +72,9 @@ class ComputeDiagnosisThread implements Runnable{
 			
 			while(true){
 				if (ComputeRepair.justificationsCompleted){
-					ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, "minimal", outDirStr, new HashSet<>(), reasonerName);
+					ASPMinimalDiagnoses.getAllClassicalRepairs(axiom, ontology, "minimal", outDirStr, new HashSet<>(), new HashSet<>(), reasonerName);
 					ComputeRepair.minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+					ComputeRepair.allDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allDiagnoses);
 					ComputeRepair.diagnosisComputed = true;
 					break;
 				}

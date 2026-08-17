@@ -60,9 +60,9 @@ public class JustificationsGenerator {
 		}	
 
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
-
+		InterruptMonitor monitor = () -> Thread.currentThread().isInterrupted();
 		try{
-			MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
+			MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, monitor,
 				new MinimalSubsetCollector<>(allJustifications));
 
 			if (logger.isDebugEnabled())
@@ -99,6 +99,7 @@ public class JustificationsGenerator {
 		InferenceJustifier<Inference<OWLAxiom>, ? extends Set<? extends OWLAxiom>> justifier = (InferenceJustifier) InferenceJustifiers
 				.justifyAssertedInferences();
 		DynamicProof<ElkOwlInference> proof = null;
+		InterruptMonitor monitor = () -> Thread.currentThread().isInterrupted();
 
 		try{
 			proof = ElkOwlProof.create(reasoner, axiom);
@@ -110,13 +111,24 @@ public class JustificationsGenerator {
 			Thread.currentThread().interrupt();
 			return null;
 		} 	
-
+		
 		Set<Set<? extends OWLAxiom>> allJustifications = new HashSet<>();
 
 		try{
-			MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
-				new CustomSubsetCollector<>(allJustifications));
+			// MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, InterruptMonitor.DUMMY,
+			// 	new CustomSubsetCollector<>(allJustifications));
 
+			MinimalSubsetEnumerators.enumerateJustifications(axiom, proof, justifier, monitor, 
+				subset -> {
+					Set<? extends OWLAxiom> justification = Set.copyOf(subset);
+					allJustifications.add(justification);
+					try{
+						queue.put(justification);
+					} catch (InterruptedException e){
+						Thread.currentThread().interrupt();
+					}
+				}
+			);
 			if (logger.isDebugEnabled())
 				allJustifications.forEach(logger::debug);
 		} catch (Exception e){
@@ -129,9 +141,6 @@ public class JustificationsGenerator {
 			Thread.currentThread().interrupt();
 			return null;
 		} 
-		// finally {
-		// 	
-		// }
 		reasoner.dispose();
 		reasoner = null;
 		return allJustifications;

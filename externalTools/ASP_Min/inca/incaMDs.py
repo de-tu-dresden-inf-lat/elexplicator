@@ -34,11 +34,17 @@ def main():
                         help="facet that is being applied",
                         type=str
                         )
+    parser.add_argument("-ad", dest="allDiagnosis", action="store_true", required=False,
+                        help="indicate if it is to get all diagnoses"
+                        )
+    parser.add_argument("-out2", dest="diagFilePath", required=False,
+                        help="the path of the diagnosis file",
+                        type=str)
 
     args = parser.parse_args()
 
     start = datetime.datetime.now()
-    minimalDiagnoses.get_all_minimal_diagnoses(args.maxInt, args.filePath, args.mDsFilePath, args.minimalDiagnosis, args.facetedDiagnosis, args.firstRun, args.facet)
+    minimalDiagnoses.get_all_minimal_diagnoses(args.maxInt, args.filePath, args.mDsFilePath, args.minimalDiagnosis, args.facetedDiagnosis, args.allDiagnosis, args.firstRun, args.facet, args.diagFilePath)
     # print("done in " + str(datetime.datetime.now() - start))
 
 

@@ -71,7 +71,7 @@ public class FacetedNavigation {
 			System.out.println("tc = " + tc);
 		}
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(dID, outDirStr, false, true, false, Optional.of(facetIdentifier));
+		HelperFunctions.runProgram(dID, outDirStr, false, true, false, false, Optional.of(facetIdentifier));
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(dID, outDirStr));
 		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator + "facets_options.txt");
@@ -124,7 +124,7 @@ public class FacetedNavigation {
 			System.out.println("tc = " + tc);
 		}
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(dID, outDirStr, false, true, false, Optional.of(facetIdentifier));
+		HelperFunctions.runProgram(dID, outDirStr, false, true, false, false, Optional.of(facetIdentifier));
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(dID, outDirStr));
 		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator + "facets_options.txt");
@@ -262,7 +262,7 @@ public class FacetedNavigation {
 			System.out.println("tc = " + tc);
 		}		
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(dID, outDirStr, false, true, false, Optional.empty());
+		HelperFunctions.runProgram(dID, outDirStr, false, true, false, false, Optional.empty());
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(dID, outDirStr));
 		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator + "facets_options.txt"), outDirStr + File.separator + "facets_options.txt");
@@ -313,7 +313,7 @@ public class FacetedNavigation {
 			System.out.println("tc = " + tc);
 		}		
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(dID, outDirStr, false, true, false, Optional.empty());
+		HelperFunctions.runProgram(dID, outDirStr, false, true, false, false, Optional.empty());
 		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = new HashSet<>();
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(dID, outDirStr));
 		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator + "facets_options.txt"), outDirStr + File.separator + "facets_options.txt");

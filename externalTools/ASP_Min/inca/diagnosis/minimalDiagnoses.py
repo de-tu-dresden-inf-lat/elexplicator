@@ -39,7 +39,7 @@ file_dir = ""
 
 minimal_conflict_sets_asp = []
 
-def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min_diag, facet_diag, first_run, input_facet):
+def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min_diag, facet_diag, all_diag, first_run, input_facet, diag_file_path):
     """
     Generate all optimal classical repairs for making "not statement()" a valid option
     :param max_index:
@@ -49,14 +49,16 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
     global all_optimal_classical_repairs, optimal_classical_repairs_file_path, intermediate_optimal_classical_repairs, first_ever, \
     first_answer_set_ever, last_answer_set, init_first_answer_set, first_list_of_predicates, list_of_answer_sets, list_of_predicates,\
     list_of_difference_blue, list_of_difference_red, list_of_difference_white, tmp_prev_red, tmp_prev_white, allowed_entries, list_of_predicates_not_to_negate, input_list,\
-    file_dir
+    file_dir, all_classical_repairs, classical_repairs_file_path
 
     file_dir = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
     all_optimal_classical_repairs = []
     intermediate_optimal_classical_repairs = []
+    all_classical_repairs = [] #all repairs other than the minimal diagnoses
     # path = justifications_program_path[:justifications_program_path.rfind(os.sep) + 1]
     # optimal_classical_repairs_file_path = path + mDsID
     optimal_classical_repairs_file_path =  mDsID
+    classical_repairs_file_path = diag_file_path
 
     init_first_answer_set = first_run
     deep_investigation = not init_first_answer_set
@@ -65,10 +67,12 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
 
     if os.path.exists(optimal_classical_repairs_file_path):
         os.remove(optimal_classical_repairs_file_path)
+    if os.path.exists(classical_repairs_file_path):
+        os.remove(classical_repairs_file_path)
 
     justifications_program_path = justifications_program_path
 
-    if min_diag or first_run:
+    if min_diag or first_run or all_diag:
         program = open(justifications_program_path, "a")
 
         program.write("\n:- not remove(_).\n")
@@ -89,8 +93,11 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
         else:
             res = translator(justifications_program_path, deep_investigation)
         store_globals(file_dir)
-        
+
+    if all_diag:
+        return compute_all_classical_repairs(justifications_program_path, max_index+1)
     return compute_all_optimal_classical_repairs(justifications_program_path, max_index+1)
+    
 
 def get_added_knowledge_function(dir_str):
     global list_of_added_knowledge
@@ -101,6 +108,41 @@ def get_added_knowledge_function(dir_str):
                 list_of_added_knowledge.append(line.strip())
     except FileNotFoundError as e:
         sys.exit(1)
+
+# compute all repairs minimal and non-minimal
+def compute_all_classical_repairs(program_path, len_original):
+    """
+    
+    :param program_path
+    :return:
+    """
+
+    compute_all_optimal_classical_repairs(program_path, len_original)
+
+    #compute the remaining non-minimal repairs
+    
+    args = ['--models=0', '-t 4']
+    prg=clingo.Control(args)
+    try:
+        prg.load(program_path)
+    except RuntimeError as rte:
+        print(rte)
+        return "Parsing Problem"
+    prg.ground([("base", []), ("parts", [])])
+    try:
+        ret = str(prg.solve())
+    except RuntimeError:
+        ret = "Something is wrong"
+    if ret == "SAT":
+        str(prg.solve(on_model=extract_axioms_identifiers_all_repairs))
+        crs = open(classical_repairs_file_path, "a")
+        for repair in all_classical_repairs:
+            for identifier in repair:
+                crs.write(identifier)
+            crs.write("\n")
+        crs.close()
+
+
 
 def compute_all_optimal_classical_repairs(program_path, len_original):
     """
@@ -178,6 +220,22 @@ def are_there_more_repairs(program_path):
         return True
     return False
 
+def extract_axioms_identifiers_all_repairs(model):
+    """
+    
+    :param model:
+    :return:
+    """
+    repair=[]
+
+    for atom in model.symbols(shown=True):
+        if "remove(" in str(atom):
+            repair.append(str(atom)[str(atom).index("(")+1:str(atom).index(")")])
+            repair.append(", ")
+    repair = repair[0:len(repair)-1]
+
+    if repair not in all_optimal_classical_repairs:
+        all_classical_repairs.append(repair)
 
 def extract_axioms_identifiers(model):
     """
@@ -197,6 +255,7 @@ def extract_axioms_identifiers(model):
     if repair not in all_optimal_classical_repairs:
         all_optimal_classical_repairs.append(repair)
         intermediate_optimal_classical_repairs.append(repair)
+
 
 def add_new_integrity_constraints(program_path):
     """

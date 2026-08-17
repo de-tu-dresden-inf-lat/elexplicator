@@ -10,6 +10,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -53,7 +54,6 @@ import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.tools.LoadingScreen;
-import de.tu_dresden.lat.tools.OWLOntologyContentKey;
 
 
 public class ComputeRepair {
@@ -84,7 +84,9 @@ public class ComputeRepair {
 	private static Boolean repairCheck = true;
 	public static volatile Boolean diagnosisComputed = false;
 	public static Set<Set <? extends OWLAxiom>> minimalDiagnoses = new HashSet<>();
-
+	public static Set<Set <? extends OWLAxiom>> allDiagnoses = new HashSet<>();
+	
+	public static ReasonerName reasonerName;
 	private static RepairSession session;
 
 /**
@@ -100,7 +102,7 @@ public class ComputeRepair {
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
  */
-	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName reasonerName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 	
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
@@ -126,9 +128,18 @@ public class ComputeRepair {
 		Thread computeJustificationsThread = null;
 		Thread sortJustificationsThread = null;
 
-		OWLOntology defectModule =  Segmenter.getStarModule(ontology, axiom.getSignature(),
+		reasonerName = rName;
+		OWLOntology defectModule = null;
+		if (reasonerName==ReasonerName.Elk){
+			defectModule =  Segmenter.getStarModule(ontology, axiom.getSignature(),
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
+		} else {
+			defectModule =  SegmenterHermit.getStarModule(ontology, axiom.getSignature(),
+				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
+						: IRI.create("http://example.org/temp-ontology"));
+		}
+		
 
 		try{
 			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
@@ -509,6 +520,19 @@ public class ComputeRepair {
 		return null;
 	}
 
+	public static Set<Set<? extends OWLAxiom>> getAvailableDiagnoses(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms){
+		Set<Set <? extends OWLAxiom>> availableDiag = new HashSet<>();
+		availableDiag = allDiagnoses.stream().filter(d -> d.containsAll(removeAxioms) & Collections.disjoint(d, keepAxioms)).collect(Collectors.toSet());
+		availableDiag.addAll(minimalDiagnoses.stream().filter(d -> d.containsAll(removeAxioms) & Collections.disjoint(d, keepAxioms)).collect(Collectors.toSet()));
+		return availableDiag;
+	}
+
+	public static Set<Set<? extends OWLAxiom>> getAvailableMinDiagnoses(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms){
+		Set<Set <? extends OWLAxiom>> availableDiag = new HashSet<>();
+		availableDiag = minimalDiagnoses.stream().filter(d -> d.containsAll(removeAxioms) & Collections.disjoint(d, keepAxioms)).collect(Collectors.toSet());
+		return availableDiag;
+	}
+
 /**
  * compute the diagnoses for the given justifications and save the repaired ontologies
  * @param allJustifications
@@ -525,7 +549,7 @@ public class ComputeRepair {
 		applyUserSelection(keepAxioms, removeAxioms, outDirStr);
 
 		logger.info("Extracting Diagnoses Sets");
-		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
+		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, false, Optional.empty());
 		
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
 
@@ -588,10 +612,10 @@ public class ComputeRepair {
  * @throws OWLOntologyStorageException
  */
 	private static void getAxiomWeight(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
-		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
+		Set<Set<? extends OWLAxiom>> allReachableDiagnoses = getAvailableDiagnoses(keepAxioms, removeAxioms);
 		axiomWeightThread = null;
 		try{
-			ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, "repair", ontologyPath, "repairOntology", allOptimalDiagnoses, interestingAxiomsSet, reasonerName);
+			ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, "repair", ontologyPath, "repairOntology", allReachableDiagnoses, interestingAxiomsSet, reasonerName);
 			axiomWeightThread = new Thread(runnable2); 
 			axiomWeightThread.start();
 			
@@ -647,9 +671,17 @@ public class ComputeRepair {
 				manager.removeAxiom(ontology, axiom);
 			}
 			for (OWLAxiom impAxiom : interestingAxiomsSet){
-				OWLOntology impModule = Segmenter.getStarModule(ontology, impAxiom.getSignature(),
+				OWLOntology impModule = null;
+				if (reasonerName == ReasonerName.Elk){
+					impModule = Segmenter.getStarModule(ontology, impAxiom.getSignature(),
             		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
             				: IRI.create("http://example.org/temp-repair-ontology"));
+				} else {
+					impModule = SegmenterHermit.getStarModule(ontology, impAxiom.getSignature(),
+            		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
+            				: IRI.create("http://example.org/temp-repair-ontology"));
+				}
+				
 				repairModules.putIfAbsent(impAxiom, new ArrayList<>());
 				repairModules.get(impAxiom).add(impModule);
 			}
@@ -1266,26 +1298,23 @@ public class ComputeRepair {
 	 */
 
 	public static Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> getPreferredRepair(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, EntityCheckerException{
-		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
-		int minMDSize = allOptimalDiagnoses.stream()
+		// Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
+		Set<Set<? extends OWLAxiom>> allAvailableDiagnoses = getAvailableDiagnoses(keepAxioms, removeAxioms);
+		int minMDSize = allAvailableDiagnoses.stream()
 							.mapToInt(Set::size)
 							.min()
 							.orElse(0);
-		Set<Set<? extends OWLAxiom>> smallestMDs = allOptimalDiagnoses.stream()
+		Set<Set<? extends OWLAxiom>> smallestMDs = allAvailableDiagnoses.stream()
 													.filter(s -> s.size() == minMDSize).collect(Collectors.toSet());
 
 		int max_entailed = 0, ia_entailment_count = 0;
-		// Map<OWLOntologyContentKey, Set<OWLAxiom>> repairEntailMap = new HashMap<>();
-		// Map<OWLOntologyContentKey, Set<OWLAxiom>> preferredRepairs = new HashMap<>();
 		Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> repairEntailMap = new HashMap<>();
 		Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> preferredRepairs = new HashMap<>();
 		Set<OWLAxiom> entailedIA;
 		OWLOntology repairOntology;
-		// OWLOntologyContentKey ontologyKey;
 		for (Set<? extends OWLAxiom> diagnosisSet : smallestMDs){
 			ia_entailment_count = 0;	
 			repairOntology = computeRepair(diagnosisSet, ontologyPath);
-			// ontologyKey = new OWLOntologyContentKey(repairOntology);
 			entailedIA = new HashSet<>();
 			for (OWLAxiom ia : interestingAxiomsSet){
 				if (HelperFunctions.checkEntailment(repairOntology, ia, reasonerName)){
@@ -1293,10 +1322,6 @@ public class ComputeRepair {
 					ia_entailment_count++;
 				}
 			}
-			// if (repairEntailMap.containsKey(ontologyKey)){
-			// 	throw new IllegalStateException("Duplicate repair ontology detected!");
-			// }
-			// repairEntailMap.put(ontologyKey, entailedIA);
 			if (repairEntailMap.containsKey(diagnosisSet)){
 				throw new IllegalStateException("Duplicate repair ontology detected!");
 			}

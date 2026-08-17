@@ -28,6 +28,7 @@ import com.google.common.collect.Sets;
 
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.tools.AxiomChecker;
+import de.tu_dresden.lat.tools.Helper;
 
 /**
  * @author Christian Alrabbaa
@@ -43,6 +44,7 @@ public class ASPMinimalDiagnoses {
 	public static final String programFileName = "pi.txt";
 
 	public static Set<Set<? extends OWLAxiom>> allOptimalDiagnosesMin = new HashSet<>();
+	public static Set<Set<? extends OWLAxiom>> allDiagnoses = new HashSet<>();
 	// Added this to have a SimpleOWLFormatterCL that can format using preferred labels.
 	// Need to use setOntology first.
 	public static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
@@ -76,12 +78,66 @@ public class ASPMinimalDiagnoses {
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, Optional.empty());
+		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, false, Optional.empty());
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
 		allOptimalDiagnosesMin = allOptimalDiagnoses;
 
 		logger.info("Generating output file");
 		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+
+		return ExitCode.terminatedSuccessfully;
+	}
+
+	/**
+	 * get all classical repairs / diagnoses. Minimal diagnoses in one file and remaining diagnoses in another file.
+	 * @param axiom
+	 * @param ontology
+	 * @param mDsID
+	 * @param outDirStr
+	 * @param allOptimalDiagnoses
+	 * @param reasonerName
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public static ExitCode getAllClassicalRepairs(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
+			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<Set<? extends OWLAxiom>> allRemainingDiagnoses, ReasonerName reasonerName)
+			throws IOException, InterruptedException {
+
+		sOWLFormatter.setReferenceOntology(ontology);
+
+		if (!isAxiomSupported(reasonerName, axiom)) {
+			logger.info("Axiom is not supported!");
+			return ExitCode.NotSupportedAxiom;
+		}
+
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
+
+		if (!isJustified(allJustifications)) {
+			logger.info("No justifications available for the provided statement");
+			return ExitCode.NoJustificationsComputed;
+		}
+
+		if (outDirStr.isEmpty())
+			outDirStr = "defaultMDsFolder";
+
+		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
+
+		logger.info("Creating Program");
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
+
+		logger.info("Extracting All Minimal Classical Diagnoses");
+		HelperFunctions.runProgram(mDsID, outDirStr, false, false, false, true, Optional.empty());
+		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		allRemainingDiagnoses.addAll(HelperFunctions.returnResult(mDsID+"_all", outDirStr));
+
+		allOptimalDiagnosesMin = allOptimalDiagnoses;
+		allDiagnoses = allRemainingDiagnoses;
+
+		logger.info("Generating output file");
+		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+		HelperFunctions.saveResult(allRemainingDiagnoses, mDsID+"_all", outDirStr);
 
 		return ExitCode.terminatedSuccessfully;
 	}
@@ -185,7 +241,7 @@ public class ASPMinimalDiagnoses {
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
+		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, false, Optional.empty());
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
 		
 		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator +"facets_options.txt");
@@ -220,7 +276,7 @@ public class ASPMinimalDiagnoses {
 		SolveProgramHelpers.createProgram(allJustifications, outDirStr,axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, Optional.empty());
+		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, false, Optional.empty());
 		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
 		
 		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator +"facets_options.txt");
