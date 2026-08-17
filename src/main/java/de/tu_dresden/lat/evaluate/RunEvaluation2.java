@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.semanticweb.elk.owlapi.ElkReasoner;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
@@ -33,6 +35,7 @@ import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLDataFactory;
 import org.semanticweb.owlapi.model.OWLDocumentFormat;
 import org.semanticweb.owlapi.model.OWLEntity;
+import org.semanticweb.owlapi.model.OWLObject;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 import org.semanticweb.owlapi.model.OWLOntologyManager;
@@ -58,6 +61,9 @@ import de.tu_dresden.lat.tools.HierarchyMapping;
 
 import java.time.LocalDateTime;
 
+/**
+ * RunEvaluation2
+ */
 public class RunEvaluation2 {
     private static Boolean normalize;
     
@@ -164,8 +170,13 @@ public class RunEvaluation2 {
 
     }
 
+    /**
+     * generate 'n' interesting axioms, atleast 60% of axioms are inferred and not explicitly in the ontology
+     */
     private static String generateInterestingAxiom(String ontologyPath, OWLAxiom defectAxiom, String outDirStr, HierarchyMapping hierarchyMapping) throws OWLOntologyCreationException, IOException{
         System.out.println(LocalDateTime.now() + " Generating Interesting Axiom");
+        int n = (int) (Math.random()*(31-10) + 10); //integer range 10-30
+        int nInferred = (int) (Math.ceil(n * 0.6));
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
         OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
         
@@ -180,11 +191,13 @@ public class RunEvaluation2 {
         for (OWLClass owlClass : classes) {
             Set<OWLClass> inferredSubClasses = new HashSet<>();
             inferredSubClasses = hierarchyMapping.getSubClassMap().getOrDefault(owlClass, Collections.emptySet());
+            inferredSubClasses.remove(factory.getOWLNothing());
             if (!inferredSubClasses.isEmpty()) {                
                 for (OWLClass inferredSubClass: inferredSubClasses){
+
                     OWLSubClassOfAxiom subclassAxiom = factory.getOWLSubClassOfAxiom(inferredSubClass, owlClass);
                     if(!subclassAxiom.equals(defectAxiom)){
-                        if (!ontology.containsAxiom(subclassAxiom) && !inferredSubClass.isBottomEntity()){                        
+                        if (!ontology.containsAxiom(subclassAxiom)){                        
                             axiomSet1.add(subclassAxiom);
                         } else {
                             axiomSet2.add(subclassAxiom);
@@ -205,19 +218,27 @@ public class RunEvaluation2 {
 
         OWLOntology interestingAxiomOntology = manager.createOntology();
 
-        List<OWLSubClassOfAxiom> axiomList;
-        if (!axiomSet1.isEmpty()){
-            axiomList = new ArrayList<>(axiomSet1);
-        } else {
-            axiomList = new ArrayList<>(axiomSet2);
+        Set<OWLSubClassOfAxiom> axiomList = new HashSet<>();
+
+        if (axiomSet1.size() < nInferred){
+            nInferred =axiomSet1.size();
+            n = (int) Math.ceil(nInferred / 0.6);
         }
-        if(axiomList.isEmpty()){
-            axiomList = new ArrayList<>(ontology.getAxioms(AxiomType.SUBCLASS_OF));
-        }
-        Random random = new Random();
-        
+        axiomList.addAll(axiomSet1.stream()
+                .limit(nInferred)
+                .collect(Collectors.toSet())
+            );
+        axiomList.addAll(axiomSet2.stream()
+                .limit(n - axiomList.size())
+                .collect(Collectors.toSet())
+            );      
+        axiomList.addAll(ontology.getAxioms(AxiomType.SUBCLASS_OF).stream()
+                .filter(ax -> !axiomList.contains(ax))
+                .limit(n -axiomList.size())
+                .collect(Collectors.toSet())
+            );
         try {
-            manager.addAxiom(interestingAxiomOntology, axiomList.get(random.nextInt(axiomList.size())));
+            manager.addAxioms(interestingAxiomOntology, axiomList);
             manager.saveOntology(interestingAxiomOntology, ontologyFormat, outputstream);
         } catch (OWLOntologyStorageException e) {
             e.printStackTrace();
@@ -225,7 +246,7 @@ public class RunEvaluation2 {
         }
         manager.removeOntology(interestingAxiomOntology);
         System.gc();
-
+        System.out.println(nInferred + " out of " + n + " selected interesting axioms are not explicit.");
         return IApath;
     }
 
