@@ -67,8 +67,9 @@ def get_all_minimal_diagnoses(max_index, justifications_program_path, mDsID, min
 
     if os.path.exists(optimal_classical_repairs_file_path):
         os.remove(optimal_classical_repairs_file_path)
-    if os.path.exists(classical_repairs_file_path):
-        os.remove(classical_repairs_file_path)
+    if classical_repairs_file_path is not None:
+        if os.path.exists(classical_repairs_file_path):
+            os.remove(classical_repairs_file_path)
 
     justifications_program_path = justifications_program_path
 
