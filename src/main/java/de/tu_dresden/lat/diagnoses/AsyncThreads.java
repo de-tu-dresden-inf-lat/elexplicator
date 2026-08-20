@@ -1,5 +1,6 @@
 package de.tu_dresden.lat.diagnoses;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,19 +32,12 @@ class ComputeJustificationsThread implements Runnable{
 
 	@Override
 	public void run(){	
-		try{
-			ComputeRepair.allJustifications = ComputeRepair.getAllJustificationsAsync(reasonerName, axiom, ontology, ComputeRepair.justificationQueue);        
-			if (ComputeRepair.allJustifications != null){
-				ComputeRepair.fillMap(ComputeRepair.allJustifications);
-				HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
-			}			
-			ComputeRepair.justificationsCompleted = true;
-		} catch (Exception e) {
-			logger.warn("Thread exception: " + e.getMessage());
-			Thread.currentThread().interrupt(); 
-		} finally {
-			ComputeRepair.justificationsCompleted = true;
-		}
+		ComputeRepair.allJustifications = ComputeRepair.getAllJustificationsAsync(reasonerName, axiom, ontology, ComputeRepair.justificationQueue);        
+		if (ComputeRepair.allJustifications != null){
+			ComputeRepair.fillMap(ComputeRepair.allJustifications);
+			HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
+		}			
+		ComputeRepair.justificationsCompleted = true;
 		
 	}
 }
@@ -68,22 +62,20 @@ class ComputeDiagnosisThread implements Runnable{
 
 	@Override
 	public void run(){
-		try{
 			
 			while(true){
 				if (ComputeRepair.justificationsCompleted){
-					ASPMinimalDiagnoses.getAllClassicalRepairs(axiom, ontology, "minimal", outDirStr, new HashSet<>(), new HashSet<>(), reasonerName);
+					try {
+						ASPMinimalDiagnoses.getAllClassicalRepairs(axiom, ontology, "minimal", outDirStr, new HashSet<>(), new HashSet<>(), reasonerName);
+					} catch (IOException | InterruptedException e) {
+						throw new RuntimeException(e);
+					}
 					ComputeRepair.minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
 					ComputeRepair.allDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allDiagnoses);
 					ComputeRepair.diagnosisComputed = true;
 					break;
 				}
 			}
-		} catch (Exception e){
-			logger.warn("Thread exception: " + e.getMessage());
-			Thread.currentThread().interrupt();
-		}
-		
 	}
 }
 
@@ -120,8 +112,7 @@ class ComputeAxiomWeightThread implements Runnable{
 			// ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
 			ComputeRepair.computeAxiomWeight(modulesMap, reasonerName, totalRepairs);
 		} catch (Exception e){
-			logger.warn("Thread exception: " + e.getMessage());
-			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
 		} 
 		// finally {
 		// 	ComputeRepair.cleanup();

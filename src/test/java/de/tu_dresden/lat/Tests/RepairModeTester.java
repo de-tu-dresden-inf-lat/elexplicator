@@ -105,9 +105,12 @@ public class RepairModeTester {
 
         Field minimalDiagnoses = ComputeRepair.class.getDeclaredField("minimalDiagnoses");
         minimalDiagnoses.setAccessible(true);
+        Field allDiagnoses = ComputeRepair.class.getDeclaredField("allDiagnoses");
+        allDiagnoses.setAccessible(true);
         try {
-            ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, "minimal", outDirStr, new HashSet<>(), reasonerName);
+            ASPMinimalDiagnoses.getAllClassicalRepairs(axiom, ontology, "minimal", outDirStr, new HashSet<>(), new HashSet<>(), reasonerName);
             minimalDiagnoses.set(null, ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+            allDiagnoses.set(null, ASPMinimalDiagnoses.allDiagnoses);
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -126,15 +129,14 @@ public class RepairModeTester {
 
     @Test
     public void testGetAxiomWeight() throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
-        Map<OWLAxiom, Integer> expectedAxiomWeight = new HashMap<>();
-        expectedAxiomWeight.put(justificationAxioms.get(0), 100);
-        expectedAxiomWeight.put(justificationAxioms.get(2), 0);
-        expectedAxiomWeight.put(justificationAxioms.get(9), 100);
-        expectedAxiomWeight.put(justificationAxioms.get(13), 66);
-        expectedAxiomWeight.put(justificationAxioms.get(7), 100);
+        Map<OWLAxiom, Double> expectedAxiomWeight = new HashMap<>();
+        expectedAxiomWeight.put(justificationAxioms.get(0), 100.0);
+        expectedAxiomWeight.put(justificationAxioms.get(2), 0.0);
+        expectedAxiomWeight.put(justificationAxioms.get(9), 50.0);
+        expectedAxiomWeight.put(justificationAxioms.get(13), 42.857142857142854);
+        expectedAxiomWeight.put(justificationAxioms.get(7), 50.0);
 
         Path tempOutDir = Files.createTempDirectory(tempDir,"tempOutDirStr");
-        String tempOutDirStr = tempOutDir.toString();
 
         keepAxioms = new HashSet <>(Arrays.asList(
             justificationAxioms.get(0),	 
@@ -149,14 +151,12 @@ public class RepairModeTester {
             justificationAxioms.get(5)
             ));
 
-        Set<Set<? extends OWLAxiom>> diagnoses =  ComputeRepair.computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
-        assertNotNull("Diagnosis not computed!", diagnoses);
-        // int counter = ComputeRepair.computeRepairs(tempOutDirStr, "repair", ontologyPathString, "repairOntology", diagnoses);
-		// Map<OWLAxiom, Integer> actualAxiomWeight =  ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxiomsSet, reasonerName);
+        // get all diagnoses, filter out the available ones, then do the repair modules and axiom weight
+        Set<Set<? extends OWLAxiom>> diagnoses = ComputeRepair.getAvailableDiagnoses(keepAxioms, removeAxioms);
+        assertNotNull("Diagnosis not available!", diagnoses);
 
         Map<OWLAxiom, List<OWLOntology>> modulesMap = ComputeRepair.computeRepairsModules(ontologyPathString, diagnoses, interestingAxiomsSet);
 		int totalRepairs = diagnoses.size();
-			// ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
 		Map<OWLAxiom, Double> actualAxiomWeight = ComputeRepair.computeAxiomWeight(modulesMap, reasonerName, totalRepairs);
         assertEquals("The axiom weight calculation is inaccurate!", expectedAxiomWeight, actualAxiomWeight);
         

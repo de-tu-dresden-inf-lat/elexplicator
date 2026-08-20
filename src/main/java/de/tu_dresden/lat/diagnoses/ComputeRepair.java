@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,8 +73,6 @@ public class ComputeRepair {
 
 	public static final String programFileName = "pi.txt";
 
-	private static Thread axiomWeightThread = null;
-	private static Thread computeDiagnosisThread = null;
 
 	private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
 		true);
@@ -101,8 +100,9 @@ public class ComputeRepair {
  * @throws EntityCheckerException
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
+ * @throws InterruptedException 
  */
-	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
 	
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
 		Runtime.getRuntime().addShutdownHook(new Thread(()->{
@@ -125,9 +125,6 @@ public class ComputeRepair {
 		justificationsCompleted = false;
 		isSnapshotActive = true;
 
-		Thread computeJustificationsThread = null;
-		Thread sortJustificationsThread = null;
-
 		reasonerName = rName;
 		OWLOntology defectModule = null;
 		if (reasonerName==ReasonerName.Elk){
@@ -139,57 +136,48 @@ public class ComputeRepair {
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
 		}
-		
+		ExecutorService executor = Executors.newFixedThreadPool(3);
 
-		try{
-			System.out.println("Entered repair mode for the defect axiom: " + sOWLFormatter.format(axiom).toString());
-			System.out.println("For the following axioms, choose if you want them in the repair (\"yes\"), not (\"no\") or check their effect (\"not sure\").");
-			
-			ComputeJustificationsThread computeJustificationsRunnable = new ComputeJustificationsThread(reasonerName, axiom, defectModule);
-			computeJustificationsThread = new Thread(computeJustificationsRunnable); 
-			computeJustificationsThread.start();
+		Future<?> justificationFuture = executor.submit(new ComputeJustificationsThread(reasonerName, axiom, defectModule));
 
-			ComputeDiagnosisThread computeDiagnosisRunnable = new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName);
-			computeDiagnosisThread = new Thread(computeDiagnosisRunnable);
-			computeDiagnosisThread.start();
+		Future<?> diagnosisFuture = executor.submit(new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName));
 
-			if (sortMethod == SortMethod.Frequency){
-				FrequencySortingThread sortJustificationsRunnable = new FrequencySortingThread();
-				sortJustificationsThread = new Thread(sortJustificationsRunnable);
-			} else {
-				EntropySortingThread sortJustificationsRunnable = new EntropySortingThread();
-				sortJustificationsThread = new Thread(sortJustificationsRunnable);
-			}	
+		if (!liveSort){
+			//loading screen till the justifications are computed
+			while (!justificationFuture.isDone() || !diagnosisFuture.isDone()){
+				checkFuture(justificationFuture);
+				checkFuture(diagnosisFuture);
+				LoadingScreen.main(null);
+			}
 			if (visualize){
-				session = new RepairSession();
-			}
 			
-			if (!liveSort){
-				//loading screen till the justifications are computed
-				while (computeJustificationsThread.isAlive() || computeDiagnosisThread.isAlive()){
-					LoadingScreen.main(null);
+				session.startRepair(axiom, allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
+				ElExplicatorApplication.setRepairSession(session);
+				try {
+					ElExplicatorApplication.main(new String[] { "server", "config.yml" });
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
-				computeJustificationsThread.join();
-				if (visualize){
-				
-					session.startRepair(axiom, allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
-					ElExplicatorApplication.setRepairSession(session);
-					try {
-						ElExplicatorApplication.main(new String[] { "server", "config.yml" });
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-
-				computeDiagnosisThread.join();
 			}
-			sortJustificationsThread.start();
-			if (!liveSort){
-				sortJustificationsThread.join();
-			}
-			
+			waitForFuture(diagnosisFuture);
+		}
+		Future<?> sortingFuture;
+		if (sortMethod == SortMethod.Frequency){
+			sortingFuture = executor.submit(new FrequencySortingThread());
+		} else {
+			sortingFuture = executor.submit(new EntropySortingThread());
+		}	
+		if (!liveSort){
+			waitForFuture(sortingFuture);
+		}
+		try{			
 			Scanner scanner = new Scanner(System.in);
 			while(inputFlag){
+				if (liveSort){
+					checkFuture(justificationFuture);
+					checkFuture(diagnosisFuture);
+					checkFuture(sortingFuture);
+				}				
 				Map<OWLAxiom, Double> freqMap; 
 				while (!axiomMap.isEmpty() || isSnapshotActive){
 					
@@ -271,7 +259,9 @@ public class ComputeRepair {
 									for (String opt : selections){
 										switch(opt.trim()){
 											case "1":{
-												computeJustificationsThread.join();
+												// computeJustificationsThread.join();
+												waitForFuture(justificationFuture);
+												waitForFuture(diagnosisFuture);
 												bufferedString += computeProbabilities(justificationAxiom, keepAxioms, removeAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName, Optional.empty());
 												break;
 											}
@@ -280,7 +270,9 @@ public class ComputeRepair {
 												break;
 											}
 											case "3":{
-												computeJustificationsThread.join();
+												// computeJustificationsThread.join();
+												waitForFuture(justificationFuture);
+												waitForFuture(diagnosisFuture);
 												bufferedString += hammingDistance(justificationAxiom, removeAxioms, keepAxioms, interestingAxiomsSet, ontologyPath, reasonerName, outDirStr, Optional.empty());
 												break;
 											}
@@ -303,14 +295,15 @@ public class ComputeRepair {
 									continue;
 								}
 								case "save":{
-									computeJustificationsThread.join();
-										
+									// computeJustificationsThread.join();
+									waitForFuture(justificationFuture);
+									
 									System.out.println("Enter the filename to save as: ");
 									System.out.println("\u0007");
 									System.out.flush();
 									String save_filename = scanner.nextLine();
 
-									computeDiagnosisThread.join();
+									waitForFuture(diagnosisFuture);
 									Boolean savedFlag = saveProcess(ontology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
 
 									if(savedFlag){
@@ -323,9 +316,9 @@ public class ComputeRepair {
 								case "exit":{
 									System.out.println("Exiting repair mode!");
 									inputFlag = false;
-									computeJustificationsThread.interrupt();
-									sortJustificationsThread.interrupt();
-									computeDiagnosisThread.interrupt();
+									justificationFuture.cancel(true);
+									diagnosisFuture.cancel(true);
+									sortingFuture.cancel(true);
 									break;
 								}
 								default:{
@@ -337,7 +330,8 @@ public class ComputeRepair {
 							
 						}
 						if(diagnosisComputed && repairCheck){
-							computeDiagnosisThread.join();
+							// computeDiagnosisThread.join();
+							waitForFuture(diagnosisFuture);
 							Boolean repairStatus = checkRepair(axiom, ontology, removeAxioms, outDirStr, reasonerName, ontologyPath, scanner);
 							if (repairStatus){
 								inputFlag = false;
@@ -371,7 +365,9 @@ public class ComputeRepair {
 							System.out.flush();
 							String save_filename = scanner.nextLine();
 
-							computeJustificationsThread.join();
+							// computeJustificationsThread.join();
+							waitForFuture(justificationFuture);
+							waitForFuture(diagnosisFuture);
 							Boolean savedFlag = saveProcess(ontology, axiom, removeAxioms, ontologyPath, outDirStr, save_filename, reasonerName, scanner);
 
 							if(savedFlag){
@@ -394,11 +390,9 @@ public class ComputeRepair {
 			}
 		} catch (Exception e){
 			e.printStackTrace();
-			computeJustificationsThread.interrupt();
-			sortJustificationsThread.interrupt();
-			if (axiomWeightThread != null){
-				axiomWeightThread.interrupt();
-			}
+			justificationFuture.cancel(true);
+			diagnosisFuture.cancel(true);
+			sortingFuture.cancel(true);
 			Thread.currentThread().interrupt();
 			ecode = ExitCode.executionInterrupted;
 			System.out.println(e.getMessage());
@@ -613,20 +607,11 @@ public class ComputeRepair {
  */
 	private static void getAxiomWeight(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, ReasonerName reasonerName) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
 		Set<Set<? extends OWLAxiom>> allReachableDiagnoses = getAvailableDiagnoses(keepAxioms, removeAxioms);
-		axiomWeightThread = null;
-		try{
-			ComputeAxiomWeightThread runnable2 = new ComputeAxiomWeightThread(outDirStr, "repair", ontologyPath, "repairOntology", allReachableDiagnoses, interestingAxiomsSet, reasonerName);
-			axiomWeightThread = new Thread(runnable2); 
-			axiomWeightThread.start();
-			
-			while(axiomWeightThread.isAlive()){
-				LoadingScreen.main(null);
-			}
-			axiomWeightThread.join();
-		} catch (InterruptedException e){
-			axiomWeightThread.interrupt();
-			Thread.currentThread().interrupt();
-		}
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		Future<?> axiomWeightFuture;
+
+		axiomWeightFuture = executor.submit(new ComputeAxiomWeightThread(outDirStr, "repair", ontologyPath, "repairOntology", allReachableDiagnoses, interestingAxiomsSet, reasonerName));
+		waitForFuture(axiomWeightFuture);
 	}
 
 /**
@@ -1255,34 +1240,6 @@ public class ComputeRepair {
     
 	}
 
-	// public static void entropySorting(Set<Set<? extends OWLAxiom>> allJustifications, Set<Set<? extends OWLAxiom>> minimalDiagnoses){
-	// 	//get entropy score for each axiom in the justification sets: 
-	// 	//entropyscore = p(Y) log2 p(Y) + p(N) log2 p(N) + 1
-	// 	Map<OWLAxiom, Double> entropyScoreMap = new HashMap<>();
-	// 	for (Set<? extends OWLAxiom> justificationSet : allJustifications){
-	// 		for (OWLAxiom justAxiom : justificationSet){
-	// 			if (entropyScoreMap.containsKey(justAxiom)){
-	// 				continue;
-	// 			}
-	// 			entropyScoreMap.putIfAbsent(justAxiom, 0.0);
-	// 			int Dp = 0;
-	// 			int Dn = 0;
-	// 			for (Set<? extends OWLAxiom> diagSet : minimalDiagnoses){
-	// 				if (diagSet.contains(justAxiom)){
-	// 					Dp++;
-	// 				} else if (!diagSet.contains(justAxiom)){
-	// 					Dn++;
-	// 				} 
-	// 			}
-	// 			double pYProb = (double) Dp / minimalDiagnoses.size();
-	// 			double pNProb = (double) Dn / minimalDiagnoses.size();
-	// 			double entropyScore = (pYProb * Math.log(pYProb) / Math.log(2)) + (pNProb * Math.log(pNProb) / Math.log(2)) + 1;
-	// 			entropyScoreMap.put(justAxiom, entropyScore);
-	// 		}
-	// 	}
-	// 	System.out.println("Entropy scores:" + entropyScoreMap);
-	// }
-
 	/**
 	 * get the repairs from smallest minimal diagnosis sets that entail the maximum interesting axioms as preferred repairs
 	 * @param keepAxioms
@@ -1298,7 +1255,6 @@ public class ComputeRepair {
 	 */
 
 	public static Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> getPreferredRepair(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, EntityCheckerException{
-		// Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = computeDiagnosis(allJustifications, keepAxioms, removeAxioms, outDirStr);
 		Set<Set<? extends OWLAxiom>> allAvailableDiagnoses = getAvailableDiagnoses(keepAxioms, removeAxioms);
 		int minMDSize = allAvailableDiagnoses.stream()
 							.mapToInt(Set::size)
@@ -1332,8 +1288,6 @@ public class ComputeRepair {
 		}
 		System.out.println("Max entailed interesting axioms count: " + max_entailed);
 		for (Map.Entry<Set<? extends OWLAxiom>, Set<OWLAxiom>> entry : repairEntailMap.entrySet()) {
-			// System.out.println("Repair: " + entry.getKey().getOntology().hashCode() + " entails interesting axioms: " + entry.getValue());
-			// System.out.println("Count: " + entry.getValue().size());
 			if (entry.getValue().size() == max_entailed) {
 				System.out.println("Also max entailed! Adding to preferred repairs.");
 				preferredRepairs.put(entry.getKey(), entry.getValue());
@@ -1380,10 +1334,6 @@ public class ComputeRepair {
 		Set<OWLAxiom> updKeepAxioms = new HashSet<>(keepAxioms);
 		Set<OWLAxiom> updRemoveAxioms = new HashSet<>(removeAxioms);
 
-		// Map<OWLOntologyContentKey, Set<OWLAxiom>> preferredRepairs_yes = null;
-		// Map<OWLOntologyContentKey, Double> preferredRepair_yes = new HashMap<>();
-		// Map<OWLOntologyContentKey, Set<OWLAxiom>> preferredRepairs_no = null;
-		// Map<OWLOntologyContentKey, Double> preferredRepair_no = new HashMap<>();
 		Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> preferredRepairs_yes = null;
 		Map<Set<? extends OWLAxiom>, Double> preferredRepair_yes = new HashMap<>();
 		Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> preferredRepairs_no = null;
@@ -1546,6 +1496,44 @@ public class ComputeRepair {
 			computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort, visualize);
 		} catch(Exception e){
 			e.printStackTrace();
+		}
+	}
+
+	private static void checkFuture(Future<?> future){
+		if (!future.isDone()){
+			return;
+		}
+
+		try {
+			future.get();
+		} catch (InterruptedException e){
+			Thread.currentThread().interrupt();
+			e.printStackTrace();
+			System.exit(1);
+			
+		} catch (ExecutionException e){
+			Throwable cause = e.getCause();
+
+			cause.printStackTrace();
+			Thread.currentThread().interrupt();
+			System.exit(1);
+		}
+	}
+
+	private static void waitForFuture(Future<?> future){
+		try{
+			future.get();
+		} catch (InterruptedException e){
+			Thread.currentThread().interrupt();
+			e.printStackTrace();
+			System.exit(1);
+			
+		} catch (ExecutionException e){
+			Throwable cause = e.getCause();
+
+			cause.printStackTrace();
+			Thread.currentThread().interrupt();
+			System.exit(1);
 		}
 	}
 
