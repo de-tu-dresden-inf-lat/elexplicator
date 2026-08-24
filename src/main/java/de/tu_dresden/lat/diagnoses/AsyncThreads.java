@@ -1,19 +1,26 @@
 package de.tu_dresden.lat.diagnoses;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.apache.log4j.Logger;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
 
+import de.tu_dresden.lat.api.ElExplicatorApplication;
+import de.tu_dresden.lat.api.RepairSession;
 import de.tu_dresden.lat.data.names.ReasonerName;
 
 //Thread to compute justifications to an ontology for a given axiom and update id map
@@ -149,10 +156,10 @@ class FrequencySortingThread_interval implements Runnable{
 							ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0.0) + 1);
 						}
 					};
-					ComputeRepair.isSnapshotActive = true;
+					// ComputeRepair.isSnapshotActive = true;
 				} 
 			}
-			ComputeRepair.isSnapshotActive = false;
+			// ComputeRepair.isSnapshotActive = false;
 		} catch (Exception e) {
 			logger.warn("Thread exception: " + e.getMessage());
             // Thread.currentThread().interrupt();
@@ -165,7 +172,6 @@ class FrequencySortingThread implements Runnable{
 	@Override
 	public void run(){
 		while(!ComputeRepair.justificationQueue.isEmpty() || !ComputeRepair.justificationsCompleted){
-			ComputeRepair.isSnapshotActive = true;	
 			Set<? extends OWLAxiom> queueElement = null;				
 			try {
 				queueElement = ComputeRepair.justificationQueue.poll(1, TimeUnit.MILLISECONDS);
@@ -180,8 +186,16 @@ class FrequencySortingThread implements Runnable{
 					ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0.0) + 1);
 				}
 			} 
-		} 
-		ComputeRepair.isSnapshotActive = false;		
+			LinkedList<OWLAxiom> orderedAxioms = new LinkedList<>(ComputeRepair.axiomMap.entrySet()
+						.stream()
+						.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue().reversed())  
+						.map(Map.Entry::getKey)
+						.collect(Collectors.toList()));
+			
+			ComputeRepair.orderedAxiomsCMD.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+			ComputeRepair.orderedAxiomsAPI.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+		} 	
+		ComputeRepair.sortingCompleted = true;
 	}
 		
 }
@@ -190,15 +204,13 @@ class EntropySortingThread implements Runnable{
 
 	@Override
 	public void run() {
-		while (true) {
-			ComputeRepair.isSnapshotActive = true;
+		Boolean sortActive = true;
+		while (sortActive) {
 			if (!ComputeRepair.diagnosisComputed && !ComputeRepair.justificationQueue.isEmpty()) {
 				try {
 					for (OWLAxiom axiom : ComputeRepair.justificationQueue.poll(1, TimeUnit.MILLISECONDS)) {
 						ComputeRepair.axiomMap.putIfAbsent(axiom, 0.0);
 					}
-					ComputeRepair.isSnapshotActive = false;
-					continue;
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -229,10 +241,19 @@ class EntropySortingThread implements Runnable{
 					}
 				}
 				ComputeRepair.axiomMap = new ConcurrentHashMap<>(entropyScoreMap);
-				ComputeRepair.isSnapshotActive = false;
-				break;
+				
+				sortActive = false;
 			}
+			LinkedList<OWLAxiom> orderedAxioms = new LinkedList<>(ComputeRepair.axiomMap.entrySet()
+					.stream()
+					.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue())  
+					.map(Map.Entry::getKey)
+					.collect(Collectors.toList()));
+
+			ComputeRepair.orderedAxiomsCMD.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+			ComputeRepair.orderedAxiomsAPI.set(new ConcurrentLinkedQueue<>(orderedAxioms));
 		}
+		ComputeRepair.sortingCompleted = true;
 		
 	}
 }
@@ -257,4 +278,25 @@ class CheckMinimalityThread implements Callable<Boolean>{
 		return ComputeRepair.checkDiagMinimality(ontology, axiom, removeAxioms, outDirStr, reasonerName);
 	}
 	
+}
+
+class BuildDecisionTreeThread implements Runnable{
+	RepairSession session;
+	public BuildDecisionTreeThread(RepairSession session){
+		this.session = session;
+	}
+	@Override
+	public void run(){
+		while (!ComputeRepair.orderedAxiomsAPI.get().isEmpty() || !ComputeRepair.sortingCompleted){
+			if (ComputeRepair.orderedAxiomsAPI.get().isEmpty()){
+				continue;
+			}
+			ConcurrentLinkedQueue<OWLAxiom> snapshotRef = ComputeRepair.orderedAxiomsAPI.get();
+			List<OWLAxiom> orderedAxiomSS = new ArrayList<>(snapshotRef);
+			ComputeRepair.orderedAxiomsAPI.compareAndSet(snapshotRef, new ConcurrentLinkedQueue<>());
+			session.buildTree(orderedAxiomSS);
+			ElExplicatorApplication.setRepairSession(session);
+
+		}
+	}
 }

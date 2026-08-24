@@ -28,8 +28,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.apibinding.OWLManager;
@@ -60,15 +62,17 @@ import de.tu_dresden.lat.tools.LoadingScreen;
 public class ComputeRepair {
 	private static final Logger logger = Logger.getLogger(ComputeRepair.class);
 
-	public static volatile Boolean isSnapshotActive;
 	public static Map<OWLAxiom, String> axioms2Identifiers;	
 	public static Map<String, OWLAxiom> identifiers2Axioms;
 	public static Set<Set<? extends OWLAxiom>> allJustifications;
 	public static BlockingQueue<Set<? extends OWLAxiom>> justificationQueue;
 	public static BlockingQueue<String> tempFiles;
 	public static ConcurrentHashMap<OWLAxiom, Double> axiomMap = new ConcurrentHashMap<>();
+	public static AtomicReference<ConcurrentLinkedQueue<OWLAxiom>> orderedAxiomsCMD = new AtomicReference<>(new ConcurrentLinkedQueue<>()); 
+	public static AtomicReference<ConcurrentLinkedQueue<OWLAxiom>> orderedAxiomsAPI = new AtomicReference<>(new ConcurrentLinkedQueue<>());
 	public static Map<OWLAxiom,Double> axiomWeightMap;
 	public static volatile Boolean justificationsCompleted;
+	public static volatile Boolean sortingCompleted;
 	private static ByteArrayOutputStream axiomWeightOutputBuffer = new ByteArrayOutputStream();
 
 	public static final String programFileName = "pi.txt";
@@ -81,7 +85,7 @@ public class ComputeRepair {
 	private static Boolean inputFlag = true;
 
 	private static Boolean repairCheck = true;
-	public static volatile Boolean diagnosisComputed = false;
+	public static volatile Boolean diagnosisComputed;
 	public static Set<Set <? extends OWLAxiom>> minimalDiagnoses = new HashSet<>();
 	public static Set<Set <? extends OWLAxiom>> allDiagnoses = new HashSet<>();
 	
@@ -121,9 +125,21 @@ public class ComputeRepair {
 		axiomMap = new ConcurrentHashMap<>();
 		Set<OWLAxiom> keepAxioms = new HashSet<>();
 		Set<OWLAxiom> removeAxioms = new HashSet<>();
+
+		if (visualize){
+			session = new RepairSession();
+			session.startRepair(axiom, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
+			ElExplicatorApplication.setRepairSession(session);
+			try {
+				ElExplicatorApplication.main(new String[] { "server", "config.yml" });
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 		
 		justificationsCompleted = false;
-		isSnapshotActive = true;
+		diagnosisComputed = false;
+		sortingCompleted = false;
 
 		reasonerName = rName;
 		OWLOntology defectModule = null;
@@ -136,11 +152,16 @@ public class ComputeRepair {
 				ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
 						: IRI.create("http://example.org/temp-ontology"));
 		}
-		ExecutorService executor = Executors.newFixedThreadPool(3);
+		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		Future<?> justificationFuture = executor.submit(new ComputeJustificationsThread(reasonerName, axiom, defectModule));
 
 		Future<?> diagnosisFuture = executor.submit(new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName));
+		Future<?> decisionTreeFuture = null;
+		if (visualize){
+			decisionTreeFuture = executor.submit(new BuildDecisionTreeThread(session));
+		}
+		
 
 		if (!liveSort){
 			//loading screen till the justifications are computed
@@ -148,16 +169,6 @@ public class ComputeRepair {
 				checkFuture(justificationFuture);
 				checkFuture(diagnosisFuture);
 				LoadingScreen.main(null);
-			}
-			if (visualize){
-			
-				session.startRepair(axiom, allJustifications, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
-				ElExplicatorApplication.setRepairSession(session);
-				try {
-					ElExplicatorApplication.main(new String[] { "server", "config.yml" });
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
 			}
 			waitForFuture(diagnosisFuture);
 		}
@@ -169,57 +180,38 @@ public class ComputeRepair {
 		}	
 		if (!liveSort){
 			waitForFuture(sortingFuture);
+			if (visualize){
+				waitForFuture(decisionTreeFuture);
+			}
 		}
 		try{			
 			Scanner scanner = new Scanner(System.in);
+			List<OWLAxiom> orderAxiomsSSPrev = null;
 			while(inputFlag){
 				if (liveSort){
 					checkFuture(justificationFuture);
 					checkFuture(diagnosisFuture);
 					checkFuture(sortingFuture);
+					if (visualize){
+						checkFuture(decisionTreeFuture);
+					}
 				}				
-				Map<OWLAxiom, Double> freqMap; 
-				while (!axiomMap.isEmpty() || isSnapshotActive){
+				while (!orderedAxiomsCMD.get().isEmpty() || !sortingFuture.isDone()){
 					
-					while (axiomMap.isEmpty()){
+					while (orderedAxiomsCMD.get().isEmpty()){
 						LoadingScreen.main(null);
-						if (!isSnapshotActive){
+						if(sortingFuture.isDone()){
 							break;
 						}
 					}
-
-					Map<OWLAxiom, Double> freqMapUnsorted = new LinkedHashMap<>(axiomMap);
-					axiomMap.clear();
-					isSnapshotActive = false;
-
-					if (sortMethod == SortMethod.Entropy){
-						freqMap = freqMapUnsorted.entrySet()
-						.stream()
-						.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue())  
-						.collect(Collectors.toMap(
-							Map.Entry::getKey, 
-							Map.Entry::getValue,
-							(e1, e2) -> e1, 
-							LinkedHashMap::new 
-						));
-					} else {
-						freqMap = freqMapUnsorted.entrySet()
-						.stream()
-						.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue().reversed())  
-						.collect(Collectors.toMap(
-							Map.Entry::getKey,
-							Map.Entry::getValue,
-							(e1, e2) -> e1, 
-							LinkedHashMap::new 
-						));
-					}
-					if (visualize){
-						List<OWLAxiom> orderedAxioms = new ArrayList<>(freqMap.keySet());
-						session.buildTree(orderedAxioms);
-						ElExplicatorApplication.setRepairSession(session);
+					ConcurrentLinkedQueue<OWLAxiom> snapshotRef = orderedAxiomsCMD.get();
+					List<OWLAxiom> orderedAxiomSS = new ArrayList<>(snapshotRef);
+					orderedAxiomsCMD.compareAndSet(snapshotRef, new ConcurrentLinkedQueue<>());
+					if (orderAxiomsSSPrev != null){
+						orderedAxiomSS.removeAll(orderAxiomsSSPrev);
 					}
 										
-					for (OWLAxiom justificationAxiom : freqMap.keySet()){
+					for (OWLAxiom justificationAxiom : orderedAxiomSS){
 						if(keepAxioms.contains(justificationAxiom) | removeAxioms.contains(justificationAxiom) | justificationAxiom.equals(axiom)){
 							if (justificationAxiom.equals(axiom)){
 								removeAxioms.add(justificationAxiom);
@@ -342,6 +334,7 @@ public class ComputeRepair {
 
 						if (!inputFlag){break;}
 					}
+					orderAxiomsSSPrev = new ArrayList<>(orderedAxiomSS);
 					if (!inputFlag){break;}
 				}
 				if (!inputFlag){
@@ -393,6 +386,7 @@ public class ComputeRepair {
 			justificationFuture.cancel(true);
 			diagnosisFuture.cancel(true);
 			sortingFuture.cancel(true);
+			decisionTreeFuture.cancel(true);
 			Thread.currentThread().interrupt();
 			ecode = ExitCode.executionInterrupted;
 			System.out.println(e.getMessage());

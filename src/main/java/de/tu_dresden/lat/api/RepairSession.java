@@ -2,8 +2,6 @@ package de.tu_dresden.lat.api;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -15,27 +13,21 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.ws.rs.core.Link;
-
-import org.checkerframework.checker.units.qual.s;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
-import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.diagnoses.ComputeRepair;
-import javassist.bytecode.annotation.BooleanMemberValue;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 
 public class RepairSession {
     private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
 		true);
-    private Set<Set<? extends OWLAxiom>> justificationSets;
     private List<AxiomNode> session;
     private List<OWLAxiom> axioms;
     public AxiomNode root;
@@ -47,8 +39,7 @@ public class RepairSession {
     public OWLAxiom defectAxiom;
     //reasonername
 
-    public void startRepair(OWLAxiom defectAxiom, Set<Set<? extends OWLAxiom>> just, String outDir, String ontologyPath, ReasonerName reasonerName, OWLOntology ontology, Set<? extends OWLAxiom> interestingAxiomsSet){
-        justificationSets = just;
+    public void startRepair(OWLAxiom defectAxiom, String outDir, String ontologyPath, ReasonerName reasonerName, OWLOntology ontology, Set<? extends OWLAxiom> interestingAxiomsSet){
         session = new LinkedList<>();
         this.outDirStr = outDir;
         this.ontologyPath = ontologyPath;
@@ -58,19 +49,9 @@ public class RepairSession {
         this.defectAxiom = defectAxiom;
     }
 
-    public String getJustificationsStr() {
-        StringBuilder sb = new StringBuilder();
-        for (Set<? extends OWLAxiom> js : justificationSets) {
-            sb.append("Justification Set:\n");
-            for (OWLAxiom axiom : js) {
-                // Process each axiom if needed
-                sb.append(axiom.toString()).append("\n");
-            }
-        }
-        return sb.toString();
-    }
-
     public AxiomNode buildTree(List<OWLAxiom> justificationAxioms){
+        session = new LinkedList<>();
+        AxiomNode.counter = 0;
         axioms = justificationAxioms;
         OWLAxiom rootAxiom = axioms.get(0);
         root = new AxiomNode(0, new LinkedList<>(), sOWLFormatter.format(rootAxiom), rootAxiom, null, null);
@@ -145,6 +126,14 @@ public class RepairSession {
             serializedNodes.add(serialized);
         }
 
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        try {
+            mapper.writeValue(new File(outDirStr + File.separator + "decisionsTree.json"), serializedNodes);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return serializedNodes;
     }
 
