@@ -114,10 +114,11 @@ class ComputeAxiomWeightThread implements Runnable{
 		String tempOutDirStr = outDirStr + "/" + tempfolderPath;
 		try{			
 			// int counter = ComputeRepair.computeRepairs(tempOutDirStr, mDsID, ontologyPath, outputFileName, allOptimalDiagnoses);
-			Map<OWLAxiom, List<OWLOntology>> modulesMap = ComputeRepair.computeRepairsModules(ontologyPath, allOptimalDiagnoses, interestingAxioms);
+			// Map<OWLAxiom, List<OWLOntology>> modulesMap = ComputeRepair.computeRepairsModules(ontologyPath, allOptimalDiagnoses, interestingAxioms);
+			Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> entailmentMap = ComputeRepair.getInterestingAxiomsEntailment(ontologyPath, allOptimalDiagnoses, interestingAxioms);
 			int totalRepairs = allOptimalDiagnoses.size();
 			// ComputeRepair.computeAxiomWeight(counter, tempOutDirStr, interestingAxioms, reasonerName);
-			ComputeRepair.computeAxiomWeight(modulesMap, reasonerName, totalRepairs);
+			ComputeRepair.computeAxiomWeight(entailmentMap, reasonerName, totalRepairs);
 		} catch (Exception e){
 			throw new RuntimeException(e);
 		} 

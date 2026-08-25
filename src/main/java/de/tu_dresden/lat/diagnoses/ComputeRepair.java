@@ -668,6 +668,25 @@ public class ComputeRepair {
 		return repairModules;
 	}
 
+	public static Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> getInterestingAxiomsEntailment(String ontologyPath, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxiomsSet) throws OWLOntologyCreationException{
+		Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> axiomToRepairs = new HashMap<>();
+		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
+			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
+			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
+
+			for (OWLAxiom axiom: axiomSets){
+				manager.removeAxiom(ontology, axiom);
+			}
+
+			for (OWLAxiom impAxiom : interestingAxiomsSet){
+				if (HelperFunctions.checkEntailment(ontology, impAxiom, reasonerName)){
+					axiomToRepairs.get(impAxiom).add(axiomSets);
+				}			
+				
+			}
+		}
+		return axiomToRepairs;
+	}
 /**
  * compute the repair ontology for the given diagnosis set	
  * @param selectedMinDiagnosis
@@ -952,24 +971,12 @@ public class ComputeRepair {
  * @param outDirStr
  * @throws OWLOntologyCreationException
  */
-	public static Map<OWLAxiom, Double> computeAxiomWeight(Map<OWLAxiom, List<OWLOntology>> impAxiomRepMod, ReasonerName reasonerName, int totalRepairs) throws OWLOntologyCreationException{
+	public static Map<OWLAxiom, Double> computeAxiomWeight(Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> impAxiomRep, ReasonerName reasonerName, int totalRepairs) throws OWLOntologyCreationException{
 
 		axiomWeightMap = new HashMap<>();
-		
-		//get the axiom weight of the interesting axioms
-		for (OWLAxiom impAxiom : impAxiomRepMod.keySet()){
-			axiomWeightMap.putIfAbsent(impAxiom, 0.0);
-			List<OWLOntology> impAxiomSet = impAxiomRepMod.get(impAxiom);
-			for (OWLOntology repModule : impAxiomSet){
-				if (HelperFunctions.checkEntailment(repModule, impAxiom, reasonerName)){
-					axiomWeightMap.put(impAxiom, axiomWeightMap.get(impAxiom)+1);
-				} 		
-			}
-		}
 
-		//get the axiom weight in percentage
-		for (OWLAxiom axiom : axiomWeightMap.keySet()){
-			axiomWeightMap.put(axiom, (axiomWeightMap.get(axiom)*100)/totalRepairs);
+		for (OWLAxiom axiom : impAxiomRep.keySet()){
+			axiomWeightMap.put(axiom, (double) impAxiomRep.get(axiom).size()*100/totalRepairs);
 		}
 		return axiomWeightMap;
 	}
