@@ -91,7 +91,9 @@ public class ComputeRepair {
 	
 	public static ReasonerName reasonerName;
 	private static RepairSession session;
-
+	
+	private static Future<?> justificationFuture;
+	private static Future<?> diagnosisFuture;
 /**
  * interactive method to compute the repair ontology based on user selection of justification axioms
  * @param axiom
@@ -154,9 +156,9 @@ public class ComputeRepair {
 		}
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
-		Future<?> justificationFuture = executor.submit(new ComputeJustificationsThread(reasonerName, axiom, defectModule));
+		justificationFuture = executor.submit(new ComputeJustificationsThread(reasonerName, axiom, defectModule));
 
-		Future<?> diagnosisFuture = executor.submit(new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName));
+		diagnosisFuture = executor.submit(new ComputeDiagnosisThread(ontology, axiom, outDirStr, reasonerName));
 		Future<?> decisionTreeFuture = null;
 		if (visualize){
 			decisionTreeFuture = executor.submit(new BuildDecisionTreeThread(session));
@@ -411,6 +413,14 @@ public class ComputeRepair {
  */
 	public static String computeProbabilities(OWLAxiom justificationAxiom, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName, Optional<String> nodeId) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
 		//entailment probability when retaining the justification axiom
+		System.out.println(justificationsCompleted + " " + diagnosisComputed);
+		//if diagnosis thread is not completed, wait for it to complete before computing the entailment probabilities
+		if (!justificationsCompleted || !diagnosisComputed){ 
+			System.out.println("Waiting for diagnosis computation to complete before computing entailment probabilities...");
+			waitForFuture(justificationFuture);
+			waitForFuture(diagnosisFuture);
+			System.out.println("Diagnosis computation completed. Proceeding with entailment probability computation...");
+		}
 		String bufferedString = "";
 		axiomWeightOutputBuffer.write("\n\t\t1. Entailment probability\n".getBytes());
 		axiomWeightOutputBuffer.write("==========================\n".getBytes());
@@ -457,6 +467,11 @@ public class ComputeRepair {
  * @throws OWLOntologyStorageException
  */
 	public static String computeHierarchyDiff(OWLAxiom defect, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, OWLAxiom justificationAxiom, ReasonerName reasonerName, Optional<String> nodeId) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException{
+		if (!justificationsCompleted || !diagnosisComputed){ 
+			waitForFuture(justificationFuture);
+			waitForFuture(diagnosisFuture);
+		}
+		
 		String bufferedString = "";
 		ClassHierarchyDifference classHierarchyDifference = new ClassHierarchyDifference(allJustifications, outDirStr, ontologyPath, keepAxioms, removeAxioms, justificationAxiom, reasonerName);
 		classHierarchyDifference.getClassHierarchy(ontologyPath);
@@ -679,6 +694,7 @@ public class ComputeRepair {
 			}
 
 			for (OWLAxiom impAxiom : interestingAxiomsSet){
+				axiomToRepairs.putIfAbsent(impAxiom, new HashSet<>());
 				if (HelperFunctions.checkEntailment(ontology, impAxiom, reasonerName)){
 					axiomToRepairs.get(impAxiom).add(axiomSets);
 				}			
@@ -1321,6 +1337,10 @@ public class ComputeRepair {
 	}
 
 	public static String hammingDistance(OWLAxiom justAxiom, Set<OWLAxiom> removeAxioms, Set<OWLAxiom> keepAxioms, Set<? extends OWLAxiom> interestingAxiomsSet, String ontologyPath, ReasonerName reasonerName, String outDirStr, Optional<String> nodeId) throws OWLOntologyCreationException, IOException, EntityCheckerException{
+		if (!justificationsCompleted || !diagnosisComputed){
+			waitForFuture(justificationFuture);
+			waitForFuture(diagnosisFuture);
+		}
 		OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 		OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
 		manager.removeAxioms(ontology, removeAxioms);
