@@ -3,9 +3,11 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -73,5 +75,42 @@ public class ElExplicatorResources {
                        .build();
         }
         return Response.ok(impact).build();
+    }
+
+    @POST 
+    @Path("/{id}/save")
+    public Response saveOntology(@PathParam("id") long id, @QueryParam ("filename") String filename) {
+        SaveResponse saveStatus;
+        try{
+            saveStatus = repairSession.saveOntology(id, filename);
+        } catch (NodeNotFoundException e){
+            return Response.status(Response.Status.NOT_FOUND)
+                       .entity(new ErrorResponse(e.getMessage()))
+                       .build();
+        } catch (RuntimeException e){
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                       .entity(new ErrorResponse(e.getMessage()))
+                       .build();
+        }
+        return Response.ok(saveStatus).build();
+    }
+
+    @POST
+    @Path("/{id}/save-anyway")
+    public Response saveOntologyAndContinue(@PathParam("id") long id, @QueryParam ("filename") String filename) {
+        try{
+            repairSession.saveAnyway(id, filename);
+        }
+        catch (NodeNotFoundException e){
+            return Response.status(Response.Status.NOT_FOUND)
+                       .entity(new ErrorResponse(e.getMessage()))
+                       .build();
+        }
+        catch (RuntimeException e){
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                       .entity(new ErrorResponse(e.getMessage()))
+                       .build();
+        }
+        return Response.ok().build();
     }
 }

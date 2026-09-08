@@ -12,9 +12,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +26,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import de.tu_dresden.lat.diagnoses.ComputeRepair;
+import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 
 public class RepairSession {
@@ -283,6 +287,92 @@ public class RepairSession {
         }
         ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), node.axiomStr, hammingNode);
         return impactResponse;
+    }
+
+    public SaveResponse saveOntology(long id, String filename){
+        System.out.println("Saving ontology for node ID: " + id + " with filename: " + filename);
+        //if there already exists a json file with possible maximal repairs, then return that instead of computing again
+        File jsonFile = new File(outDirStr + File.separator + "saveContext_" + id + ".json");
+        System.out.println("Checking if save context exists: " + jsonFile.exists());
+        ObjectMapper objMapper = new ObjectMapper();
+        if (jsonFile.exists()){
+            try {
+                SaveResponse response = objMapper.readValue(jsonFile, SaveResponse.class);
+                return response;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
         
+        AxiomNode node = getNodeById(id);
+        if (node == null) {
+            throw new NodeNotFoundException("Node not found!");
+        }
+        Set<OWLAxiom> remove_list = new HashSet<>();
+        for (int i = 0; i < node.path.size(); i++) {
+            Map<String, Object> p = node.path.get(i);
+            if(!(Boolean) p.get("answer")){
+                remove_list.add((OWLAxiom) p.get("axiom"));
+            }
+        }
+        
+        if (ComputeRepair.isRepair(remove_list)){
+            if (ComputeRepair.checkMinimality(remove_list)){
+                try {
+                    OWLOntology modifiedOntology = ComputeRepair.computeRepair(remove_list, ontologyPath);
+                    ComputeRepair.saveRepairOntology(modifiedOntology, outDirStr, filename);
+                    SaveResponse response = new SaveResponse(id, RepairStatus.MAXIMAL);
+                    objMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, response);
+                    return response;
+                } catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException e) {
+                    throw new RuntimeException("Error saving ontology: " + e.getMessage(), e);
+                }
+            } else {
+                SaveResponse response = new SaveResponse(id, RepairStatus.NON_MAXIMAL);
+                try {
+                    List<Set<? extends OWLAxiom>> recommendedDiagnoses = ComputeRepair.recommendDiagnosisSet(remove_list);
+                    List<Set<String>> recommendedDiagnosisStrings = recommendedDiagnoses.stream()
+                    .map(elem -> ComputeRepair.toStringSet(elem))
+                    .collect(Collectors.toList());
+                    response.setPossibleMaximalRepairs(recommendedDiagnosisStrings);
+                    
+                    objMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, response);
+
+                } catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException
+                        | EntityCheckerException | InterruptedException e) {
+                    throw new RuntimeException("Error computing possible maximal repairs: " + e.getMessage(), e);
+                }
+                return response;
+            }
+        } else {
+            SaveResponse response = new SaveResponse(id, RepairStatus.NOT_REPAIR);
+            try {
+                objMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, response);
+            } catch (IOException e) {
+                throw new RuntimeException("Error saving save context: " + e.getMessage(), e);
+            }
+            return response;
+        }
+
+    }
+
+    public void saveAnyway(long id, String filename){
+        AxiomNode node = getNodeById(id);
+        if (node == null) {
+            throw new NodeNotFoundException("Node not found!");
+        }
+        Set<OWLAxiom> remove_list = new HashSet<>();
+        for (int i = 0; i < node.path.size(); i++) {
+            Map<String, Object> p = node.path.get(i);
+            if(!(Boolean) p.get("answer")){
+                remove_list.add((OWLAxiom) p.get("axiom"));
+            }
+        }
+        try {
+            OWLOntology modifiedOntology = ComputeRepair.computeRepair(remove_list, ontologyPath);
+            ComputeRepair.saveRepairOntology(modifiedOntology, outDirStr, filename);
+        } catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException e) {
+            throw new RuntimeException("Error saving ontology: " + e.getMessage(), e);
+        }
     }
 }

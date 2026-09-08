@@ -2,7 +2,6 @@ package de.tu_dresden.lat.diagnoses;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -725,7 +724,7 @@ public class ComputeRepair {
 		return repairOntology;
 	}
 
-	private static Boolean isRepair(Set<OWLAxiom> removeAxioms){
+	public static Boolean isRepair(Set<OWLAxiom> removeAxioms){
 		Set<Set<? extends OWLAxiom>> satisfiedDiagnoses = new HashSet<>();
 
 		if (minimalDiagnoses.size() > 0){
@@ -839,6 +838,14 @@ public class ComputeRepair {
 		}
 	}
 
+	public static Boolean checkMinimality(Set<OWLAxiom> removeAxioms){
+		if (minimalDiagnoses.contains(removeAxioms)){
+			return true; //i.e diagnosis is minimal
+		} else {
+			return false;
+		}
+	}
+
 	private static Boolean refineRepair(OWLOntology defectOntology, OWLOntology repairOntology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName, Scanner scanner) 
 		throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, EntityCheckerException, InterruptedException, ExecutionException{
 		String user_in;
@@ -877,7 +884,7 @@ public class ComputeRepair {
 				System.out.println("Repair Saved!");
 				return true;
 			} else if(user_in.toLowerCase().equals("max")){
-				List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(minimalDiagnoses, removeAxioms);
+				List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(removeAxioms);
 				if (recommendedDiagnoses.size() < 2){
 					Set<? extends OWLAxiom> selectedMinDiagnosis = recommendedDiagnoses.get(0);
 					OWLOntology repairOntologyMax = computeRepair(selectedMinDiagnosis, ontologyPath);
@@ -956,7 +963,7 @@ public class ComputeRepair {
 			return true; 
 		} else {
 			
-			List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(minimalDiagnoses, removeAxioms);
+			List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(removeAxioms);
 			for (Set<? extends OWLAxiom> diagnosisSet : recommendedDiagnoses){
 				OWLOntology repairOntologyMax = computeRepair(diagnosisSet, ontologyPath);
 				try{
@@ -973,11 +980,13 @@ public class ComputeRepair {
 									
 	}
 
-	public static void saveRepairOntology(OWLOntology saveOntology, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, FileNotFoundException{
+	public static void saveRepairOntology(OWLOntology saveOntology, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, IOException{
 		OWLOntologyManager manager = saveOntology.getOWLOntologyManager();
 		File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outFileNameStr + ".owl"));
+		FileOutputStream fos = new FileOutputStream(outputFile);
 		OWLDocumentFormat format = manager.getOntologyFormat(saveOntology);
-		manager.saveOntology(saveOntology, format, new FileOutputStream(outputFile));
+		manager.saveOntology(saveOntology, format, fos);
+		fos.close();
 	}
 
 
@@ -1246,9 +1255,9 @@ public class ComputeRepair {
  * @throws OWLOntologyStorageException
  * @throws InterruptedException
  */
-	private static List<Set<? extends OWLAxiom>> recommendDiagnosisSet(Set<Set<? extends OWLAxiom>> allMinimalOptimalDiagnoses, Set<? extends OWLAxiom> repairDiagnosis) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
+	public static List<Set<? extends OWLAxiom>> recommendDiagnosisSet(Set<? extends OWLAxiom> repairDiagnosis) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
 		List<Set<? extends OWLAxiom>> recommendationList =  new ArrayList<>();
-		for (Set<? extends OWLAxiom> diagSet : allMinimalOptimalDiagnoses) {
+		for (Set<? extends OWLAxiom> diagSet : minimalDiagnoses) {
 			if(repairDiagnosis.containsAll(diagSet)){
 				recommendationList.add(diagSet);
 			}
@@ -1459,7 +1468,7 @@ public class ComputeRepair {
 		return bufferString;
 	}
 
-	private static Set<String> toStringSet(Set<OWLAxiom> axioms) {
+	public static Set<String> toStringSet(Set<? extends OWLAxiom> axioms) {
 	Set<String> result = new HashSet<>();
 	for (OWLAxiom axiom : axioms) {
 		result.add(sOWLFormatter.format(axiom).toString()); // or use a renderer for nicer output

@@ -1,14 +1,12 @@
 package de.tu_dresden.lat.diagnoses;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.util.ArrayList;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.StringJoiner;
 
 import org.semanticweb.HermiT.ReasonerFactory;
 import org.semanticweb.elk.owlapi.ElkReasonerFactory;
@@ -72,7 +70,7 @@ public class ClassHierarchyDifference {
         manager.removeAxioms(ontology, removeAxioms);  
         try {
             ComputeRepair.saveRepairOntology(ontology, outputDirStr, "ontoYes");
-        } catch (OWLOntologyCreationException | OWLOntologyStorageException | FileNotFoundException e) {
+        } catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException e) {
             e.printStackTrace();
         }
 
@@ -89,7 +87,7 @@ public class ClassHierarchyDifference {
         manager.removeAxiom(ontology, selectedAxiom);
         try {
             ComputeRepair.saveRepairOntology(ontology, outputDirStr, "ontoNo");
-        } catch (OWLOntologyCreationException | OWLOntologyStorageException | FileNotFoundException e) {
+        } catch (OWLOntologyCreationException | OWLOntologyStorageException | IOException e) {
             e.printStackTrace();
         }        
         keepAxioms.remove(selectedAxiom);
