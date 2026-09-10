@@ -150,6 +150,20 @@ public class RepairSession {
         return null; // Node not found
     }
 
+    public AxiomNode getNodeByPath(Set<String> reqPath){
+        for (AxiomNode node : session){
+            // LinkedList<Map<String, Object>> path
+            Set<String> removedInPath = node.path.stream()
+                .filter(e -> ! (boolean) e.get("answer"))
+                .map(e -> (String) e.get("axiomStr"))
+                .collect(Collectors.toSet());
+            if (removedInPath.equals(reqPath)){
+                return node;
+            }
+        }
+        return null;
+    }
+
     public ImpactResponse getHierarchyImpact(long id) {
         JsonNode hierarchyDiffNode = null;
         File jsonFile = new File(outDirStr + File.separator + "classHierarchyDifference_" + id + ".json");
@@ -334,7 +348,12 @@ public class RepairSession {
                     List<Set<String>> recommendedDiagnosisStrings = recommendedDiagnoses.stream()
                     .map(elem -> ComputeRepair.toStringSet(elem))
                     .collect(Collectors.toList());
-                    response.setPossibleMaximalRepairs(recommendedDiagnosisStrings);
+                    Map<Long, Set<String>> recDiagMap = recommendedDiagnosisStrings.stream()
+                        .collect(Collectors.toMap(
+                            elem -> getNodeByPath(elem).nodeId,
+                            elem -> elem));
+                    //Map the nodeID of node having path corresponding to recommendedDiagnosisStrings
+                    response.setPossibleMaximalRepairs(recDiagMap);
                     
                     objMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, response);
 
