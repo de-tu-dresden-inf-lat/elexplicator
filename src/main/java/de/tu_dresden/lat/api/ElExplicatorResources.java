@@ -1,6 +1,7 @@
 package de.tu_dresden.lat.api;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -10,6 +11,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import de.tu_dresden.lat.ELExplicator;
 
 
 @Path("/repair")
@@ -110,6 +113,16 @@ public class ElExplicatorResources {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                        .entity(new ErrorResponse(e.getMessage()))
                        .build();
+        }
+        return Response.ok().build();
+    }
+
+    @POST 
+    @Path("/shutdown")
+    public Response shutdown(){
+        CountDownLatch latch = ElExplicatorApplication.getShutDownLatch();
+        if (latch != null){
+            latch.countDown();
         }
         return Response.ok().build();
     }

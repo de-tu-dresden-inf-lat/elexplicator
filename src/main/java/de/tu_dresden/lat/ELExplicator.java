@@ -261,7 +261,12 @@ public class ELExplicator {
 			Boolean visualize = cmd.hasOption(CLIOptionsStrings.visualizeOptionShort);
 			ExitCode ecode = ExitCode.terminatedSuccessfully;
 			try{
-				ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort, visualize);	
+				if (visualize){
+					ecode = ComputeRepair.computeRepairOntologyVisual(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);	
+				} else {
+					ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);
+				}
+				
 			} catch (Exception e){
 				e.printStackTrace();
 			}		

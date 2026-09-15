@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -93,51 +94,35 @@ public class ComputeRepair {
 	
 	private static Future<?> justificationFuture;
 	private static Future<?> diagnosisFuture;
-/**
- * interactive method to compute the repair ontology based on user selection of justification axioms
- * @param axiom
- * @param ontology
- * @param interestingAxiomOntology
- * @param reasonerName
- * @param outDirStr
- * @param ontologyPath
- * @throws IOException
- * @throws EntityCheckerException
- * @throws OWLOntologyCreationException
- * @throws OWLOntologyStorageException
- * @throws InterruptedException 
- */
-	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
-	
+	private static Future<?> sortingFuture;
+
+
+	public static ExitCode computeRepairOntologyVisual(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
+		// return computeRepairOntology(repairSession.defectAxiom, repairSession.ontology, repairSession.axiomsOntology, repairSession.reasonerName, repairSession.outDirStr, repairSession.ontologyPath, repairSession.sortMethod, repairSession.liveSort, true);
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
-		Runtime.getRuntime().addShutdownHook(new Thread(()->{
-			System.out.println("Shutting down");
-			signal = false;
-			inputFlag = false;
-		}));
-
-		if (outDirStr.isEmpty())
-			outDirStr = "defaultRepairFolder";
-
-		sOWLFormatter.setReferenceOntology(ontology);
+		session = new RepairSession();
 		Set<? extends OWLAxiom> interestingAxiomsSet = interestingAxiomOntology.getTBoxAxioms(Imports.EXCLUDED);
+		session.startRepair(axiom, outDirStr, ontologyPath, rName, ontology, interestingAxiomsSet);
+		ElExplicatorApplication.setRepairSession(session);
+		 CountDownLatch shutdownLatch = new CountDownLatch(1);
+    	ElExplicatorApplication.setShutdownLatch(shutdownLatch);
+		try {
+			ElExplicatorApplication.main(new String[] { "server", "config.yml" });
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ExitCode.executionInterrupted;
+		}
+		initiateRepair(axiom, ontology, interestingAxiomOntology, rName, outDirStr, ontologyPath, sortMethod, liveSort, true);
+		shutdownLatch.await();
+		return ecode;
+	}
+
+	public static void initiateRepair(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws OWLOntologyCreationException, InterruptedException{
+		sOWLFormatter.setReferenceOntology(ontology);
 		allJustifications = new CopyOnWriteArraySet<>();
 		justificationQueue = new LinkedBlockingQueue<>();
 		axiomMap = new ConcurrentHashMap<>();
-		Set<OWLAxiom> keepAxioms = new HashSet<>();
-		Set<OWLAxiom> removeAxioms = new HashSet<>();
 
-		if (visualize){
-			session = new RepairSession();
-			session.startRepair(axiom, outDirStr, ontologyPath, reasonerName, ontology, interestingAxiomsSet);
-			ElExplicatorApplication.setRepairSession(session);
-			try {
-				ElExplicatorApplication.main(new String[] { "server", "config.yml" });
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
 		justificationsCompleted = false;
 		diagnosisComputed = false;
 		sortingCompleted = false;
@@ -161,8 +146,7 @@ public class ComputeRepair {
 		Future<?> decisionTreeFuture = null;
 		if (visualize){
 			decisionTreeFuture = executor.submit(new BuildDecisionTreeThread(session));
-		}
-		
+		}		
 
 		if (!liveSort){
 			//loading screen till the justifications are computed
@@ -173,7 +157,6 @@ public class ComputeRepair {
 			}
 			waitForFuture(diagnosisFuture);
 		}
-		Future<?> sortingFuture;
 		if (sortMethod == SortMethod.Frequency){
 			sortingFuture = executor.submit(new FrequencySortingThread());
 		} else {
@@ -185,6 +168,39 @@ public class ComputeRepair {
 				waitForFuture(decisionTreeFuture);
 			}
 		}
+
+	}
+/**
+ * interactive method to compute the repair ontology based on user selection of justification axioms
+ * @param axiom
+ * @param ontology
+ * @param interestingAxiomOntology
+ * @param reasonerName
+ * @param outDirStr
+ * @param ontologyPath
+ * @throws IOException
+ * @throws EntityCheckerException
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ * @throws InterruptedException 
+ */
+	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
+	
+		ExitCode ecode = ExitCode.terminatedSuccessfully;
+		Runtime.getRuntime().addShutdownHook(new Thread(()->{
+			System.out.println("Shutting down");
+			signal = false;
+			inputFlag = false;
+		}));
+		if (outDirStr.isEmpty()){
+			outDirStr = "defaultRepairFolder";
+		}
+		initiateRepair(axiom, ontology, interestingAxiomOntology, rName, outDirStr, ontologyPath, sortMethod, liveSort, false);
+		
+		Set<? extends OWLAxiom> interestingAxiomsSet = interestingAxiomOntology.getTBoxAxioms(Imports.EXCLUDED);
+		Set<OWLAxiom> keepAxioms = new HashSet<>();
+		Set<OWLAxiom> removeAxioms = new HashSet<>();		
+		
 		try{			
 			Scanner scanner = new Scanner(System.in);
 			List<OWLAxiom> orderAxiomsSSPrev = null;
@@ -193,9 +209,6 @@ public class ComputeRepair {
 					checkFuture(justificationFuture);
 					checkFuture(diagnosisFuture);
 					checkFuture(sortingFuture);
-					if (visualize){
-						checkFuture(decisionTreeFuture);
-					}
 				}				
 				while (!orderedAxiomsCMD.get().isEmpty() || !sortingFuture.isDone()){
 					
@@ -387,7 +400,6 @@ public class ComputeRepair {
 			justificationFuture.cancel(true);
 			diagnosisFuture.cancel(true);
 			sortingFuture.cancel(true);
-			decisionTreeFuture.cancel(true);
 			Thread.currentThread().interrupt();
 			ecode = ExitCode.executionInterrupted;
 			System.out.println(e.getMessage());
@@ -1321,7 +1333,6 @@ public class ComputeRepair {
 				preferredRepairs.put(entry.getKey(), entry.getValue());
 			}
 		}
-		System.out.println("Preferred repairs found: " + preferredRepairs);
 		return preferredRepairs;
 	}
 
@@ -1525,7 +1536,12 @@ public class ComputeRepair {
 		Boolean visualize = (Boolean) args[8];
 
 		try{
-			computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort, visualize);
+			if (visualize){
+				computeRepairOntologyVisual(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
+			} else {
+				computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
+			}
+			
 		} catch(Exception e){
 			e.printStackTrace();
 		}
@@ -1535,7 +1551,7 @@ public class ComputeRepair {
 		if (!future.isDone()){
 			return;
 		}
-
+		
 		try {
 			future.get();
 		} catch (InterruptedException e){
