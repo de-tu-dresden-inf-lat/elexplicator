@@ -727,6 +727,7 @@ public class ComputeRepair {
 	public static Boolean isRepair(Set<OWLAxiom> removeAxioms){
 		Set<Set<? extends OWLAxiom>> satisfiedDiagnoses = new HashSet<>();
 
+		if (!diagnosisComputed){ waitForFuture(diagnosisFuture);}
 		if (minimalDiagnoses.size() > 0){
 			for (Set<? extends OWLAxiom> diagnosisSet : minimalDiagnoses){
 				if (removeAxioms.containsAll(diagnosisSet)){
@@ -839,6 +840,7 @@ public class ComputeRepair {
 	}
 
 	public static Boolean checkMinimality(Set<OWLAxiom> removeAxioms){
+		if (!diagnosisComputed){ waitForFuture(diagnosisFuture);}
 		if (minimalDiagnoses.contains(removeAxioms)){
 			return true; //i.e diagnosis is minimal
 		} else {
