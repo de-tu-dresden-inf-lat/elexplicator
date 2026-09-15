@@ -256,7 +256,7 @@ public class ComputeRepair {
 									String bufferedString = "Select from the options: \n" + //
 																"1. Compute the entailment probabilities of the interesting axioms\n" + //
 																"2. Compute the class hierarchy difference\n" + //
-																"3. Hamming distance of current ontology to a candidate repair";
+																"3. Dissimilarity measure of current ontology to a candidate repair";
 									System.out.println(bufferedString);
 									System.out.println("\u0007");
 									System.out.flush();
@@ -279,7 +279,7 @@ public class ComputeRepair {
 												// computeJustificationsThread.join();
 												waitForFuture(justificationFuture);
 												waitForFuture(diagnosisFuture);
-												bufferedString += hammingDistance(justificationAxiom, removeAxioms, keepAxioms, interestingAxiomsSet, ontologyPath, reasonerName, outDirStr, Optional.empty());
+												bufferedString += dissimilarity(justificationAxiom, removeAxioms, keepAxioms, interestingAxiomsSet, ontologyPath, reasonerName, outDirStr, Optional.empty());
 												break;
 											}
 											default:{
@@ -1156,41 +1156,41 @@ public class ComputeRepair {
 		}
 	}
 
-	private static void writeHammingDistanceToFile(Boolean noRepairYes, Boolean noRepairNo, Map<Set<? extends OWLAxiom>, Double> hammingYes, Map<Set<? extends OWLAxiom>, Double> hammingNo, Set<OWLAxiom> entailedYes, Set<OWLAxiom> entailedNo, Set<OWLAxiom> entailedBoth, String outDirStr, Optional<String> nodeId) {
+	private static void writeDissimilarityToFile(Boolean noRepairYes, Boolean noRepairNo, Map<Set<? extends OWLAxiom>, Double> dissimilarityYes, Map<Set<? extends OWLAxiom>, Double> dissimilarityNo, Set<OWLAxiom> entailedYes, Set<OWLAxiom> entailedNo, Set<OWLAxiom> entailedBoth, String outDirStr, Optional<String> nodeId) {
 		ObjectMapper mapper = new ObjectMapper();
-		String filename = "hammingDistance.json";
-		if (nodeId.isPresent()) filename="hammingDistance_"+nodeId.get()+".json";
-		Map<String, Object> hammingData = new HashMap<>();
+		String filename = "dissimilarity.json";
+		if (nodeId.isPresent()) filename="dissimilarity_"+nodeId.get()+".json";
+		Map<String, Object> dissimilarityData = new HashMap<>();
 		if (noRepairYes){
-			hammingData.put("hamming_yes", "No Repair!");
+			dissimilarityData.put("dissimilarity_yes", "No Repair!");
 		} else {
-			Set<String> hamming_yes_repair = new HashSet<>();
-			for (OWLAxiom repAx : hammingYes.keySet().iterator().next()){
-				hamming_yes_repair.add(sOWLFormatter.format(repAx));
+			Set<String> dissimilarity_yes_repair = new HashSet<>();
+			for (OWLAxiom repAx : dissimilarityYes.keySet().iterator().next()){
+				dissimilarity_yes_repair.add(sOWLFormatter.format(repAx));
 			}
-			hammingData.put("hamming_yes_repair", hamming_yes_repair);
-			hammingData.put("hamming_yes", hammingYes.values().iterator().next());
-			hammingData.put("entailed_yes", toStringSet(entailedYes));
+			dissimilarityData.put("dissimilarity_yes_repair", dissimilarity_yes_repair);
+			dissimilarityData.put("dissimilarity_yes", dissimilarityYes.values().iterator().next());
+			dissimilarityData.put("entailed_yes", toStringSet(entailedYes));
 		}
 
 		if (noRepairNo){
-			hammingData.put("hamming_no", "No Repair!");
+			dissimilarityData.put("dissimilarity_no", "No Repair!");
 		} else {
-			Set<String> hamming_no_repair = new HashSet<>();
-			for (OWLAxiom repAx : hammingNo.keySet().iterator().next()){
-				hamming_no_repair.add(sOWLFormatter.format(repAx));
+			Set<String> dissimilarity_no_repair = new HashSet<>();
+			for (OWLAxiom repAx : dissimilarityNo.keySet().iterator().next()){
+				dissimilarity_no_repair.add(sOWLFormatter.format(repAx));
 			}
-			hammingData.put("hamming_no_repair", hamming_no_repair);
-			hammingData.put("hamming_no", hammingNo.values().iterator().next());
-			hammingData.put("entailed_no", toStringSet(entailedNo));
+			dissimilarityData.put("dissimilarity_no_repair", dissimilarity_no_repair);
+			dissimilarityData.put("dissimilarity_no", dissimilarityNo.values().iterator().next());
+			dissimilarityData.put("entailed_no", toStringSet(entailedNo));
 		}
 		
 		if (!noRepairYes && !noRepairNo){
-			hammingData.put("entailed_both", toStringSet(entailedBoth));
+			dissimilarityData.put("entailed_both", toStringSet(entailedBoth));
 		}		
 		
 		try {
-			mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outDirStr + File.separator + filename), hammingData);
+			mapper.writerWithDefaultPrettyPrinter().writeValue(new File(outDirStr + File.separator + filename), dissimilarityData);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -1337,28 +1337,28 @@ public class ComputeRepair {
 	}
 
 
-	private static double computeHammingDistance(OWLOntology currentOntology, OWLOntology preferredRepair){
+	private static double computeDissimilarity(OWLOntology currentOntology, OWLOntology preferredRepair){
 		Set<OWLAxiom> intersection = new HashSet<>(currentOntology.getAxioms());
 		intersection.retainAll(preferredRepair.getAxioms());
 		Set<OWLAxiom> union = new HashSet<>(currentOntology.getAxioms());
 		union.addAll(preferredRepair.getAxioms());
-		double hammingDistance = 1 - ((double) intersection.size() / (double) union.size());
-		return hammingDistance;
+		double dissimilarity = 1 - ((double) intersection.size() / (double) union.size());
+		return dissimilarity;
 	}
 
 	private static Map<Set<? extends OWLAxiom>, Double> getBestRepair(Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> repairs, OWLOntology ontology, String ontologyPath) throws OWLOntologyCreationException {
 		if (repairs == null || repairs.isEmpty()) return null;
-		Map<Set<? extends OWLAxiom>, Double> repairHammingDist = new HashMap<>();
+		Map<Set<? extends OWLAxiom>, Double> repairDissimilarityDist = new HashMap<>();
 		Set<? extends OWLAxiom> bestRepair = repairs.keySet().iterator().next();
 
 		OWLOntology repairOntology = null;
 		repairOntology = computeRepair(bestRepair, ontologyPath);
-		double distance = computeHammingDistance(ontology, repairOntology);
-		repairHammingDist.put(bestRepair, distance);
-		return repairHammingDist;
+		double distance = computeDissimilarity(ontology, repairOntology);
+		repairDissimilarityDist.put(bestRepair, distance);
+		return repairDissimilarityDist;
 	}
 
-	public static String hammingDistance(OWLAxiom justAxiom, Set<OWLAxiom> removeAxioms, Set<OWLAxiom> keepAxioms, Set<? extends OWLAxiom> interestingAxiomsSet, String ontologyPath, ReasonerName reasonerName, String outDirStr, Optional<String> nodeId) throws OWLOntologyCreationException, IOException, EntityCheckerException{
+	public static String dissimilarity(OWLAxiom justAxiom, Set<OWLAxiom> removeAxioms, Set<OWLAxiom> keepAxioms, Set<? extends OWLAxiom> interestingAxiomsSet, String ontologyPath, ReasonerName reasonerName, String outDirStr, Optional<String> nodeId) throws OWLOntologyCreationException, IOException, EntityCheckerException{
 		if (!justificationsCompleted || !diagnosisComputed){
 			waitForFuture(justificationFuture);
 			waitForFuture(diagnosisFuture);
@@ -1412,7 +1412,7 @@ public class ComputeRepair {
 
 		// Simulate printing class hierearchy difference
 		System.setOut(bufferStream);
-		System.out.println("\n\t\t3. Hamming Distance");
+		System.out.println("\n\t\t3. Dissimilarity measure");
 		System.out.println("============================");
 		System.out.println("\tAnswer = yes:");
 		
@@ -1423,7 +1423,7 @@ public class ComputeRepair {
 			axiomWeightOutputBuffer.reset();
 			System.setOut(bufferStream);
 		} else {
-			System.out.println("Hamming distance to a candidate repair : " + String.format("%.2f", preferredRepair_yes.values().iterator().next()));
+			System.out.println("Dissimilarity measure to a candidate repair : " + String.format("%.2f", preferredRepair_yes.values().iterator().next()));
 			System.out.println("Maximum number of interesting axioms entailed by the repair : " + (entailedIA_yes.size()));
 			if(!entailed_yes.isEmpty()){
 				System.out.println("Interesting axioms entailed by the repair : ");
@@ -1444,7 +1444,7 @@ public class ComputeRepair {
 			axiomWeightOutputBuffer.reset();
 			System.setOut(bufferStream);
 		} else {
-			System.out.println("Hamming distance to a candidate repair : " + String.format("%.2f", preferredRepair_no.values().iterator().next()));
+			System.out.println("Dissimilarity measure to a candidate repair : " + String.format("%.2f", preferredRepair_no.values().iterator().next()));
 			System.out.println("Maximum number of interesting axioms entailed by the repair : " + entailedIA_no.size());
 			if(!entailed_no.isEmpty()){
 				System.out.println("Interesting axioms entailed by the repair : ");
@@ -1472,9 +1472,9 @@ public class ComputeRepair {
 		axiomWeightOutputBuffer.reset();
 
 		if (nodeId.isPresent()){
-			writeHammingDistanceToFile(noRepairYes, noRepairNo, preferredRepair_yes, preferredRepair_no, entailed_yes, entailed_no, entailed_both, outDirStr, Optional.of(nodeId.get()));
+			writeDissimilarityToFile(noRepairYes, noRepairNo, preferredRepair_yes, preferredRepair_no, entailed_yes, entailed_no, entailed_both, outDirStr, Optional.of(nodeId.get()));
 		} else {
-			writeHammingDistanceToFile(noRepairYes, noRepairNo, preferredRepair_yes, preferredRepair_no, entailed_yes, entailed_no, entailed_both, outDirStr, Optional.empty());
+			writeDissimilarityToFile(noRepairYes, noRepairNo, preferredRepair_yes, preferredRepair_no, entailed_yes, entailed_no, entailed_both, outDirStr, Optional.empty());
 		}
 		
 		
@@ -1551,7 +1551,7 @@ public class ComputeRepair {
 		if (!future.isDone()){
 			return;
 		}
-		
+
 		try {
 			future.get();
 		} catch (InterruptedException e){

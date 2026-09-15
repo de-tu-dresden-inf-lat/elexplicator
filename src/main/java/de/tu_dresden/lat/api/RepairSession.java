@@ -263,9 +263,9 @@ public class RepairSession {
         
     }
 
-    public ImpactResponse getHammingImpact(long id) {  
-        JsonNode hammingNode = null;
-        File jsonFile = new File(outDirStr + File.separator + "hammingDistance_" + id + ".json");
+    public ImpactResponse getDissimilarityImpact(long id) {  
+        JsonNode dissimilarityNode = null;
+        File jsonFile = new File(outDirStr + File.separator + "dissimilarity_" + id + ".json");
         AxiomNode node = getNodeById(id);
         ObjectMapper objMapper = new ObjectMapper();
         if (node == null) {
@@ -276,7 +276,7 @@ public class RepairSession {
         }
         if (jsonFile.exists()){
             try {
-			    hammingNode = objMapper.readTree(jsonFile);
+			    dissimilarityNode = objMapper.readTree(jsonFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -292,10 +292,10 @@ public class RepairSession {
                 }
             }
             try{
-                ComputeRepair.hammingDistance(node.axiom, new HashSet<OWLAxiom>(remove_list), new HashSet<OWLAxiom>(keep_list), interestingAxiomsSet, ontologyPath, reasonerName, outDirStr, Optional.of(Long.toString(id)));
+                ComputeRepair.dissimilarity(node.axiom, new HashSet<OWLAxiom>(remove_list), new HashSet<OWLAxiom>(keep_list), interestingAxiomsSet, ontologyPath, reasonerName, outDirStr, Optional.of(Long.toString(id)));
                 
                 try {
-                    hammingNode = objMapper.readTree(jsonFile);
+                    dissimilarityNode = objMapper.readTree(jsonFile);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -304,7 +304,7 @@ public class RepairSession {
                 e.printStackTrace();
             }
         }
-        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), node.axiomStr, hammingNode);
+        ImpactResponse impactResponse = new ImpactResponse(id, node.axiom.toString(), node.axiomStr, dissimilarityNode);
         return impactResponse;
     }
 

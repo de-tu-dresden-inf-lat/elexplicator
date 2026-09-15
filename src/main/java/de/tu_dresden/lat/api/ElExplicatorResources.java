@@ -71,7 +71,7 @@ public class ElExplicatorResources {
     @GET
     @Path("/{id}/impact3")
     public Response getImpact3ByID(@PathParam("id") long id) {
-        ImpactResponse impact = repairSession.getHammingImpact(id);
+        ImpactResponse impact = repairSession.getDissimilarityImpact(id);
         if (impact == null){
             return Response.status(Response.Status.NOT_FOUND)
                        .entity(new ErrorResponse("Impact for node not found!"))
