@@ -41,6 +41,7 @@ public class RepairSession {
     public OWLOntology ontology;
     public Set<? extends OWLAxiom> interestingAxiomsSet;
     public OWLAxiom defectAxiom;
+    public Boolean treeComplete;
     //reasonername
 
     public void startRepair(OWLAxiom defectAxiom, String outDir, String ontologyPath, ReasonerName reasonerName, OWLOntology ontology, Set<? extends OWLAxiom> interestingAxiomsSet){
@@ -51,6 +52,7 @@ public class RepairSession {
         this.ontology = ontology;
         this.interestingAxiomsSet = interestingAxiomsSet;
         this.defectAxiom = defectAxiom;
+        this.treeComplete = false;
     }
 
     public AxiomNode buildTree(List<OWLAxiom> justificationAxioms){
@@ -117,6 +119,9 @@ public class RepairSession {
         }
         return root;
     }
+    public void setTreeCompleteFlag(){
+        this.treeComplete = true;
+    }
 
     public List<Map<String, Object>> getDecisionTree() {
         List<Map<String, Object>> serializedNodes = new ArrayList<>();
@@ -129,7 +134,7 @@ public class RepairSession {
             serialized.put("no", node.nochild != null ? node.nochild.nodeId : null);
             serializedNodes.add(serialized);
         }
-
+        serializedNodes.add(Map.of("complete", this.treeComplete));
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
 

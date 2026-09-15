@@ -299,5 +299,6 @@ class BuildDecisionTreeThread implements Runnable{
 			ElExplicatorApplication.setRepairSession(session);
 
 		}
+		session.setTreeCompleteFlag();
 	}
 }
