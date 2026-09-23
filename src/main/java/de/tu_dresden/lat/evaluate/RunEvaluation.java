@@ -64,7 +64,7 @@ import java.time.LocalDateTime;
 /**
  * RunEvaluation2
  */
-public class RunEvaluation2 {
+public class RunEvaluation {
     private static Boolean normalize;
     
     public static Map<String, Object> loadExampleInstances(File exampleFile, String outDirStr){

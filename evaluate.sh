@@ -30,7 +30,7 @@ fi
 #CLASS_PATH="target/classes"
 JAR_PATH="target/ELExplicator.jar"
 
-CLASS_NAME="de.tu_dresden.lat.evaluate.RunEvaluation2"
+CLASS_NAME="de.tu_dresden.lat.evaluate.RunEvaluation"
 
 status_value="Failure";
 normalized='True';
