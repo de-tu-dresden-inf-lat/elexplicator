@@ -112,6 +112,27 @@ public class CLIOptions {
     public final Option lemmaTitleOptionREQUIRED = new Option(CLIOptionsStrings.lemmaTitleOptionShort,
             CLIOptionsStrings.lemmaTitleOptionLong, true, CLIOptionsDescriptions.lemmaTitleOptionDescription);
 
+    public final Option diagnosisOption = new Option(CLIOptionsStrings.diagnosisOptionShort, CLIOptionsStrings.diagnosisOptionLong, 
+            true, CLIOptionsDescriptions.diagnosisOptionDescription);
+
+    public final Option repairOption = new Option(CLIOptionsStrings.repairOptionShort, CLIOptionsStrings.repairOptionLong, 
+            true, CLIOptionsDescriptions.repairOptionDescription);
+
+    public final Option interestingAxiomOption = new Option(CLIOptionsStrings.interestingAxiomOptionShort, CLIOptionsStrings.interestingAxiomOptionLong, 
+            true, CLIOptionsDescriptions.interestingAxiomDescription);
+    public final Option interestingAxiomOptionREQUIRED = new Option(CLIOptionsStrings.interestingAxiomOptionShort, CLIOptionsStrings.interestingAxiomOptionLong, 
+            true, CLIOptionsDescriptions.interestingAxiomDescription);
+    
+    public final Option liveSortOption = new Option(CLIOptionsStrings.liveSortOptionShort, CLIOptionsStrings.liveSortOptionLong, 
+            false, CLIOptionsDescriptions.liveSortOptionDescription);
+
+    public final Option sortMethodOption = new Option(CLIOptionsStrings.sortMethodOptionShort, CLIOptionsStrings.sortMethodOptionLong,
+            true, CLIOptionsDescriptions.sortMethodOptionDescription);
+    public final Option sortMethodOptionREQUIRED = new Option(CLIOptionsStrings.sortMethodOptionShort, CLIOptionsStrings.sortMethodOptionLong,
+            true, CLIOptionsDescriptions.sortMethodOptionDescription);
+
+    public final Option visualizeOption = new Option(CLIOptionsStrings.visualizeOptionShort, CLIOptionsStrings.visualizeOptionLong, false,
+            CLIOptionsDescriptions.visualizeOptionDescription);
     private CLIOptions() {
         formatter.setWidth(200);
 
@@ -196,6 +217,31 @@ public class CLIOptions {
 
         lemmaTitleOption.setRequired(false);
         lemmaTitleOptionREQUIRED.setRequired(true);
+
+        diagnosisOption.setRequired(false);
+        diagnosisOption.setArgs(2);
+        diagnosisOption.setOptionalArg(true);
+        diagnosisOption.setValueSeparator(',');
+        diagnosisOption.setArgName(CLIOptionsArgs.diagnosisOptionArgs);
+
+        repairOption.setRequired(false);
+        repairOption.setArgs(1);
+        repairOption.setOptionalArg(true);
+        repairOption.setArgName(CLIOptionsArgs.repairOptionArgs);
+
+        interestingAxiomOption.setRequired(false);
+        interestingAxiomOption.setArgName(CLIOptionsArgs.pathArg);
+        interestingAxiomOptionREQUIRED.setRequired(true);
+        interestingAxiomOptionREQUIRED.setArgName(CLIOptionsArgs.pathArg);
+
+        liveSortOption.setRequired(false);
+
+        sortMethodOption.setRequired(false);
+        sortMethodOption.setArgName(CLIOptionsArgs.nameArg);
+        sortMethodOptionREQUIRED.setRequired(true);
+        sortMethodOptionREQUIRED.setArgName(CLIOptionsArgs.nameArg);
+
+        visualizeOption.setRequired(false);
     }
 
     private static class LazyHolder {

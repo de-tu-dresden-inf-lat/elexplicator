@@ -72,6 +72,24 @@ public class CLIOptionsStrings {
             patternDirOptionShort = "pat",
             patternDirOptionLong = "pattern-path",
             lemmaTitleOptionShort = "lt",
-            lemmaTitleOptionLong="lemma-title"
+            lemmaTitleOptionLong="lemma-title",
+
+            diagnosisOptionShort = "d",
+            diagnosisOptionLong = "diagnosis",
+
+            repairOptionShort = "r",
+            repairOptionLong = "repair",
+
+            interestingAxiomOptionShort = "ia",
+            interestingAxiomOptionLong = "interesting-axiom",
+
+            liveSortOptionShort = "live",
+            liveSortOptionLong = "live-sort",
+
+            sortMethodOptionShort = "sm",
+            sortMethodOptionLong = "sort-method",
+
+            visualizeOptionShort = "vis",
+            visualizeOptionLong = "visualize"
     ;
 }

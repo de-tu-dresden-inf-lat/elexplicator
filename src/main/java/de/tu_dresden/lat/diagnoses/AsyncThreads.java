@@ -1,0 +1,296 @@
+package de.tu_dresden.lat.diagnoses;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import org.apache.log4j.Logger;
+
+import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLOntology;
+
+import de.tu_dresden.lat.api.ElExplicatorApplication;
+import de.tu_dresden.lat.api.RepairSession;
+import de.tu_dresden.lat.data.names.ReasonerName;
+
+//Thread to compute justifications to an ontology for a given axiom and update id map
+class ComputeJustificationsThread implements Runnable{
+	private ReasonerName reasonerName;
+	private OWLAxiom axiom;
+	private OWLOntology ontology;
+
+	Logger logger = Logger.getLogger(ComputeJustificationsThread.class);
+
+	public ComputeJustificationsThread(ReasonerName reasonerName, OWLAxiom axiom, OWLOntology ontology){
+		this.reasonerName = reasonerName;
+		this.axiom = axiom;
+		this.ontology = ontology;
+	}
+
+	@Override
+	public void run(){	
+		ComputeRepair.allJustifications = ComputeRepair.getAllJustificationsAsync(reasonerName, axiom, ontology, ComputeRepair.justificationQueue);        
+		if (ComputeRepair.allJustifications != null){
+			ComputeRepair.fillMap(ComputeRepair.allJustifications);
+			HelperFunctions.identifiers2Axioms = ComputeRepair.identifiers2Axioms;
+		}			
+		ComputeRepair.justificationsCompleted = true;
+		
+	}
+}
+
+//another thread to compute and set the diagnosis and status 
+class ComputeDiagnosisThread implements Runnable{
+	private OWLOntology ontology;
+	private OWLAxiom axiom;
+	private String outDirStr;
+	private ReasonerName reasonerName;
+
+	// private static final long CHECK_INTERVAL = 1000; 
+
+	Logger logger = Logger.getLogger(ComputeDiagnosisThread.class);
+
+	public ComputeDiagnosisThread(OWLOntology ontology, OWLAxiom axiom, String outDirStr, ReasonerName reasonerName){
+		this.ontology = ontology;
+		this.axiom = axiom;
+		this.outDirStr = outDirStr;
+		this.reasonerName = reasonerName;
+	}
+
+	@Override
+	public void run(){
+			
+			while(true){
+				if (ComputeRepair.justificationsCompleted){
+					try {
+						ASPMinimalDiagnoses.getAllClassicalRepairs(axiom, ontology, "minimal", outDirStr, new HashSet<>(), new HashSet<>(), reasonerName);
+					} catch (IOException | InterruptedException e) {
+						throw new RuntimeException(e);
+					}
+					ComputeRepair.minimalDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allOptimalDiagnosesMin);
+					ComputeRepair.allDiagnoses = new HashSet<>(ASPMinimalDiagnoses.allDiagnoses);
+					ComputeRepair.diagnosisComputed = true;
+					break;
+				}
+			}
+	}
+}
+
+//Thread to get the percentage of entailments of interesting axioms in the repaired ontologies obtained from current state
+class ComputeAxiomWeightThread implements Runnable{
+	String outDirStr;
+	String mDsID;
+	String ontologyPath;
+	String outputFileName;
+	Set<Set<? extends OWLAxiom>> allOptimalDiagnoses;
+	Set<? extends OWLAxiom> interestingAxioms;
+	ReasonerName reasonerName;
+
+	Logger logger = Logger.getLogger(ComputeAxiomWeightThread.class);
+
+	public ComputeAxiomWeightThread(String outDirStr, String mDsID, String ontologyPath, String outputFileName, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxioms, ReasonerName reasonerName){
+		this.outDirStr = outDirStr;
+		this.mDsID = mDsID;
+		this.ontologyPath = ontologyPath;
+		this.outputFileName = outputFileName;
+		this.allOptimalDiagnoses = allOptimalDiagnoses;
+		this.interestingAxioms = interestingAxioms;
+		this.reasonerName = reasonerName;
+	}
+
+	@Override
+	public void run(){
+		try{			
+			Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> entailmentMap = ComputeRepair.getInterestingAxiomsEntailment(ontologyPath, allOptimalDiagnoses, interestingAxioms);
+			int totalRepairs = allOptimalDiagnoses.size();
+			ComputeRepair.computeAxiomWeight(entailmentMap, reasonerName, totalRepairs);
+		} catch (Exception e){
+			throw new RuntimeException(e);
+		} 
+		
+	}
+}
+
+//Thread where a snapshot of justifications is taken every 5 seconds and the frequency of each axiom is updated in the map
+class FrequencySortingThread_interval implements Runnable{
+	private static final long SNAPSHOT_INTERVAL = 5000; 
+	private static final Logger logger = Logger.getLogger(FrequencySortingThread.class);
+	@Override
+	public void run(){
+		try{
+			while (!ComputeRepair.justificationQueue.isEmpty() || !ComputeRepair.justificationsCompleted){
+				Set<Set<? extends OWLAxiom>> justificationsSnapshot = new HashSet<>();
+				long startTime = System.currentTimeMillis();
+				while (System.currentTimeMillis() - startTime < SNAPSHOT_INTERVAL) {
+					try{
+						Set<? extends OWLAxiom> queueElement = ComputeRepair.justificationQueue.poll(SNAPSHOT_INTERVAL, TimeUnit.MILLISECONDS);
+						if (queueElement != null){
+							justificationsSnapshot.add(queueElement);
+						}
+					} catch (InterruptedException e){
+						logger.warn("Thread interrupted");
+						Thread.currentThread().interrupt();
+					}
+				}
+				if (!justificationsSnapshot.isEmpty()){
+					for (Set<? extends OWLAxiom> justificationSet : justificationsSnapshot){			
+						for (OWLAxiom justificationAxiom : justificationSet){
+							//if the axiom is already in the map, increment the frequency else add it with frequency 1	
+							ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0.0) + 1);
+						}
+					};
+					// ComputeRepair.isSnapshotActive = true;
+				} 
+			}
+			// ComputeRepair.isSnapshotActive = false;
+		} catch (Exception e) {
+			logger.warn("Thread exception: " + e.getMessage());
+            // Thread.currentThread().interrupt();
+		}
+	}
+}
+
+class FrequencySortingThread implements Runnable{
+	private static final Logger logger = Logger.getLogger(FrequencySortingThread.class);
+	@Override
+	public void run(){
+		while(!ComputeRepair.justificationQueue.isEmpty() || !ComputeRepair.justificationsCompleted){
+			Set<? extends OWLAxiom> queueElement = null;				
+			try {
+				queueElement = ComputeRepair.justificationQueue.poll(1, TimeUnit.MILLISECONDS);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				logger.error(e);
+			}
+			if (queueElement != null){		
+				for (OWLAxiom justificationAxiom : queueElement){
+					// if the axiom is already in the map, increment the frequency else add it with frequency 1	
+					ComputeRepair.axiomMap.put(justificationAxiom, ComputeRepair.axiomMap.getOrDefault(justificationAxiom, 0.0) + 1);
+				}
+			} 
+			LinkedList<OWLAxiom> orderedAxioms = new LinkedList<>(ComputeRepair.axiomMap.entrySet()
+						.stream()
+						.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue().reversed())  
+						.map(Map.Entry::getKey)
+						.collect(Collectors.toList()));
+			
+			ComputeRepair.orderedAxiomsCMD.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+			ComputeRepair.orderedAxiomsAPI.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+		} 	
+		ComputeRepair.sortingCompleted = true;
+	}
+		
+}
+
+class EntropySortingThread implements Runnable{
+
+	@Override
+	public void run() {
+		Boolean sortActive = true;
+		while (sortActive) {
+			if (!ComputeRepair.diagnosisComputed && !ComputeRepair.justificationQueue.isEmpty()) {
+				try {
+					for (OWLAxiom axiom : ComputeRepair.justificationQueue.poll(1, TimeUnit.MILLISECONDS)) {
+						ComputeRepair.axiomMap.putIfAbsent(axiom, 0.0);
+					}
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} else if (ComputeRepair.diagnosisComputed){
+				Set<Set<? extends OWLAxiom>> allJustifications = ComputeRepair.allJustifications;
+				Set<Set<? extends OWLAxiom>> minimalDiagnoses = ComputeRepair.minimalDiagnoses;
+				Map<OWLAxiom, Double> entropyScoreMap = new HashMap<>();
+				for (Set<? extends OWLAxiom> justificationSet : allJustifications){
+					for (OWLAxiom justAxiom : justificationSet){
+						if (entropyScoreMap.containsKey(justAxiom)){
+							continue;
+						}
+						entropyScoreMap.putIfAbsent(justAxiom, 0.0);
+						int Dp = 0;
+						int Dn = 0;
+						for (Set<? extends OWLAxiom> diagSet : minimalDiagnoses){
+							if (diagSet.contains(justAxiom)){
+								Dp++;
+							} else if (!diagSet.contains(justAxiom)){
+								Dn++;
+							} 
+						}
+						double pYProb = (double) Dp / minimalDiagnoses.size();
+						double pNProb = (double) Dn / minimalDiagnoses.size();
+						double entropyScore = (pYProb * Math.log(pYProb) / Math.log(2)) + (pNProb * Math.log(pNProb) / Math.log(2)) + 1;
+						entropyScoreMap.put(justAxiom, entropyScore);
+					}
+				}
+				ComputeRepair.axiomMap = new ConcurrentHashMap<>(entropyScoreMap);
+				
+				sortActive = false;
+			}
+			LinkedList<OWLAxiom> orderedAxioms = new LinkedList<>(ComputeRepair.axiomMap.entrySet()
+					.stream()
+					.sorted(Map.Entry.<OWLAxiom, Double>comparingByValue())  
+					.map(Map.Entry::getKey)
+					.collect(Collectors.toList()));
+
+			ComputeRepair.orderedAxiomsCMD.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+			ComputeRepair.orderedAxiomsAPI.set(new ConcurrentLinkedQueue<>(orderedAxioms));
+		}
+		ComputeRepair.sortingCompleted = true;
+		
+	}
+}
+
+class CheckMinimalityThread implements Callable<Boolean>{
+	private OWLOntology ontology;
+	private OWLAxiom axiom;
+	private Set<OWLAxiom> removeAxioms;
+	private String outDirStr;
+	private ReasonerName reasonerName;
+	
+	public CheckMinimalityThread(OWLOntology ontology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName){
+		this.ontology = ontology;
+		this.axiom = axiom;
+		this.removeAxioms = removeAxioms;
+		this.outDirStr = outDirStr;
+		this.reasonerName = reasonerName;
+	}
+	
+	@Override
+	public Boolean call() throws Exception {
+		return ComputeRepair.checkDiagMinimality(ontology, axiom, removeAxioms, outDirStr, reasonerName);
+	}
+	
+}
+
+class BuildDecisionTreeThread implements Runnable{
+	RepairSession session;
+	public BuildDecisionTreeThread(RepairSession session){
+		this.session = session;
+	}
+	@Override
+	public void run(){
+		while (!ComputeRepair.orderedAxiomsAPI.get().isEmpty() || !ComputeRepair.sortingCompleted){
+			if (ComputeRepair.orderedAxiomsAPI.get().isEmpty()){
+				continue;
+			}
+			ConcurrentLinkedQueue<OWLAxiom> snapshotRef = ComputeRepair.orderedAxiomsAPI.get();
+			List<OWLAxiom> orderedAxiomSS = new ArrayList<>(snapshotRef);
+			ComputeRepair.orderedAxiomsAPI.compareAndSet(snapshotRef, new ConcurrentLinkedQueue<>());
+			session.buildTree(orderedAxiomSS);
+			ElExplicatorApplication.setRepairSession(session);
+
+		}
+		session.setTreeCompleteFlag();
+	}
+}

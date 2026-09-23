@@ -2,6 +2,7 @@ package de.tu_dresden.lat;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -32,13 +33,17 @@ import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLEntity;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
-
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 
 import de.tu_dresden.inf.lat.evee.data.ProofType;
+import de.tu_dresden.lat.api.ElExplicatorApplication;
 import de.tu_dresden.lat.atomicDecomposition.AtomicDecompositionGenerator;
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.data.enums.OutputType;
+import de.tu_dresden.lat.data.enums.SortMethod;
 import de.tu_dresden.lat.diagnoses.ASPMinimalDiagnoses;
+import de.tu_dresden.lat.diagnoses.ComputeRepair;
+import de.tu_dresden.lat.diagnoses.HelperFunctions;
 import de.tu_dresden.lat.managers.MyELKModelManager;
 import de.tu_dresden.lat.managers.MyELkProofManager;
 
@@ -57,7 +62,8 @@ public class ELExplicator {
 			translateAxioms = true,
 			exportMapper = false;
 
-	public static void main(String[] args) throws OWLOntologyCreationException, IOException, ProofGenerationException, EntityCheckerException, ParserConfigurationException, TransformerException {
+	public static void main(String[] args) throws OWLOntologyCreationException, IOException, ProofGenerationException, EntityCheckerException, ParserConfigurationException, TransformerException, OWLOntologyStorageException {
+		System.setOut(new PrintStream(System.out, true, "UTF-8")); // Set the output stream to UTF-8
 
 		Options options = new Options();
 
@@ -101,6 +107,17 @@ public class ELExplicator {
 
 		options.addOption(myOpts.exportMapperOption);
 
+		options.addOption(myOpts.diagnosisOption);
+
+		options.addOption(myOpts.repairOption);
+
+		options.addOption(myOpts.interestingAxiomOption);
+
+		options.addOption(myOpts.liveSortOption);
+
+		options.addOption(myOpts.sortMethodOption);
+
+		options.addOption(myOpts.visualizeOption);
 
 		CommandLine cmd = null;
 
@@ -141,6 +158,9 @@ public class ELExplicator {
 
 		String reasonerNameStr = cmd.getOptionValue(CLIOptionsStrings.reasonerNameOptionLong,
 				CLIOptionsDefaultValues.defaultReasonerStr);
+
+		String sortMethodStr = cmd.getOptionValue(CLIOptionsStrings.sortMethodOptionLong, 
+				CLIOptionsDefaultValues.defaultSortMethodOptionStr);
 
 		if (cmd.hasOption(CLIOptionsStrings.keepGeneratedStuffOptionShort))
 			keep = true;
@@ -194,7 +214,7 @@ public class ELExplicator {
 
 				ecode = ASPMinimalDiagnoses.getAllMinimalDiagnoses(axiom, ontology, mdsID, outDirStr, Sets.newHashSet(),
 						reasonerName);
-
+			
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -202,6 +222,58 @@ public class ELExplicator {
 			System.exit(ecode.getValue());
 		}
 
+		if (cmd.hasOption(CLIOptionsStrings.diagnosisOptionShort)){
+			String[] diagnosisArgs = cmd.getOptionValues(CLIOptionsStrings.diagnosisOptionLong);
+			ReasonerName reasonerName = Helper.getReasonerName(diagnosisArgs);
+			String dID = Helper.getMDsID(diagnosisArgs);
+			ExitCode ecode = ExitCode.terminatedSuccessfully;
+			
+			
+			try {
+				ecode = ASPMinimalDiagnoses.parseUserInteraction(axiom, ontology, dID, outDirStr, reasonerName, ontologyPathStr);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+			System.exit(ecode.getValue());
+		}
+
+		
+		if (cmd.hasOption(CLIOptionsStrings.repairOptionShort)){
+			String[] repairArgs = cmd.getOptionValues(CLIOptionsStrings.repairOptionLong);
+			ReasonerName reasonerName = Helper.getReasonerName(repairArgs);
+
+			if (!HelperFunctions.reasonerAxiomTypeCheck(reasonerName, axiom)){
+				System.err.println("The selected reasoner " + reasonerName + " does not support the given axiom type.");
+				System.exit(ExitCode.NotSupportedAxiom.getValue());
+			}
+
+			String axiomsPath = cmd.getOptionValue(CLIOptionsStrings.interestingAxiomOptionLong);
+			OWLOntology axiomsOntology = OWLManager.createOWLOntologyManager()
+				.loadOntologyFromOntologyDocument(new File(axiomsPath));
+
+			if(!HelperFunctions.reasonerOntologyAxiomTypeCheck(reasonerName, axiomsOntology)){
+				System.err.println("The selected reasoner " + reasonerName + " does not support the axiom types of the given interesting axioms.");
+				System.exit(ExitCode.NotSupportedAxiom.getValue());
+			}
+			SortMethod sortMethod = SortMethod.getSortMethod(sortMethodStr);
+			Boolean liveSort = cmd.hasOption(CLIOptionsStrings.liveSortOptionShort);
+			Boolean visualize = cmd.hasOption(CLIOptionsStrings.visualizeOptionShort);
+			ExitCode ecode = ExitCode.terminatedSuccessfully;
+			try{
+				if (visualize){
+					ecode = ComputeRepair.computeRepairOntologyVisual(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);	
+				} else {
+					ecode = ComputeRepair.computeRepairOntology(axiom, ontology, axiomsOntology, reasonerName, outDirStr, ontologyPathStr, sortMethod, liveSort);
+				}
+				
+			} catch (Exception e){
+				e.printStackTrace();
+			}		
+
+			System.exit(ecode.getValue());	
+		}
+		
 		Collection<OWLEntity> signature = null;
 		if (cmd.hasOption(CLIOptionsStrings.signatureFilePathOptionShort)) {
 			File sigFile = new File(cmd.getOptionValue(CLIOptionsStrings.signatureFilePathOptionLong));

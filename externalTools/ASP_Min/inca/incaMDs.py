@@ -21,14 +21,31 @@ def main():
     parser.add_argument("-out", dest="mDsFilePath", required=True,
                         help="the path of the mDs file",
                         type=str)
+    parser.add_argument("-md", dest="minimalDiagnosis", action="store_true", required=False,
+                        help="indicate if it is to get all minimal diagnoses"
+                        )
+    parser.add_argument("-fd", dest="facetedDiagnosis", action="store_true", required=False,
+                        help="indicate if it is to do faceted navigation in minimal diagnoses"
+                        )
+    parser.add_argument("-fr", dest="firstRun", action="store_true", required=False,
+                        help="indicate if it is first run of the logic program"
+                        )
+    parser.add_argument("-facet", dest="facet", required=False,
+                        help="facet that is being applied",
+                        type=str
+                        )
+    parser.add_argument("-ad", dest="allDiagnosis", action="store_true", required=False,
+                        help="indicate if it is to get all diagnoses"
+                        )
+    parser.add_argument("-out2", dest="diagFilePath", required=False,
+                        help="the path of the diagnosis file",
+                        type=str)
 
     args = parser.parse_args()
 
     start = datetime.datetime.now()
-    print(args.mDsFilePath)
-    minimalDiagnoses.get_all_minimal_diagnoses(args.maxInt, args.filePath, args.mDsFilePath)
-
-    print("done in " + str(datetime.datetime.now() - start))
+    minimalDiagnoses.get_all_minimal_diagnoses(args.maxInt, args.filePath, args.mDsFilePath, args.minimalDiagnosis, args.facetedDiagnosis, args.allDiagnosis, args.firstRun, args.facet, args.diagFilePath)
+    # print("done in " + str(datetime.datetime.now() - start))
 
 
 def is_valid_file(parser, arg):

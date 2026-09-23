@@ -1,30 +1,34 @@
 package de.tu_dresden.lat.diagnoses;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Scanner;
+import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 
-import de.tu_dresden.inf.lat.model.tools.GeneralTools;
+import de.tu_dresden.inf.lat.exceptions.EntityCheckerException;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleDLFormatter$;
 import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatterCl;
 import de.tu_dresden.lat.data.names.ReasonerName;
 import org.apache.log4j.Logger;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLOntology;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
+import org.semanticweb.owlapi.model.OWLOntologyStorageException;
 
-import de.tu_dresden.inf.lat.prettyPrinting.formatting.SimpleOWLFormatter;
+import com.google.common.collect.Sets;
+
 import de.tu_dresden.lat.data.enums.ExitCode;
 import de.tu_dresden.lat.tools.AxiomChecker;
+import de.tu_dresden.lat.tools.Helper;
 
 /**
  * @author Christian Alrabbaa
@@ -34,16 +38,16 @@ public class ASPMinimalDiagnoses {
 
 	private static final Logger logger = Logger.getLogger(ASPMinimalDiagnoses.class);
 
-	private static Map<OWLAxiom, String> axioms2Identifiers;
-	private static Map<String, OWLAxiom> identifiers2Axioms;
-	private static final String axiomPrefix = "alpha";
-	private static final String programFileName = "pi.txt";
-	private static final String INCAPath = "externalTools" + File.separator + "ASP_Min" + File.separator + "inca"
-			+ File.separator + "incaMDs.py";
+	public static Map<OWLAxiom, String> axioms2Identifiers;
+	public static Map<String, OWLAxiom> identifiers2Axioms;
+	public static final String axiomPrefix = "alpha";
+	public static final String programFileName = "pi.txt";
 
+	public static Set<Set<? extends OWLAxiom>> allOptimalDiagnosesMin = new HashSet<>();
+	public static Set<Set<? extends OWLAxiom>> allDiagnoses = new HashSet<>();
 	// Added this to have a SimpleOWLFormatterCL that can format using preferred labels.
 	// Need to use setOntology first.
-	private static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
+	public static SimpleOWLFormatterCl sOWLFormatter = new SimpleOWLFormatterCl(true, SimpleDLFormatter$.MODULE$,
 			true);
 
 	public static ExitCode getAllMinimalDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
@@ -57,7 +61,7 @@ public class ASPMinimalDiagnoses {
 			return ExitCode.NotSupportedAxiom;
 		}
 
-		Set<Set<? extends OWLAxiom>> allJustifications = getAllJustifications(reasonerName, axiom, ontology);
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
 
 		if (!isJustified(allJustifications)) {
 			logger.info("No justifications available for the provided statement");
@@ -68,26 +72,74 @@ public class ASPMinimalDiagnoses {
 			outDirStr = "defaultMDsFolder";
 
 		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
 
 		logger.info("Creating Program");
-		createProgram(allJustifications, outDirStr);
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
 
 		logger.info("Extracting All Minimal Classical Diagnoses");
-		runProgram(mDsID, outDirStr);
-		allOptimalDiagnoses.addAll(returnResult(mDsID, outDirStr));
+		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, false, Optional.empty());
+		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		allOptimalDiagnosesMin = allOptimalDiagnoses;
 
 		logger.info("Generating output file");
-		saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
 
 		return ExitCode.terminatedSuccessfully;
 	}
 
-	private static Set<Set<? extends OWLAxiom>> getAllJustifications(ReasonerName reasonerName, OWLAxiom axiom,
-																	 OWLOntology ontology) {
-		if (reasonerName == ReasonerName.Elk)
-			return JustificationsGenerator.getAllELKJustifications(axiom, ontology);
+	/**
+	 * get all classical repairs / diagnoses. Minimal diagnoses in one file and remaining diagnoses in another file.
+	 * @param axiom
+	 * @param ontology
+	 * @param mDsID
+	 * @param outDirStr
+	 * @param allOptimalDiagnoses
+	 * @param reasonerName
+	 * @return
+	 * @throws IOException
+	 * @throws InterruptedException
+	 */
+	public static ExitCode getAllClassicalRepairs(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
+			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<Set<? extends OWLAxiom>> allRemainingDiagnoses, ReasonerName reasonerName)
+			throws IOException, InterruptedException {
 
-		return JustificationsGenerator.getAllHermitJustifications(axiom, ontology);
+		sOWLFormatter.setReferenceOntology(ontology);
+
+		if (!isAxiomSupported(reasonerName, axiom)) {
+			logger.info("Axiom is not supported!");
+			return ExitCode.NotSupportedAxiom;
+		}
+
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
+
+		if (!isJustified(allJustifications)) {
+			logger.info("No justifications available for the provided statement");
+			return ExitCode.NoJustificationsComputed;
+		}
+
+		if (outDirStr.isEmpty())
+			outDirStr = "defaultMDsFolder";
+
+		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
+
+		logger.info("Creating Program");
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
+
+		logger.info("Extracting All Minimal Classical Diagnoses");
+		HelperFunctions.runProgram(mDsID, outDirStr, false, false, false, true, Optional.empty());
+		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		allRemainingDiagnoses.addAll(HelperFunctions.returnResult(mDsID+"_all", outDirStr));
+
+		allOptimalDiagnosesMin = allOptimalDiagnoses;
+		allDiagnoses = allRemainingDiagnoses;
+
+		logger.info("Generating output file");
+		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+		HelperFunctions.saveResult(allRemainingDiagnoses, mDsID+"_all", outDirStr);
+
+		return ExitCode.terminatedSuccessfully;
 	}
 
 	private static boolean isAxiomSupported(ReasonerName reasonerName, OWLAxiom axiom) {
@@ -103,38 +155,6 @@ public class ASPMinimalDiagnoses {
 				return false;
 
 		return !allJustifications.isEmpty();
-	}
-
-	private static void saveResult(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, String mDsID,
-			String outDirStr) throws IOException {
-		StringJoiner oneDiagnosis, allDiagnoses = new StringJoiner("\n");
-
-		String columnsNames = getColumnsNames(allOptimalDiagnoses);
-		allDiagnoses.add(columnsNames);
-
-		for (Set<? extends OWLAxiom> diagnosis : allOptimalDiagnoses) {
-			oneDiagnosis = new StringJoiner("; ");
-			for (OWLAxiom axiom : diagnosis)
-				oneDiagnosis.add(sOWLFormatter.format(axiom).replaceAll("\"",""));
-
-			allDiagnoses.add(oneDiagnosis.toString());
-		}
-
-		saveText(allDiagnoses.toString(), getMDSFilePathStr(outDirStr, mDsID));
-	}
-
-	private static String getColumnsNames(Set<Set<? extends OWLAxiom>> allOptimalDiagnoses) {
-		int maxSize = 0;
-		for (Set<? extends OWLAxiom> diagnosis : allOptimalDiagnoses) {
-			if (diagnosis.size() > maxSize)
-				maxSize = diagnosis.size();
-		}
-
-		StringJoiner columnsNames = new StringJoiner("; ");
-		for (int i = 0; i < maxSize; i++)
-			columnsNames.add("axiom" + i);
-
-		return columnsNames.toString();
 	}
 
 	/**
@@ -159,43 +179,7 @@ public class ASPMinimalDiagnoses {
 			}
 		}
 	}
-
-	private static void createProgram(Set<Set<? extends OWLAxiom>> allJustifications, String outDirStr)
-			throws IOException {
-		StringJoiner program = new StringJoiner("\n");
-
-		program.add("%All Justifications");
-		allJustifications.forEach(justification -> {
-			program.add(getRule(justification));
-		});
-
-		program.add("%Choices");
-		program.add(getChoices());
-
-		File outDir = new File(outDirStr);
-		if (!outDir.exists())
-			throw new IOException("Directory does not exist -> " + outDirStr);
-
-		saveText(program.toString(), outDirStr + File.separator + programFileName);
-	}
-
-	private static void saveText(String str, String filePath) throws IOException {
-		File file = GeneralTools.createFile(filePath);
-
-		FileOutputStream outStream = new FileOutputStream(file);
-
-		OutputStreamWriter writer = new OutputStreamWriter(outStream, StandardCharsets.UTF_8);
-
-		try {
-			writer.write(str);
-		} catch (Exception e) {
-			logger.error("Failed to write to -> " + filePath);
-		} finally {
-			writer.close();
-			logger.info("Done writing to -> " + filePath);
-		}
-	}
-
+	
 	/**
 	 * Return a string representing the ASP choice rule of the form {alpha1; ... ;
 	 * alpha_i} where each alpha_n is an axiom appearing in some justification
@@ -221,59 +205,151 @@ public class ASPMinimalDiagnoses {
 		String ruleHead = "statement :- ";
 
 		StringJoiner ruleBody = new StringJoiner(",");
-		justification.forEach(axiom -> {
-			ruleBody.add(axioms2Identifiers.get(axiom) + "()");
+		justification.forEach(axiom -> {			
+				ruleBody.add(axioms2Identifiers.get(axiom) + "()");
 		});
 
 		return ruleHead + ruleBody + ".";
+	}	
+	
+/* 
+	* compute and save all the minimal diagnoses (in the first run with no facets applied yet), 
+	* store the list of available facets in a text file 
+*/
+	public static ExitCode getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr,
+			Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun)
+			throws IOException, InterruptedException {
+		if (!isAxiomSupported(reasonerName, axiom)) {
+			logger.info("Axiom is not supported!");
+			return ExitCode.NotSupportedAxiom;
+		}
+
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
+
+		if (!isJustified(allJustifications)) {
+			logger.info("No justifications available for the provided statement");
+			return ExitCode.NoJustificationsComputed;
+		}
+
+		if (outDirStr.isEmpty())
+			outDirStr = "defaultMDsFolder";
+
+		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
+
+		logger.info("Creating Program");
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
+
+		logger.info("Extracting All Minimal Classical Diagnoses");
+		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, false, Optional.empty());
+		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		
+		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator +"facets_options.txt");
+
+		logger.info("Generating output file");
+		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+		return ExitCode.terminatedSuccessfully;
 	}
 
-	private static void runProgram(String mDsID, String outDirStr) {
-		Process p;
-		int tc = -1;
-		try {
-			if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-				p = Runtime.getRuntime()
-						.exec("py " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
-								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
-								+ getMDSFilePathStr(outDirStr, mDsID));
-				tc = p.waitFor();
-			} else {
-				p = Runtime.getRuntime()
-						.exec("python3 " + INCAPath + " -f " + outDirStr + File.separator + programFileName + " -m "
-								+ (identifiers2Axioms.keySet().size() - 1) + " -out "
-								+ getMDSFilePathStr(outDirStr, mDsID));
-				tc = p.waitFor();
+	public static Set<Set<String>> getAllDiagnoses(OWLAxiom axiom, OWLOntology ontology, String mDsID, String outDirStr, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, ReasonerName reasonerName, Boolean firstRun, Boolean unitTest)
+			throws IOException, InterruptedException{
+		Set<Set<String>> diagnosesSet = new HashSet<>();
+		if (!isAxiomSupported(reasonerName, axiom)) {
+			logger.info("Axiom is not supported!");
+			return diagnosesSet;
+		}
+
+		Set<Set<? extends OWLAxiom>> allJustifications = HelperFunctions.getAllJustifications(reasonerName, axiom, ontology);
+
+		if (!isJustified(allJustifications)) {
+			logger.info("No justifications available for the provided statement");
+			return diagnosesSet;
+		}
+
+		if (outDirStr.isEmpty())
+			outDirStr = "defaultMDsFolder";
+
+		fillMap(allJustifications);
+		HelperFunctions.identifiers2Axioms = identifiers2Axioms;
+
+		logger.info("Creating Program");
+		SolveProgramHelpers.createProgram(allJustifications, outDirStr,axioms2Identifiers, identifiers2Axioms, programFileName);
+
+		logger.info("Extracting All Minimal Classical Diagnoses");
+		HelperFunctions.runProgram(mDsID, outDirStr, false, true, firstRun, false, Optional.empty());
+		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
+		
+		HelperFunctions.storeFacets(HelperFunctions.returnFacets(outDirStr + File.separator +"facets_options.txt"), outDirStr + File.separator +"facets_options.txt");
+
+		logger.info("Generating output file");
+		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
+
+		diagnosesSet = HelperFunctions.createStringSet(allOptimalDiagnoses);
+
+		return diagnosesSet;
+	}
+
+	public static ExitCode parseUserInteraction(OWLAxiom axiom, OWLOntology ontology, String dID, String outDirStr, ReasonerName reasonerName, String ontologyPathStr) throws IOException, InterruptedException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException{
+		ExitCode ecode = ExitCode.terminatedSuccessfully;
+
+		boolean flag = true;
+		ecode = ASPMinimalDiagnoses.getAllDiagnoses(axiom, ontology, dID, outDirStr, Sets.newHashSet(),
+				reasonerName, true);
+
+		Files.deleteIfExists(Paths.get(outDirStr + File.separator + "added_knowledge.txt"));
+		Files.deleteIfExists(Paths.get(outDirStr + File.separator + "deep_investigation.txt"));
+
+		while (flag == true){
+			java.util.Scanner scanner = new java.util.Scanner(System.in);
+			System.out.println("\033[1;36mType help to list commands:\033[0m");
+			String user_in = scanner.nextLine();
+			
+			if (user_in.equals("exit")){
+				flag = false;
+				scanner.close();
 			}
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-			System.out.println("tc = " + tc);
+			else{
+				if (!user_in.contains("#impact") && !user_in.contains("#reactivate") && !user_in.contains("#del") && !user_in.contains("delall") && !user_in.contains("save") && !user_in.contains("help")){	
+					FacetedNavigation.applyFacet(dID, outDirStr, user_in);		
+				}	
+				if (user_in.contains("#impact")){
+					FacetedNavigation.getImpact(dID, outDirStr, user_in.substring(8));
+				}	
+				if (user_in.contains("#reactivate")){
+					FacetedNavigation.reactivateFunction(dID, outDirStr, user_in.substring(12));
+				}
+				if (user_in.contains("#del")){
+					String del_axiom = user_in.substring(5);
+					FacetedNavigation.delete(dID, outDirStr, Optional.of(del_axiom));
+				}
+				if (user_in.contains("delall")){
+					FacetedNavigation.delete(dID, outDirStr, Optional.empty());
+				}
+				if (user_in.contains("save")){
+					String outputFileStr = user_in.substring(5);
+					FacetedNavigation.saveRepair(outDirStr, dID, ontologyPathStr, axiom, reasonerName, outputFileStr);
+				}
+
+				if (user_in.contains("help")){
+					List<List<String>> helpText = new ArrayList<>(
+						Arrays.asList(
+							new ArrayList<>(Arrays.asList("Apply a nav. step using the identifier of a facet", "ex: alpha0\n")),
+							new ArrayList<>(Arrays.asList("Retract a specific facet", "ex: alpha0\n" )),
+							new ArrayList<>(Arrays.asList("Show the impact of removing certain facets", "ex: #impact alpha0\n")),
+							new ArrayList<>(Arrays.asList("Find all min. correction sets to w.r.t a facet", "ex: #reactivate alpha0\n")),		
+							new ArrayList<>(Arrays.asList("Retract all facets", "delall\n")),
+							new ArrayList<>(Arrays.asList("Saves the repair w.r.t to the current diagnoses", "save\n")),
+							new ArrayList<>(Arrays.asList("Terminate the program", "exit\n\n")),
+							new ArrayList<>(Arrays.asList("\033[1;32m*Note* Multiple entries and deletions must be separated by \"/\"\033[0m", "\n\n"))
+						)
+					);			
+					for (List<String> i : helpText){
+						System.out.printf("%1$-50s %2$s", i.get(0), i.get(1));
+					}
+				}								
+			}	
 		}
-	}
-
-	private static Set<Set<? extends OWLAxiom>> returnResult(String mDsID, String outDirStr) throws IOException {
-		Set<Set<? extends OWLAxiom>> allDiagnoses = new HashSet<>();
-		Set<OWLAxiom> diagnosis;
-
-		Path path = Paths.get(getMDSFilePathStr(outDirStr, mDsID));
-		Scanner scanner = new Scanner(path);
-		while (scanner.hasNextLine()) {
-			diagnosis = new HashSet<>();
-
-			String line = scanner.nextLine();
-			for (String id : line.split(","))
-				diagnosis.add(identifiers2Axioms.get(axiomPrefix + id.trim()));
-
-			allDiagnoses.add(diagnosis);
-		}
-
-		scanner.close();
-
-		return allDiagnoses;
-	}
-
-	private static String getMDSFilePathStr(String outDir, String mDsID) {
-		String fileName = mDsID.isEmpty() ? "mDs.txt" : "mDs_" + mDsID + ".txt";
-		return outDir + File.separator + fileName;
+		return ecode;
 	}
 }
+
