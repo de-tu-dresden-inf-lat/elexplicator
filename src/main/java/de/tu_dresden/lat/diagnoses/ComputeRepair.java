@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -26,7 +25,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -96,7 +94,23 @@ public class ComputeRepair {
 	private static Future<?> diagnosisFuture;
 	private static Future<?> sortingFuture;
 
-
+/**
+ * 
+ * @param axiom
+ * @param ontology
+ * @param interestingAxiomOntology
+ * @param rName
+ * @param outDirStr
+ * @param ontologyPath
+ * @param sortMethod
+ * @param liveSort
+ * @return
+ * @throws IOException
+ * @throws EntityCheckerException
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ * @throws InterruptedException
+ */
 	public static ExitCode computeRepairOntologyVisual(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
 		// return computeRepairOntology(repairSession.defectAxiom, repairSession.ontology, repairSession.axiomsOntology, repairSession.reasonerName, repairSession.outDirStr, repairSession.ontologyPath, repairSession.sortMethod, repairSession.liveSort, true);
 		ExitCode ecode = ExitCode.terminatedSuccessfully;
@@ -117,6 +131,20 @@ public class ComputeRepair {
 		return ecode;
 	}
 
+/**
+ * 
+ * @param axiom
+ * @param ontology
+ * @param interestingAxiomOntology
+ * @param rName
+ * @param outDirStr
+ * @param ontologyPath
+ * @param sortMethod
+ * @param liveSort
+ * @param visualize
+ * @throws OWLOntologyCreationException
+ * @throws InterruptedException
+ */
 	public static void initiateRepair(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort, Boolean visualize) throws OWLOntologyCreationException, InterruptedException{
 		sOWLFormatter.setReferenceOntology(ontology);
 		allJustifications = new CopyOnWriteArraySet<>();
@@ -170,19 +198,23 @@ public class ComputeRepair {
 		}
 
 	}
+
 /**
- * interactive method to compute the repair ontology based on user selection of justification axioms
+ * 
  * @param axiom
  * @param ontology
  * @param interestingAxiomOntology
- * @param reasonerName
+ * @param rName
  * @param outDirStr
  * @param ontologyPath
+ * @param sortMethod
+ * @param liveSort
+ * @return
  * @throws IOException
  * @throws EntityCheckerException
  * @throws OWLOntologyCreationException
  * @throws OWLOntologyStorageException
- * @throws InterruptedException 
+ * @throws InterruptedException
  */
 	public static ExitCode computeRepairOntology(OWLAxiom axiom, OWLOntology ontology, OWLOntology interestingAxiomOntology, ReasonerName rName, String outDirStr, String ontologyPath, SortMethod sortMethod, Boolean liveSort) throws IOException, EntityCheckerException, OWLOntologyCreationException, OWLOntologyStorageException, InterruptedException{
 	
@@ -405,22 +437,24 @@ public class ComputeRepair {
 			System.out.println(e.getMessage());
 			return ecode;
 		} 
-		// finally {
-		// 	cleanup();
-		// }
-
-		return ecode;
-		
+		return ecode;	
 	}
 
 /**
- * handle option probabilities in not sure case
- * @param str
- * @param filePath
+ * 
+ * @param justificationAxiom
+ * @param keepAxioms
+ * @param removeAxioms
+ * @param outDirStr
+ * @param ontologyPath
+ * @param interestingAxiomsSet
+ * @param reasonerName
+ * @param nodeId
+ * @return
  * @throws IOException
- * @throws EntityCheckerException 
- * @throws OWLOntologyStorageException 
- * @throws OWLOntologyCreationException 
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ * @throws EntityCheckerException
  */
 	public static String computeProbabilities(OWLAxiom justificationAxiom, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName, Optional<String> nodeId) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
 		//entailment probability when retaining the justification axiom
@@ -450,7 +484,6 @@ public class ComputeRepair {
 		Boolean entailment_no = getEntailmentProbability(allJustifications, keepAxioms, updatedRemoveAxioms, outDirStr, ontologyPath, interestingAxiomsSet, reasonerName);
 		
 		Map<OWLAxiom, Double> axiomWeightNo = new HashMap<>(axiomWeightMap);
-		//write the axiom weight map to the json file as value for key "yes"
 		bufferedString += axiomWeightOutputBuffer.toString();									
 		axiomWeightOutputBuffer.reset();
 
@@ -498,8 +531,9 @@ public class ComputeRepair {
 
 		return bufferedString;
 	}
+
 /**
- * append constraints in given string to the logic program file
+ * 
  * @param str
  * @param filePath
  * @throws IOException
@@ -523,7 +557,8 @@ public class ComputeRepair {
 /**
  * check for each justification set in allJustifications if all the axioms in it are selected to be in the repair
  * @param allJustifications
- * @return unsatisfiable justification set
+ * @param keepAxioms
+ * @return the justification set that is incompatible with the keepAxioms set.
  */
 	public static Set<? extends OWLAxiom> checkAxiomSelection(Set<Set<? extends OWLAxiom>> allJustifications, Set<OWLAxiom> keepAxioms){
 		for (Set<? extends OWLAxiom> justificationSet : allJustifications){
@@ -534,6 +569,12 @@ public class ComputeRepair {
 		return null;
 	}
 
+/**
+ * 
+ * @param keepAxioms
+ * @param removeAxioms
+ * @return
+ */
 	public static Set<Set<? extends OWLAxiom>> getAvailableDiagnoses(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms){
 		Set<Set <? extends OWLAxiom>> availableDiag = new HashSet<>();
 		availableDiag = allDiagnoses.stream().filter(d -> d.containsAll(removeAxioms) & Collections.disjoint(d, keepAxioms)).collect(Collectors.toSet());
@@ -541,66 +582,21 @@ public class ComputeRepair {
 		return availableDiag;
 	}
 
-	public static Set<Set<? extends OWLAxiom>> getAvailableMinDiagnoses(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms){
-		Set<Set <? extends OWLAxiom>> availableDiag = new HashSet<>();
-		availableDiag = minimalDiagnoses.stream().filter(d -> d.containsAll(removeAxioms) & Collections.disjoint(d, keepAxioms)).collect(Collectors.toSet());
-		return availableDiag;
-	}
-
 /**
- * compute the diagnoses for the given justifications and save the repaired ontologies
+ * 
  * @param allJustifications
- * @param allOptDiagnoses
+ * @param keepAxioms
+ * @param removeAxioms
  * @param outDirStr
+ * @param ontologyPath
+ * @param interestingAxiomsSet
+ * @param reasonerName
+ * @return
  * @throws IOException
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ * @throws EntityCheckerException
  */
-	public static Set<Set<? extends OWLAxiom>> computeDiagnosis(Set<Set<? extends OWLAxiom>> allJustifications, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr) throws IOException{
-		Set<Set<? extends OWLAxiom>> allOptimalDiagnoses = new HashSet<>();
-		String mDsID = "repair";
-		logger.info("Creating program");
-		SolveProgramHelpers.createProgram(allJustifications, outDirStr, axioms2Identifiers, identifiers2Axioms, programFileName);
-
-		applyUserSelection(keepAxioms, removeAxioms, outDirStr);
-
-		logger.info("Extracting Diagnoses Sets");
-		HelperFunctions.runProgram(mDsID, outDirStr, true, false, false, false, Optional.empty());
-		
-		allOptimalDiagnoses.addAll(HelperFunctions.returnResult(mDsID, outDirStr));
-
-		logger.info("Generating the diagnoses output file");
-		HelperFunctions.saveResult(allOptimalDiagnoses, mDsID, outDirStr);
-
-		return allOptimalDiagnoses;
-	}
-
-/**
- * add constraints respective to keepAxioms and removeAxioms to the logic program file
- * @param outDirStr
- * @throws IOException
- */
-	private static void applyUserSelection(Set<OWLAxiom> keepAxioms,Set<OWLAxiom> removeAxioms, String outDirStr) throws IOException{
-		StringJoiner keepAxiomsProgram = new StringJoiner("\n");
-		keepAxiomsProgram.add("");
-		StringJoiner removeAxiomsProgram = new StringJoiner("\n");
-		removeAxiomsProgram.add("");
-
-		for (OWLAxiom axiom : keepAxioms){
-			String axiomID = axioms2Identifiers.get(axiom);
-			keepAxiomsProgram.add(":- not "+axiomID+"().");
-		}
-
-		for (OWLAxiom axiom : removeAxioms){
-			String axiomID = axioms2Identifiers.get(axiom);
-			removeAxiomsProgram.add(":- "+axiomID+"().");
-		}
-
-		File outDir = new File(outDirStr);
-		if (!outDir.exists())
-			throw new IOException("Directory does not exist -> " + outDirStr);
-		appendTextToFile(keepAxiomsProgram.toString(), outDirStr + File.separator + programFileName);
-		appendTextToFile(removeAxiomsProgram.toString(), outDirStr + File.separator + programFileName);
-	}
-
 	private static Boolean getEntailmentProbability(Set<Set<? extends OWLAxiom>> allJustifications, Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, OWLOntologyStorageException, EntityCheckerException{
 		axiomWeightMap = new HashMap<>();
 		Set<? extends OWLAxiom> selectedJustification = checkAxiomSelection(allJustifications, keepAxioms);
@@ -616,10 +612,14 @@ public class ComputeRepair {
 	}
 
 /**
- * create and run logic program based on user selection of justification axioms, compute the diagnoses and invoke the async thread to compute axiom weight
+ * 
  * @param allJustifications
- * @param allOptDiagnoses
  * @param outDirStr
+ * @param ontologyPath
+ * @param interestingAxiomsSet
+ * @param keepAxioms
+ * @param removeAxioms
+ * @param reasonerName
  * @throws IOException
  * @throws EntityCheckerException
  * @throws OWLOntologyCreationException
@@ -636,7 +636,6 @@ public class ComputeRepair {
 
 /**
  * Map every axiom to an identifier of the form "alpha" + integer
- * 
  * @param allJustifications
  */
 	public static void fillMap(Set<Set<? extends OWLAxiom>> allJustifications) {
@@ -659,41 +658,14 @@ public class ComputeRepair {
 		}
 	}
 
-
 /**
- * compute the possible repairs, extract and save the modules of important axioms from the repaired ontologies in a map
- * replaces the computeRepairs method before the enatilment percentage computation used modules 
- * @return Map<OWLAxiom, Set<OWLOntology>>
- * @throws OWLOntologyCreationException 
+ * 
+ * @param ontologyPath
+ * @param allOptimalDiagnoses
+ * @param interestingAxiomsSet
+ * @return
+ * @throws OWLOntologyCreationException
  */
-	public static Map<OWLAxiom, List<OWLOntology>> computeRepairsModules(String ontologyPath, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxiomsSet) throws OWLOntologyCreationException{
-		Map<OWLAxiom, List<OWLOntology>> repairModules = new HashMap<>();
-		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
-			OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
-			OWLOntology ontology = manager.loadOntologyFromOntologyDocument(new File(ontologyPath));
-
-			for (OWLAxiom axiom: axiomSets){
-				manager.removeAxiom(ontology, axiom);
-			}
-			for (OWLAxiom impAxiom : interestingAxiomsSet){
-				OWLOntology impModule = null;
-				if (reasonerName == ReasonerName.Elk){
-					impModule = Segmenter.getStarModule(ontology, impAxiom.getSignature(),
-            		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
-            				: IRI.create("http://example.org/temp-repair-ontology"));
-				} else {
-					impModule = SegmenterHermit.getStarModule(ontology, impAxiom.getSignature(),
-            		ontology.getOntologyID().getOntologyIRI().isPresent() ? ontology.getOntologyID().getOntologyIRI().get()
-            				: IRI.create("http://example.org/temp-repair-ontology"));
-				}
-				
-				repairModules.putIfAbsent(impAxiom, new ArrayList<>());
-				repairModules.get(impAxiom).add(impModule);
-			}
-		}
-		return repairModules;
-	}
-
 	public static Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> getInterestingAxiomsEntailment(String ontologyPath, Set<Set<? extends OWLAxiom>> allOptimalDiagnoses, Set<? extends OWLAxiom> interestingAxiomsSet) throws OWLOntologyCreationException{
 		Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> axiomToRepairs = new HashMap<>();
 		for (Set<? extends OWLAxiom> axiomSets : allOptimalDiagnoses){
@@ -736,6 +708,11 @@ public class ComputeRepair {
 		return repairOntology;
 	}
 
+/**
+ * 
+ * @param removeAxioms
+ * @return
+ */
 	public static Boolean isRepair(Set<OWLAxiom> removeAxioms){
 		Set<Set<? extends OWLAxiom>> satisfiedDiagnoses = new HashSet<>();
 
@@ -750,6 +727,19 @@ public class ComputeRepair {
 		return satisfiedDiagnoses.size() > 0;
 	}
 
+/**
+ * 
+ * @param defectAxiom
+ * @param defectOntology
+ * @param removeAxioms
+ * @param outDirStr
+ * @param reasonerName
+ * @param ontologyPath
+ * @param scanner
+ * @return
+ * @throws IOException
+ * @throws InterruptedException
+ */
 	private static Boolean checkRepair(OWLAxiom defectAxiom, OWLOntology defectOntology, Set<OWLAxiom> removeAxioms, String outDirStr, ReasonerName reasonerName, String ontologyPath, Scanner scanner) throws IOException, InterruptedException{
 		
 		if (isRepair(removeAxioms)){
@@ -778,6 +768,18 @@ public class ComputeRepair {
 		return false;	
 	}
 
+/**
+ * 
+ * @param ontology
+ * @param axiom
+ * @param removeAxioms
+ * @param ontologyPath
+ * @param outDirStr
+ * @param save_filename
+ * @param reasonerName
+ * @param scanner
+ * @return
+ */
 	public static Boolean saveProcess(OWLOntology ontology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName, Scanner scanner){
 		OWLOntology repairOntology;
 		try {
@@ -836,7 +838,9 @@ public class ComputeRepair {
  * check if the diagnosis is minimal	
  * @param defectOntology
  * @param defectAxiom
+ * @param removeAxiom
  * @param outDirStr
+ * @param reasonerName
  * @return
  * @throws IOException
  * @throws InterruptedException
@@ -851,6 +855,11 @@ public class ComputeRepair {
 		}
 	}
 
+/**
+ * 
+ * @param removeAxioms
+ * @return
+ */
 	public static Boolean checkMinimality(Set<OWLAxiom> removeAxioms){
 		if (!diagnosisComputed){ waitForFuture(diagnosisFuture);}
 		if (minimalDiagnoses.contains(removeAxioms)){
@@ -860,6 +869,25 @@ public class ComputeRepair {
 		}
 	}
 
+/**
+ * 
+ * @param defectOntology
+ * @param repairOntology
+ * @param axiom
+ * @param removeAxioms
+ * @param ontologyPath
+ * @param outDirStr
+ * @param save_filename
+ * @param reasonerName
+ * @param scanner
+ * @return
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ * @throws IOException
+ * @throws EntityCheckerException
+ * @throws InterruptedException
+ * @throws ExecutionException
+ */
 	private static Boolean refineRepair(OWLOntology defectOntology, OWLOntology repairOntology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName, Scanner scanner) 
 		throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, EntityCheckerException, InterruptedException, ExecutionException{
 		String user_in;
@@ -951,49 +979,15 @@ public class ComputeRepair {
 									
 	}
 
-	//for not sure option evaluation. Save all maximal repairs.
-	private static Boolean refineRepair2(OWLOntology defectOntology, OWLOntology repairOntology, OWLAxiom axiom, Set<OWLAxiom> removeAxioms, String ontologyPath, String outDirStr, String save_filename, ReasonerName reasonerName) 
-		throws OWLOntologyCreationException, OWLOntologyStorageException, IOException, EntityCheckerException, InterruptedException, ExecutionException{
-
-		
-		ExecutorService executor = Executors.newSingleThreadExecutor();
-		CheckMinimalityThread minimalityThread = new CheckMinimalityThread(defectOntology, axiom, removeAxioms, outDirStr, reasonerName);
-
-    	Future<Boolean> isMinimal = executor.submit(minimalityThread); 
-		
-
-		while (!isMinimal.isDone()){
-			LoadingScreen.main(null);
-		}
-		//if diagnosis is already computed, use that as the minimalDiagnoses else do the computation
-		if (isMinimal.get().booleanValue()){
-			try{
-				saveRepairOntology(repairOntology, outDirStr, save_filename);
-			} catch (Exception e){
-				e.printStackTrace();
-				return false;
-			}
-			System.out.println("Repair Saved!");
-			return true; 
-		} else {
-			
-			List<Set<? extends OWLAxiom>> recommendedDiagnoses = recommendDiagnosisSet(removeAxioms);
-			for (Set<? extends OWLAxiom> diagnosisSet : recommendedDiagnoses){
-				OWLOntology repairOntologyMax = computeRepair(diagnosisSet, ontologyPath);
-				try{
-					saveRepairOntology(repairOntologyMax, outDirStr, save_filename);														
-				} catch (Exception e){
-					e.printStackTrace();
-					return false;
-				}
-				System.out.println("Repair Saved!");
-				
-			}
-			return true;
-		}	
-									
-	}
-
+/**
+ * 
+ * @param saveOntology
+ * @param outDirStr
+ * @param outFileNameStr
+ * @throws OWLOntologyCreationException
+ * @throws OWLOntologyStorageException
+ * @throws IOException
+ */
 	public static void saveRepairOntology(OWLOntology saveOntology, String outDirStr, String outFileNameStr) throws OWLOntologyCreationException, OWLOntologyStorageException, IOException{
 		OWLOntologyManager manager = saveOntology.getOWLOntologyManager();
 		File outputFile = new File(HelperFunctions.getRepairFilePathStr(outDirStr, outFileNameStr + ".owl"));
@@ -1003,11 +997,12 @@ public class ComputeRepair {
 		fos.close();
 	}
 
-
 /**
- * compute axiom weight of interesting axioms based on entailement in the repaired ontologies and update the axiomWeightMap
- * @param counter
- * @param outDirStr
+ * compute axiom weight of interesting axioms based on entailement in the repaired ontologies and update the axiomWeightMap 
+ * @param impAxiomRep
+ * @param reasonerName
+ * @param totalRepairs
+ * @return
  * @throws OWLOntologyCreationException
  */
 	public static Map<OWLAxiom, Double> computeAxiomWeight(Map<OWLAxiom, Set<Set<? extends OWLAxiom>>> impAxiomRep, ReasonerName reasonerName, int totalRepairs) throws OWLOntologyCreationException{
@@ -1018,26 +1013,6 @@ public class ComputeRepair {
 			axiomWeightMap.put(axiom, (double) impAxiomRep.get(axiom).size()*100/totalRepairs);
 		}
 		return axiomWeightMap;
-	}
-
-/**
- * get the most frequent axiom the set of sets of axioms provided
- * @param axioms2DSet
- * @return
- */
-	public static OWLAxiom mostFrequentAxiom(Set<Set<? extends OWLAxiom>> axioms2DSet){
-		Map<OWLAxiom, Integer> frequencyMap = new HashMap<>();
-		for (Set<? extends OWLAxiom> axiomsSet : axioms2DSet){
-			for (OWLAxiom axiom : axiomsSet){
-				frequencyMap.putIfAbsent(axiom, 0);
-				frequencyMap.put(axiom, frequencyMap.get(axiom)+1);
-				if(frequencyMap.get(axiom) == axioms2DSet.size()){
-					frequencyMap.remove(axiom);
-				}
-			}
-		}
-		OWLAxiom frequentAxiom = frequencyMap.entrySet().stream().max(Map.Entry.comparingByValue()).get().getKey();
-		return frequentAxiom;
 	}
 
 /**
@@ -1088,15 +1063,15 @@ public class ComputeRepair {
     }
 
 /**
- * write the initial, modified class hierarchy and the difference to a json file
+ * 
  * @param hierarchy1
  * @param hierarchy2
  * @param hierarchyDiff
  * @param repairYes
  * @param repairNo
  * @param outDirStr
+ * @param nodeId
  */
-
 	private static void writeClassHierarchyDifferenceToFile(Set<List<String>> hierarchy1, Set<List<String>> hierarchy2, Map<String, Set<List<String>>> hierarchyDiff, Boolean repairYes,Boolean repairNo, String outDirStr, Optional<String> nodeId){
 		ObjectMapper mapper = new ObjectMapper();
 		String filename = "classHierarchyDifference.json";
@@ -1117,10 +1092,13 @@ public class ComputeRepair {
 	}
 
 /**
- * write the probabilities of the axioms to a json file
+ * 
+ * @param entail_yes
+ * @param entail_no
  * @param probabilities_yes
  * @param probabilities_no
  * @param outDirStr
+ * @param nodeId
  */
 	private static void writeProbabilitiesToFile(Boolean entail_yes, Boolean entail_no, Map<OWLAxiom, Double> probabilities_yes, Map<OWLAxiom, Double> probabilities_no, String outDirStr, Optional<String> nodeId) {
 		ObjectMapper mapper = new ObjectMapper();
@@ -1156,6 +1134,18 @@ public class ComputeRepair {
 		}
 	}
 
+/**
+ * 
+ * @param noRepairYes
+ * @param noRepairNo
+ * @param dissimilarityYes
+ * @param dissimilarityNo
+ * @param entailedYes
+ * @param entailedNo
+ * @param entailedBoth
+ * @param outDirStr
+ * @param nodeId
+ */
 	private static void writeDissimilarityToFile(Boolean noRepairYes, Boolean noRepairNo, Map<Set<? extends OWLAxiom>, Double> dissimilarityYes, Map<Set<? extends OWLAxiom>, Double> dissimilarityNo, Set<OWLAxiom> entailedYes, Set<OWLAxiom> entailedNo, Set<OWLAxiom> entailedBoth, String outDirStr, Optional<String> nodeId) {
 		ObjectMapper mapper = new ObjectMapper();
 		String filename = "dissimilarity.json";
@@ -1245,10 +1235,10 @@ public class ComputeRepair {
 
 
 /**
- * overwrite the given output in console with blank lines 
+ * 
  * @param output
-  * @throws InterruptedException 
-  */
+ * @throws InterruptedException
+ */
 	private static void overwriteWithBlankLines(String output) throws InterruptedException {
 		int lineCount = output.split("\n").length;
 
@@ -1260,7 +1250,6 @@ public class ComputeRepair {
 
 /**
  * recommend the minimal diagnosis set that is a subset of the selected diagnosis set
- * @param allMinimalOptimalDiagnoses
  * @param repairDiagnosis
  * @return
  * @throws IOException
@@ -1280,20 +1269,19 @@ public class ComputeRepair {
     
 	}
 
-	/**
-	 * get the repairs from smallest minimal diagnosis sets that entail the maximum interesting axioms as preferred repairs
-	 * @param keepAxioms
-	 * @param removeAxioms
-	 * @param outDirStr
-	 * @param ontologyPath
-	 * @param interestingAxiomsSet
-	 * @param reasonerName
-	 * @return
-	 * @throws IOException
-	 * @throws OWLOntologyCreationException
-	 * @throws EntityCheckerException
-	 */
-
+/**
+ * get the repairs from smallest minimal diagnosis sets that entail the maximum interesting axioms as preferred repairs
+ * @param keepAxioms
+ * @param removeAxioms
+ * @param outDirStr
+ * @param ontologyPath
+ * @param interestingAxiomsSet
+ * @param reasonerName
+ * @return
+ * @throws IOException
+ * @throws OWLOntologyCreationException
+ * @throws EntityCheckerException
+ */
 	public static Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> getPreferredRepair(Set<OWLAxiom> keepAxioms, Set<OWLAxiom> removeAxioms, String outDirStr, String ontologyPath, Set<? extends OWLAxiom> interestingAxiomsSet, ReasonerName reasonerName) throws IOException, OWLOntologyCreationException, EntityCheckerException{
 		Set<Set<? extends OWLAxiom>> allAvailableDiagnoses = getAvailableDiagnoses(keepAxioms, removeAxioms);
 		int minMDSize = allAvailableDiagnoses.stream()
@@ -1336,7 +1324,12 @@ public class ComputeRepair {
 		return preferredRepairs;
 	}
 
-
+/**
+ * 
+ * @param currentOntology
+ * @param preferredRepair
+ * @return
+ */
 	private static double computeDissimilarity(OWLOntology currentOntology, OWLOntology preferredRepair){
 		Set<OWLAxiom> intersection = new HashSet<>(currentOntology.getAxioms());
 		intersection.retainAll(preferredRepair.getAxioms());
@@ -1346,6 +1339,14 @@ public class ComputeRepair {
 		return dissimilarity;
 	}
 
+/**
+ * 
+ * @param repairs
+ * @param ontology
+ * @param ontologyPath
+ * @return
+ * @throws OWLOntologyCreationException
+ */
 	private static Map<Set<? extends OWLAxiom>, Double> getBestRepair(Map<Set<? extends OWLAxiom>, Set<OWLAxiom>> repairs, OWLOntology ontology, String ontologyPath) throws OWLOntologyCreationException {
 		if (repairs == null || repairs.isEmpty()) return null;
 		Map<Set<? extends OWLAxiom>, Double> repairDissimilarityDist = new HashMap<>();
@@ -1358,6 +1359,21 @@ public class ComputeRepair {
 		return repairDissimilarityDist;
 	}
 
+/**
+ * 
+ * @param justAxiom
+ * @param removeAxioms
+ * @param keepAxioms
+ * @param interestingAxiomsSet
+ * @param ontologyPath
+ * @param reasonerName
+ * @param outDirStr
+ * @param nodeId
+ * @return
+ * @throws OWLOntologyCreationException
+ * @throws IOException
+ * @throws EntityCheckerException
+ */
 	public static String dissimilarity(OWLAxiom justAxiom, Set<OWLAxiom> removeAxioms, Set<OWLAxiom> keepAxioms, Set<? extends OWLAxiom> interestingAxiomsSet, String ontologyPath, ReasonerName reasonerName, String outDirStr, Optional<String> nodeId) throws OWLOntologyCreationException, IOException, EntityCheckerException{
 		if (!justificationsCompleted || !diagnosisComputed){
 			waitForFuture(justificationFuture);
@@ -1481,15 +1497,25 @@ public class ComputeRepair {
 		return bufferString;
 	}
 
+/**
+ * 
+ * @param axioms
+ * @return
+ */
 	public static Set<String> toStringSet(Set<? extends OWLAxiom> axioms) {
-	Set<String> result = new HashSet<>();
-	for (OWLAxiom axiom : axioms) {
-		result.add(sOWLFormatter.format(axiom).toString()); // or use a renderer for nicer output
+		Set<String> result = new HashSet<>();
+		for (OWLAxiom axiom : axioms) {
+			result.add(sOWLFormatter.format(axiom).toString()); // or use a renderer for nicer output
+		}
+		return result;
 	}
-	return result;
-}
 
-
+/**
+ * 
+ * @param entailed_yes
+ * @param entailed_no
+ * @return
+ */
 	private static Map<String, Set<OWLAxiom>> getEntailedSets(Set<OWLAxiom> entailed_yes, Set<OWLAxiom> entailed_no){
 		Set<OWLAxiom> both = new HashSet<>(entailed_yes);
 		both.retainAll(entailed_no);
@@ -1524,29 +1550,10 @@ public class ComputeRepair {
 		return JustificationsGenerator.getAllHermitJustificationsAsync(axiom, ontology);
 	}
 
-	public static void main(Object[] args){
-		OWLAxiom defect = (OWLAxiom) args[0];
-		OWLOntology ontology = (OWLOntology) args[1];
-		OWLOntology interestingAxiomOntology = (OWLOntology) args[2];
-		ReasonerName reasonerName = (ReasonerName) args[3];
-		String outDirStr = (String) args[4];
-		String ontologyPath = (String) args[5];
-		SortMethod sortMethod = (SortMethod) args[6];
-		Boolean liveSort = (Boolean) args[7];
-		Boolean visualize = (Boolean) args[8];
-
-		try{
-			if (visualize){
-				computeRepairOntologyVisual(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
-			} else {
-				computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
-			}
-			
-		} catch(Exception e){
-			e.printStackTrace();
-		}
-	}
-
+/**
+ * 
+ * @param future
+ */
 	private static void checkFuture(Future<?> future){
 		if (!future.isDone()){
 			return;
@@ -1568,6 +1575,10 @@ public class ComputeRepair {
 		}
 	}
 
+/**
+ * 
+ * @param future
+ */
 	private static void waitForFuture(Future<?> future){
 		try{
 			future.get();
@@ -1582,6 +1593,29 @@ public class ComputeRepair {
 			cause.printStackTrace();
 			Thread.currentThread().interrupt();
 			System.exit(1);
+		}
+	}
+
+	public static void main(Object[] args){
+		OWLAxiom defect = (OWLAxiom) args[0];
+		OWLOntology ontology = (OWLOntology) args[1];
+		OWLOntology interestingAxiomOntology = (OWLOntology) args[2];
+		ReasonerName reasonerName = (ReasonerName) args[3];
+		String outDirStr = (String) args[4];
+		String ontologyPath = (String) args[5];
+		SortMethod sortMethod = (SortMethod) args[6];
+		Boolean liveSort = (Boolean) args[7];
+		Boolean visualize = (Boolean) args[8];
+
+		try{
+			if (visualize){
+				computeRepairOntologyVisual(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
+			} else {
+				computeRepairOntology(defect, ontology, interestingAxiomOntology, reasonerName, outDirStr, ontologyPath, sortMethod, liveSort);
+			}
+			
+		} catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 
